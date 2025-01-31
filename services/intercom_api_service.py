@@ -37,7 +37,7 @@ class IntercomAPIService:
             return response.status_code, None
 
     def create_conversation(
-            self, user_id: str, message: str
+        self, user_id: str, message: str
     ) -> Tuple[int, Dict | None]:
         url: str = self.base_url + "conversations"
         headers = {
@@ -53,7 +53,7 @@ class IntercomAPIService:
             return response.status_code, None
 
     def attach_admin_to_conversation(
-            self, admin_id: str, conversation_id: str
+        self, admin_id: str, conversation_id: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/parts"
         headers = {
@@ -76,7 +76,7 @@ class IntercomAPIService:
             return response.status_code, None
 
     def add_admin_note_to_conversation(
-            self, conversation_id: str, admin_id: str, note: str
+        self, conversation_id: str, admin_id: str, note: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         headers = {
@@ -98,7 +98,7 @@ class IntercomAPIService:
             return response.status_code, None
 
     def add_admin_message_to_conversation(
-            self, conversation_id: str, admin_id: str, message: str
+        self, conversation_id: str, admin_id: str, message: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         headers = {
