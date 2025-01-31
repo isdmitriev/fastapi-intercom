@@ -1,7 +1,18 @@
 from services.intercom_api_service import IntercomAPIService
 from typing import Dict
+import pytest
+import asyncio
 
 CLIENT: IntercomAPIService = IntercomAPIService()
+from services.mongodb_service import MongodbService
+
+
+# @pytest.mark.asyncio
+# async def test_mongo_db_service():
+#     client = MongodbService()
+#     await client.add_document_to_collection(
+#         "intercom_app", "event_logs", {"name": "ilya"}
+#     )
 
 
 def test_get_admins():

@@ -2,6 +2,7 @@ from fastapi import FastAPI, Response, status, Request
 from fastapi.responses import JSONResponse
 import uvicorn
 from typing import Dict
+import motor.motor_asyncio
 from services.web_hook_processor import WebHookProcessor
 
 app = FastAPI()
@@ -13,7 +14,7 @@ processor: WebHookProcessor = WebHookProcessor()
 async def get_message(request: Request):
     try:
         payload: Dict = await request.json()
-        topic: str = payload.get("topic", '')
+        topic: str = payload.get("topic", "")
         await processor.process_message(topic, payload)
         return Response(status_code=status.HTTP_200_OK)
     except:

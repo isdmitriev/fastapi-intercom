@@ -31,16 +31,16 @@ class WebHookProcessor:
             return
 
     async def handle_conversation_user_created(self, data: Dict):
-        print('conversation.user.created')
+        print("conversation.user.created")
 
     async def handle_conversation_user_replied(self, data: Dict):
-        print('conversation.user.replied')
+        print("conversation.user.replied")
 
     async def handle_conversation_admin_replied(self, data: Dict):
-        print('conversation.admin.replied')
+        print("conversation.admin.replied")
 
     async def handle_conversation_admin_noted(self, data: Dict):
-        print('conversation.admin.noted')
+        print("conversation.admin.noted")
 
     async def handle_conversation_admin_assigned(self, data: Dict):
-        print('conversation.admin.assigned')
+        print("conversation.admin.assigned")
