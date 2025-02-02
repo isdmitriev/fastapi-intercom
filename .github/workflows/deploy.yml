@@ -6,8 +6,8 @@ on:
   workflow_dispatch:    # для ручного запуска
 
 env:
-  CLUSTER_NAME: your-cluster-name    # измените на ваше имя кластера
-  CLUSTER_RESOURCE_GROUP: your-rg    # измените на вашу resource group
+  CLUSTER_NAME: 'intercom-app-cluster'    # измените на ваше имя кластера
+  CLUSTER_RESOURCE_GROUP: 'my-app'    # измените на вашу resource group
 
 jobs:
   deploy:
