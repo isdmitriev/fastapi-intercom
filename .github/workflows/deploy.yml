@@ -1,0 +1,34 @@
+name: Deploy to AKS
+
+on:
+  push:
+    branches: [ test ]  # или master - как у вас названа основная ветка
+  workflow_dispatch:    # для ручного запуска
+
+env:
+  CLUSTER_NAME: your-cluster-name    # измените на ваше имя кластера
+  CLUSTER_RESOURCE_GROUP: your-rg    # измените на вашу resource group
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+
+      - name: Get AKS Credentials
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+          cluster-name: ${{ env.CLUSTER_NAME }}
+
+      - name: Deploy to AKS
+        uses: azure/k8s-deploy@v4
+        with:
+          manifests: |
+            deployment/deployment.yml
+          namespace: default
