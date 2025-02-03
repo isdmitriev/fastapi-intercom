@@ -5,7 +5,7 @@ from openai import OpenAI
 class OpenAIService:
     def __init__(self):
         self.open_ai_client = OpenAI(
-            api_key="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"
+            api_key="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"
         )
 
     def detect_language(self, message: str) -> str | None:

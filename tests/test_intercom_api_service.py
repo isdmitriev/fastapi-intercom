@@ -1,3 +1,5 @@
+import datetime
+
 from services.intercom_api_service import IntercomAPIService
 from typing import Dict
 import pytest
@@ -6,6 +8,7 @@ from services.openai_api_service import OpenAIService
 
 CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService
+from models.models import MessageTranslated, User
 
 
 # @pytest.mark.asyncio
@@ -70,7 +73,13 @@ def test_get_admins():
 #     )
 #     assert add_admin_note_to_conversation_response[0] == 200
 
-
+# def test_openai_detect_language():
+#     hindi_message: str = 'मैं हिंदी बोलता हूँ'
+#     result: str = OpenAIService().detect_language(hindi_message)
+#
+#     assert result == 'hi'
+#
+#
 # def test_openai_service_translate_to_hindi():
 #     hindi_message: str = 'मैं हिंदी बोलता हूँ'
 #     result: str = OpenAIService().translate_message_from_hindi_to_english(hindi_message)
@@ -80,4 +89,20 @@ def test_get_admins():
 # def test_openai_service_translate_to_hindi(message: str):
 #     english_message: str = 'I speak english'
 #     result: str = OpenAIService().translate_message_from_english_to_hindi(english_message)
+#
 #     assert isinstance(result, str)
+
+
+# @pytest.mark.asyncio
+# async def test_add_translations():
+#     user: User = User(type='user', email='user@mail.com', id='id')
+#     translation = MessageTranslated(
+#         conversation_id='1235rte34',
+#         time=datetime.datetime.now(),
+#         message='hello',
+#         language='en',
+#         translated_to='hi',
+#         translated_message='hello',
+#         user=user
+#     )
+#     await MongodbService().add_message_translated(translation)
