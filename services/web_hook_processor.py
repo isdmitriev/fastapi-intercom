@@ -1,4 +1,6 @@
 from typing import Dict
+from services.mongodb_service import MongodbService
+from services.openai_api_service import OpenAIService
 
 
 class WebHookProcessor:

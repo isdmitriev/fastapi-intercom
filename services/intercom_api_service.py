@@ -1,5 +1,7 @@
 import requests
 from typing import Dict, Tuple
+import aiohttp
+import asyncio
 
 
 class IntercomAPIService:
@@ -161,3 +163,31 @@ class IntercomAPIService:
         except requests.exceptions.RequestException as e:
             print(f"Ошибка при получении информации о беседе: {e}")
             return 0, None
+
+    async def add_user_replied_to_conversation(
+        self, conversation_id: str, user_id: str, message: str
+    ) -> Tuple[int, Dict | None]:
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "conversation_id": conversation_id,
+            "message_type": "comment",
+            "body": message,
+            "type": "user",
+            "user_id": user_id,
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{self.base_url}/conversations/{conversation_id}/reply",
+                headers=self.headers,
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+                if response.status == 200:
+                    json = await response.json()
+                    return response.status, json
+                else:
+                    return response.status, None
