@@ -36,6 +36,11 @@ class WebHookProcessor:
         print("conversation.user.created")
 
     async def handle_conversation_user_replied(self, data: Dict):
+        user_reply: Dict = data['data']['item']['conversation_parts']['conversation_parts'][0]
+        message: str = user_reply.get('body', '')
+        user_email: str = user_reply.get('author', {}).get('email', '')
+        user_id: str = user_reply.get('author', {}).get('id', '')
+        print(f'{message}:{user_email}:{user_id}')
         print("conversation.user.replied")
 
     async def handle_conversation_admin_replied(self, data: Dict):
