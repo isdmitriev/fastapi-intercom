@@ -11,12 +11,12 @@ from services.mongodb_service import MongodbService
 from models.models import MessageTranslated, User
 
 
-# @pytest.mark.asyncio
-# async def test_mongo_db_service():
-#     client = MongodbService()
-#     await client.add_document_to_collection(
-#         "intercom_app", "event_logs", {"name": "ilya"}
-#     )
+@pytest.mark.asyncio
+async def test_mongo_db_service():
+    client = MongodbService()
+    await client.add_document_to_collection(
+        "intercom_app", "event_logs", {"name": "ilya"}
+    )
 
 
 def test_get_admins():
@@ -45,8 +45,8 @@ def test_get_admins():
 #         conversation_id=conversation_id, note=note, admin_id=admin_id
 #     )
 #     assert result[0] == 200
-
-# def test_process():
+# @pytest.mark.asyncio
+# async def test_process():
 #     user_id: str = "6798a0c79645a8b3711b89d3"
 #     admin_id: str = "8028082"
 #     create_conversation_response: str = CLIENT.create_conversation(
@@ -60,6 +60,11 @@ def test_get_admins():
 #         conversation_id=new_conversatin_id, admin_id=admin_id
 #     )
 #     assert attach_admin_to_conversation_response[0] == 200
+#
+#     test_user_replied_response = await CLIENT.add_user_replied_to_conversation(
+#         conversation_id=new_conversatin_id, user_id=user_id, message="reply_from_user"
+#     )
+#     assert test_user_replied_response[0] == 200
 #     test_add_admin_message_to_conversation_response = (
 #         CLIENT.add_admin_message_to_conversation(
 #             conversation_id=new_conversatin_id,
@@ -72,6 +77,7 @@ def test_get_admins():
 #         conversation_id=new_conversatin_id, note="note", admin_id=admin_id
 #     )
 #     assert add_admin_note_to_conversation_response[0] == 200
+
 
 # def test_openai_detect_language():
 #     hindi_message: str = 'मैं हिंदी बोलता हूँ'

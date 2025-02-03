@@ -9,10 +9,10 @@ class IntercomAPIService:
         self.access_token = (
             "dG9rOmVlNGY1MzhmXzNjNjNfNGZjOF9hNmFkX2JmZDgyNmNlZWRlYzoxOjA="
         )
-        self.base_url = "https://api.intercom.io/"
+        self.base_url = "https://api.intercom.io"
 
     def get_all_admins(self) -> Tuple[int, Dict | None]:
-        url: str = self.base_url + "admins"
+        url: str = self.base_url + "/admins"
         headers = {
             "Intercom-Version": "2.12",
             f"Authorization": f"Bearer {self.access_token}",
@@ -24,7 +24,7 @@ class IntercomAPIService:
             return response.status_code, None
 
     def create_admin(self, admin_email: str) -> Tuple[int, Dict | None]:
-        url: str = self.base_url + "admins"
+        url: str = self.base_url + "/admins"
         headers = {
             "Content-Type": "application/json",
             "Intercom-Version": "2.12",
@@ -41,7 +41,7 @@ class IntercomAPIService:
     def create_conversation(
         self, user_id: str, message: str
     ) -> Tuple[int, Dict | None]:
-        url: str = self.base_url + "conversations"
+        url: str = self.base_url + "/conversations"
         headers = {
             "Content-Type": "application/json",
             "Intercom-Version": "2.12",
@@ -121,7 +121,7 @@ class IntercomAPIService:
             return response.status_code, None
 
     def create_user(self, email: str) -> Tuple[int, Dict | None]:
-        url: str = self.base_url + "contacts"
+        url: str = self.base_url + "/contacts"
         headers = {
             "Content-Type": "application/json",
             "Intercom-Version": "2.12",
@@ -135,7 +135,7 @@ class IntercomAPIService:
             return response.status_code, None
 
     def get_all_users(self) -> Tuple[int, Dict | None]:
-        url: str = self.base_url + "contacts"
+        url: str = self.base_url + "/contacts"
         headers = {
             "Intercom-Version": "2.12",
             "Authorization": f"Bearer {self.access_token}",
@@ -172,17 +172,17 @@ class IntercomAPIService:
             "Accept": "application/json",
             "Content-Type": "application/json",
         }
+
         payload = {
-            "conversation_id": conversation_id,
             "message_type": "comment",
             "body": message,
             "type": "user",
-            "user_id": user_id,
+            "intercom_user_id": user_id,
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 f"{self.base_url}/conversations/{conversation_id}/reply",
-                headers=self.headers,
+                headers=headers,
                 json=payload,
             ) as response:
                 response.raise_for_status()
