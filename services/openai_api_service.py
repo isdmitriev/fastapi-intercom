@@ -1,11 +1,11 @@
 import os
 from openai import OpenAI
-
-
+from dotenv import load_dotenv
+load_dotenv()
 class OpenAIService:
     def __init__(self):
         self.open_ai_client = OpenAI(
-            api_key="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"
+            api_key=os.getenv('OPENAPI_KEY')
         )
 
     def detect_language(self, message: str) -> str | None:

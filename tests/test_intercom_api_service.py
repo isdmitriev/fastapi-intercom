@@ -79,11 +79,11 @@ def test_get_admins():
 #     assert add_admin_note_to_conversation_response[0] == 200
 
 
-# def test_openai_detect_language():
-#     hindi_message: str = 'मैं हिंदी बोलता हूँ'
-#     result: str = OpenAIService().detect_language(hindi_message)
-#
-#     assert result == 'hi'
+def test_openai_detect_language():
+    hindi_message: str = 'मैं हिंदी बोलता हूँ'
+    result: str = OpenAIService().detect_language(hindi_message)
+
+    assert result == 'hi'
 #
 #
 # def test_openai_service_translate_to_hindi():
