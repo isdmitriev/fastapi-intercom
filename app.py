@@ -20,6 +20,7 @@ async def get_message(request: Request):
 
         topic: str = payload.get("topic", "")
         await processor.process_message(topic, payload)
+
         return Response(status_code=status.HTTP_200_OK)
     except:
         return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

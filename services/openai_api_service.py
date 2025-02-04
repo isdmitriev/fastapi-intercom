@@ -1,12 +1,13 @@
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
+
 load_dotenv()
+
+
 class OpenAIService:
     def __init__(self):
-        self.open_ai_client = OpenAI(
-            api_key=os.getenv('OPENAPI_KEY')
-        )
+        self.open_ai_client = OpenAI(api_key=os.getenv("OPENAPI_KEY"))
 
     def detect_language(self, message: str) -> str | None:
         response = self.open_ai_client.chat.completions.create(
