@@ -8,12 +8,11 @@ import datetime
 
 
 class WebHookProcessor:
-    mongo_db_service: MongodbService = MongodbService()
-    openai_service: OpenAIService = OpenAIService()
-    intercom_service: IntercomAPIService = IntercomAPIService()
 
     def __init__(self):
-        pass
+        self.mongo_db_service = MongodbService()
+        self.openai_service = OpenAIService()
+        self.intercom_service = IntercomAPIService()
 
     async def process_message(self, topic: str, message: Dict):
 
@@ -60,7 +59,7 @@ class WebHookProcessor:
                     clean_message
                 )
             )
-            self.intercom_service.add_admin_note_to_conversation(
+            response = self.intercom_service.add_admin_note_to_conversation(
                 note=message_for_admin,
                 admin_id="8028082",
                 conversation_id=conversation_id,
@@ -75,7 +74,8 @@ class WebHookProcessor:
                 time=datetime.datetime.now(),
                 conversation_id=conversation_id
             )
-            await MongodbService().add_message_translated(translation)
+            await self.mongo_db_service.add_message_translated(translation)
+
             return
         else:
             return
