@@ -4,9 +4,9 @@ from services.openai_api_service import OpenAIService
 from bs4 import BeautifulSoup
 from services.intercom_api_service import IntercomAPIService
 from models.models import User, MessageTranslated
-from tasks import mongodb_task
+from tasks import mongodb_task_async
 import datetime
-from fastapi import BackgroundTasks
+
 
 class WebHookProcessor:
 
@@ -53,7 +53,9 @@ class WebHookProcessor:
         conversation_id: str = data["data"]["item"]["id"]
         print(f"{clean_message}:{user_email}:{user_id}")
         print("conversation.user.replied")
-        message_language_code: str = await self.openai_service.detect_language_async(clean_message)
+        message_language_code: str = await self.openai_service.detect_language_async(
+            clean_message
+        )
         if message_language_code == "hi":
             message_for_admin: str = (
                 await self.openai_service.translate_message_from_hindi_to_english_async(
@@ -75,10 +77,7 @@ class WebHookProcessor:
                 time=datetime.datetime.now(),
                 conversation_id=conversation_id,
             )
-
-            task = mongodb_task.apply_async(args=[data], queue="celery")
-
-            # await self.mongo_db_service.add_message_translated(translation)
+            mongodb_task_async.apply_async(args=[translation.dict()], queue="celery")
 
             return
         else:

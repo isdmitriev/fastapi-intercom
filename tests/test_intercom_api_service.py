@@ -1,5 +1,5 @@
 import datetime
-from tasks import mongodb_task
+from tasks import mongodb_task, mongodb_task_async
 from services.intercom_api_service import IntercomAPIService
 from typing import Dict
 import pytest
@@ -101,17 +101,33 @@ async def test_process():
 
 @pytest.mark.asyncio
 async def test_add_translations():
-    user: User = User(type='user', email='user@mail.com', id='id')
+    user: User = User(type="user", email="user@mail.com", id="id")
     translation = MessageTranslated(
-        conversation_id='1235rte34',
+        conversation_id="1235rte34",
         time=datetime.datetime.now(),
-        message='hello',
-        language='en',
-        translated_to='hi',
-        translated_message='hello',
-        user=user
+        message="hello",
+        language="en",
+        translated_to="hi",
+        translated_message="hello",
+        user=user,
     )
     await MongodbService().add_message_translated(translation)
-def test_celery():
 
-    mongodb_task.apply_async(args=['hello'],queue='celery')
+
+def test_celery():
+    mongodb_task.apply_async(args=["hello"], queue="celery")
+
+
+def test_celery_async():
+    user: User = User(type="user", email="user@mail.com", id="id")
+    translation = MessageTranslated(
+        conversation_id="1235rte34",
+        time=datetime.datetime.now(),
+        message="hello from celery app",
+        language="en",
+        translated_to="hi",
+        translated_message="hello",
+        user=user,
+    )
+
+    mongodb_task_async.apply_async(args=[translation.dict()], queue="celery")

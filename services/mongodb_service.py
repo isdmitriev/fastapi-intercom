@@ -22,3 +22,8 @@ class MongodbService:
         db = self.client.get_database("intercom_app")
         collection = db.get_collection("translations")
         await collection.insert_one(message_translated.dict())
+
+    async def add_message_translated_dict(self, message_translated: Dict):
+        db = self.client.get_database("intercom_app")
+        collection = db.get_collection("translations")
+        await collection.insert_one(message_translated)
