@@ -52,14 +52,14 @@ class WebHookProcessor:
         conversation_id: str = data["data"]["item"]["id"]
         print(f"{clean_message}:{user_email}:{user_id}")
         print("conversation.user.replied")
-        message_language_code: str = self.openai_service.detect_language(clean_message)
+        message_language_code: str = await self.openai_service.detect_language_async(clean_message)
         if message_language_code == "hi":
             message_for_admin: str = (
-                self.openai_service.translate_message_from_hindi_to_english(
+                await self.openai_service.translate_message_from_hindi_to_english_async(
                     clean_message
                 )
             )
-            response = self.intercom_service.add_admin_note_to_conversation(
+            response = await self.intercom_service.add_admin_note_to_conversation_async(
                 note=message_for_admin,
                 admin_id="8028082",
                 conversation_id=conversation_id,
@@ -72,9 +72,9 @@ class WebHookProcessor:
                 translated_message=message_for_admin,
                 translated_to="en",
                 time=datetime.datetime.now(),
-                conversation_id=conversation_id
+                conversation_id=conversation_id,
             )
-            await self.mongo_db_service.add_message_translated(translation)
+            # await self.mongo_db_service.add_message_translated(translation)
 
             return
         else:
