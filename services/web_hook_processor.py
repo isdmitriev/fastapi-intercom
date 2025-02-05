@@ -4,8 +4,9 @@ from services.openai_api_service import OpenAIService
 from bs4 import BeautifulSoup
 from services.intercom_api_service import IntercomAPIService
 from models.models import User, MessageTranslated
+from tasks import mongodb_task
 import datetime
-
+from fastapi import BackgroundTasks
 
 class WebHookProcessor:
 
@@ -74,6 +75,9 @@ class WebHookProcessor:
                 time=datetime.datetime.now(),
                 conversation_id=conversation_id,
             )
+
+            task = mongodb_task.apply_async(args=[data], queue="celery")
+
             # await self.mongo_db_service.add_message_translated(translation)
 
             return
