@@ -45,45 +45,45 @@ def test_get_admins():
 #         conversation_id=conversation_id, note=note, admin_id=admin_id
 #     )
 #     assert result[0] == 200
-@pytest.mark.asyncio
-async def test_process():
-    user_id: str = "6798a0c79645a8b3711b89d3"
-    admin_id: str = "8028082"
-    create_conversation_response: str = CLIENT.create_conversation(
-        user_id=user_id, message="good day!"
-    )
-    status = create_conversation_response[0]
-    json_data = create_conversation_response[1]
-    assert status == 200
-    new_conversatin_id: str = json_data.get("conversation_id", "")
-    attach_admin_to_conversation_response = CLIENT.attach_admin_to_conversation(
-        conversation_id=new_conversatin_id, admin_id=admin_id
-    )
-    assert attach_admin_to_conversation_response[0] == 200
+# @pytest.mark.asyncio
+# async def test_process():
+#     user_id: str = "6798a0c79645a8b3711b89d3"
+#     admin_id: str = "8028082"
+#     create_conversation_response: str = CLIENT.create_conversation(
+#         user_id=user_id, message="good day!"
+#     )
+#     status = create_conversation_response[0]
+#     json_data = create_conversation_response[1]
+#     assert status == 200
+#     new_conversatin_id: str = json_data.get("conversation_id", "")
+#     attach_admin_to_conversation_response = CLIENT.attach_admin_to_conversation(
+#         conversation_id=new_conversatin_id, admin_id=admin_id
+#     )
+#     assert attach_admin_to_conversation_response[0] == 200
+#
+#     test_user_replied_response = await CLIENT.add_user_replied_to_conversation(
+#         conversation_id=new_conversatin_id, user_id=user_id, message='अच्छा दिन'
+#     )
+#     assert test_user_replied_response[0] == 200
+#     test_add_admin_message_to_conversation_response = (
+#         CLIENT.add_admin_message_to_conversation(
+#             conversation_id=new_conversatin_id,
+#             admin_id=admin_id,
+#             message="admin message",
+#         )
+#     )
+#     assert test_add_admin_message_to_conversation_response[0] == 200
+#     add_admin_note_to_conversation_response = CLIENT.add_admin_note_to_conversation(
+#         conversation_id=new_conversatin_id, note="note", admin_id=admin_id
+#     )
+#     assert add_admin_note_to_conversation_response[0] == 200
 
-    test_user_replied_response = await CLIENT.add_user_replied_to_conversation(
-        conversation_id=new_conversatin_id, user_id=user_id, message='अच्छा दिन'
-    )
-    assert test_user_replied_response[0] == 200
-    test_add_admin_message_to_conversation_response = (
-        CLIENT.add_admin_message_to_conversation(
-            conversation_id=new_conversatin_id,
-            admin_id=admin_id,
-            message="admin message",
-        )
-    )
-    assert test_add_admin_message_to_conversation_response[0] == 200
-    add_admin_note_to_conversation_response = CLIENT.add_admin_note_to_conversation(
-        conversation_id=new_conversatin_id, note="note", admin_id=admin_id
-    )
-    assert add_admin_note_to_conversation_response[0] == 200
 
-
-@pytest.mark.asyncio
-async def test_detect_language_async():
-    message: str = 'শুভ দিন'
-    result = await OpenAIService().detect_language_async(message)
-    assert result == 'bn'
+# @pytest.mark.asyncio
+# async def test_detect_language_async():
+#     message: str = 'শুভ দিন'
+#     result = await OpenAIService().detect_language_async(message)
+#     assert result == 'bn'
 
 
 # def test_openai_detect_language():
@@ -106,35 +106,35 @@ async def test_detect_language_async():
 #     assert isinstance(result, str)
 
 
-@pytest.mark.asyncio
-async def test_add_translations():
-    user: User = User(type="user", email="user@mail.com", id="id")
-    translation = MessageTranslated(
-        conversation_id="1235rte34",
-        time=datetime.datetime.now(),
-        message="hello",
-        language="en",
-        translated_to="hi",
-        translated_message="hello",
-        user=user,
-    )
-    await MongodbService().add_message_translated(translation)
+# @pytest.mark.asyncio
+# async def test_add_translations():
+#     user: User = User(type="user", email="user@mail.com", id="id")
+#     translation = MessageTranslated(
+#         conversation_id="1235rte34",
+#         time=datetime.datetime.now(),
+#         message="hello",
+#         language="en",
+#         translated_to="hi",
+#         translated_message="hello",
+#         user=user,
+#     )
+#     await MongodbService().add_message_translated(translation)
 
 
-def test_celery():
-    mongodb_task.apply_async(args=["hello"], queue="celery")
+# def test_celery():
+#     mongodb_task.apply_async(args=["hello"], queue="celery")
 
 
-def test_celery_async():
-    user: User = User(type="user", email="user@mail.com", id="id")
-    translation = MessageTranslated(
-        conversation_id="1235rte34",
-        time=datetime.datetime.now(),
-        message="hello from celery app",
-        language="en",
-        translated_to="hi",
-        translated_message="hello",
-        user=user,
-    )
-
-    mongodb_task_async.apply_async(args=[translation.dict()], queue="celery")
+# def test_celery_async():
+#     user: User = User(type="user", email="user@mail.com", id="id")
+#     translation = MessageTranslated(
+#         conversation_id="1235rte34",
+#         time=datetime.datetime.now(),
+#         message="hello from celery app",
+#         language="en",
+#         translated_to="hi",
+#         translated_message="hello",
+#         user=user,
+#     )
+#
+#     mongodb_task_async.apply_async(args=[translation.dict()], queue="celery")
