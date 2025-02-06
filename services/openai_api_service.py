@@ -8,7 +8,7 @@ load_dotenv()
 class OpenAIService:
     def __init__(self):
         self.open_ai_client = OpenAI(api_key=os.getenv("OPENAPI_KEY"))
-        self.clien_async = AsyncOpenAI(api_key=os.getenv("OPENAPI_KEY"))
+        self.client_async = AsyncOpenAI(api_key=os.getenv("OPENAPI_KEY"))
 
     def detect_language(self, message: str) -> str | None:
         response = self.open_ai_client.chat.completions.create(
@@ -27,7 +27,7 @@ class OpenAIService:
         return result
 
     async def detect_language_async(self, message: str) -> str | None:
-        response: ChatCompletion = await self.clien_async.chat.completions.create(
+        response: ChatCompletion = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {
@@ -60,7 +60,7 @@ class OpenAIService:
     async def translate_message_from_hindi_to_english_async(
         self, message: str
     ) -> str | None:
-        response: ChatCompletion = await self.clien_async.chat.completions.create(
+        response: ChatCompletion = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {
@@ -87,4 +87,38 @@ class OpenAIService:
         )
         result = response.choices[0].message.content.strip()
 
+        return result
+
+    async def translate_message_from_bengali_to_english_async(
+        self, message: str
+    ) -> str | None:
+        response = await self.client_async.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Ты переводчик, который переводит текст с индийских языков (например, хинди, бенгальский, тамильский) на английский.",
+                },
+                {"role": "user", "content": f"Переведи на английский: {message}"},
+            ],
+            max_tokens=100,
+        )
+        result: str = response.choices[0].message.content.strip()
+        return result
+
+    async def translate_message_from_english_to_bengali_async(
+        self, message: str
+    ) -> str | None:
+        response = await self.client_async.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Ты переводчик, который переводит текст с английских языков на бенгальский.",
+                },
+                {"role": "user", "content": f"Переведи на бенгальский: {message}"},
+            ],
+            max_tokens=100,
+        )
+        result: str = response.choices[0].message.content.strip()
         return result

@@ -79,6 +79,13 @@ async def test_process():
     assert add_admin_note_to_conversation_response[0] == 200
 
 
+@pytest.mark.asyncio
+async def test_detect_language_async():
+    message: str = 'শুভ দিন'
+    result = await OpenAIService().detect_language_async(message)
+    assert result == 'bn'
+
+
 # def test_openai_detect_language():
 #     hindi_message: str = 'मैं हिंदी बोलता हूँ'
 #     result: str = OpenAIService().detect_language(hindi_message)

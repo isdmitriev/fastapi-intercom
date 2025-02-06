@@ -31,11 +31,23 @@ def mongodb_task_async(message: Dict):
     return f"Data Inserted"
 
 
-@celery_app.task(name="translate_message_for_admin")
-def translate_message_for_admin(message: str, admin_id: str, conversation_id: str):
+@celery_app.task(name="translate_message_for_admin_hindi")
+def translate_message_for_admin_hindi(message: str, admin_id: str, conversation_id: str):
     asyncio.run(
         CeleryTasksService().translate_message_from_hindi_to_admin(
             message, admin_id=admin_id, conversation_id=conversation_id
+        )
+    )
+    return "note send to admin"
+
+
+@celery_app.task(name="translate_message_for_admin_bengali")
+def translate_message_for_admin_bengali(
+        message: str, admin_id: str, conversation_id: str
+):
+    asyncio.run(
+        CeleryTasksService().translate_message_from_bengali_to_admin(
+            message=message, conversation_id=conversation_id, admin_id=admin_id
         )
     )
     return 'note send to admin'
