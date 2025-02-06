@@ -4,7 +4,7 @@ from services.openai_api_service import OpenAIService
 from bs4 import BeautifulSoup
 from services.intercom_api_service import IntercomAPIService
 from models.models import User, MessageTranslated
-from tasks import mongodb_task_async
+from tasks import mongodb_task_async, translate_message_for_admin_bengali
 import datetime
 
 
@@ -77,9 +77,21 @@ class WebHookProcessor:
                 time=datetime.datetime.now(),
                 conversation_id=conversation_id,
             )
-            mongodb_task_async.apply_async(args=[translation.dict()], queue="celery")
+            mongodb_task_async.apply_async(args=[translation.dict()], queue="mongo_db")
 
             return
+        elif message_language_code == "bn":
+            translate_message_for_admin_bengali.apply_async(
+                kwargs={
+                    'message': clean_message,
+                    'admin_id': "8028082",
+                    'conversation_id': conversation_id
+                },
+                queue="admin_notes"
+            )
+            return
+
+
         else:
             return
 

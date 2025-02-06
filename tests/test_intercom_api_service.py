@@ -62,7 +62,7 @@ async def test_process():
     assert attach_admin_to_conversation_response[0] == 200
 
     test_user_replied_response = await CLIENT.add_user_replied_to_conversation(
-        conversation_id=new_conversatin_id, user_id=user_id, message="मैं हिंदी बोलता हूँ"
+        conversation_id=new_conversatin_id, user_id=user_id, message='अच्छा दिन'
     )
     assert test_user_replied_response[0] == 200
     test_add_admin_message_to_conversation_response = (
