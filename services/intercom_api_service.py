@@ -216,3 +216,20 @@ class IntercomAPIService:
                     return response.status, data
                 else:
                     return response.status, None
+
+    async def get_conversation_parts_by_id_async(
+        self, conversation_id: str
+    ) -> Tuple[int, Dict | None]:
+        url: str = f"https://api.intercom.io/conversations/{conversation_id}"
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json",
+        }
+        query = {"display_as": "plaintext"}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, params=query) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return response.status, data
+                else:
+                    return response.status, None

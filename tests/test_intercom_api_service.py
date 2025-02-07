@@ -78,13 +78,19 @@ def test_get_admins():
 #     )
 #     assert add_admin_note_to_conversation_response[0] == 200
 
+# @pytest.mark.asyncio
+# async def test_get_conversation():
+#     id: str = '46'
+#     response = await IntercomAPIService().get_conversation_parts_by_id_async(id)
+#     assert response[0] == 200
+#     await MongodbService().add_document_to_collection('intercom_app', 'conversation_parts', response[1])
+
 
 # @pytest.mark.asyncio
 # async def test_detect_language_async():
 #     message: str = 'শুভ দিন'
 #     result = await OpenAIService().detect_language_async(message)
 #     assert result == 'bn'
-
 
 # def test_openai_detect_language():
 #     hindi_message: str = 'मैं हिंदी बोलता हूँ'

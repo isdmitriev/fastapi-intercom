@@ -83,14 +83,13 @@ class WebHookProcessor:
         elif message_language_code == "bn":
             translate_message_for_admin_bengali.apply_async(
                 kwargs={
-                    'message': clean_message,
-                    'admin_id': "8028082",
-                    'conversation_id': conversation_id
+                    "message": clean_message,
+                    "admin_id": "8028082",
+                    "conversation_id": conversation_id,
                 },
-                queue="admin_notes"
+                queue="admin_notes",
             )
             return
-
 
         else:
             return

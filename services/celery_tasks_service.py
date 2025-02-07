@@ -8,7 +8,7 @@ class CeleryTasksService:
         self.intercom_client = IntercomAPIService()
 
     async def translate_message_from_hindi_to_admin(
-            self, message: str, admin_id: str, conversation_id: str
+        self, message: str, admin_id: str, conversation_id: str
     ):
         message_en: str = (
             await self.open_ai_client.translate_message_from_hindi_to_english_async(
@@ -20,7 +20,7 @@ class CeleryTasksService:
         )
 
     async def translate_message_from_bengali_to_admin(
-            self, message: str, conversation_id: str, admin_id: str
+        self, message: str, conversation_id: str, admin_id: str
     ):
         message_en: str = (
             await self.open_ai_client.translate_message_from_bengali_to_english_async(
