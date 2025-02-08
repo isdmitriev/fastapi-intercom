@@ -6,6 +6,7 @@ from services.intercom_api_service import IntercomAPIService
 from models.models import User, MessageTranslated
 from tasks import mongodb_task_async, translate_message_for_admin_bengali
 import datetime
+from services.conversation_parts_service import ConversationPartsService
 
 
 class WebHookProcessor:
@@ -14,6 +15,7 @@ class WebHookProcessor:
         self.mongo_db_service = MongodbService()
         self.openai_service = OpenAIService()
         self.intercom_service = IntercomAPIService()
+        self.conversation_parts_service = ConversationPartsService()
 
     async def process_message(self, topic: str, message: Dict):
 
@@ -95,9 +97,25 @@ class WebHookProcessor:
             return
 
     async def handle_conversation_admin_replied(self, data: Dict):
+
         print("conversation.admin.replied")
 
     async def handle_conversation_admin_noted(self, data: Dict):
+        admin_translator_id: str = ""
+        admin_note: Dict = data["data"]["item"]["conversation_parts"][
+            "conversation_parts"
+        ][0]
+        message: str = admin_note.get("body", "")
+        clean_message: str = BeautifulSoup(message, "html.parser").getText()
+        admin_id: str = admin_note.get("author", {}).get("id", "")
+        conversation_id: str = data["data"]["item"]["id"]
+        if admin_id != admin_translator_id:
+            await self.conversation_parts_service.handle_admin_note(
+                conversation_id=conversation_id,
+                admin_id=admin_id,
+                admin_note=clean_message,
+            )
+
         print("conversation.admin.noted")
 
     async def handle_conversation_admin_assigned(self, data: Dict):

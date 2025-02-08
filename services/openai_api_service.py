@@ -122,3 +122,20 @@ class OpenAIService:
         )
         result: str = response.choices[0].message.content.strip()
         return result
+
+    async def translate_message_from_english_to_hindi_async(
+        self, message: str
+    ) -> str | None:
+        response = await self.client_async.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Ты переводчик, который переводит текст с английских языков на индийский.",
+                },
+                {"role": "user", "content": f"Переведи на индийский: {message}"},
+            ],
+        )
+        result = response.choices[0].message.content.strip()
+
+        return result

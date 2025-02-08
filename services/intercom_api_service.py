@@ -122,6 +122,29 @@ class IntercomAPIService:
         else:
             return response.status_code, None
 
+    async def add_admin_message_to_conversation_async(
+        self, conversation_id: str, admin_id: str, message: str
+    ) -> Tuple[int, Dict | None]:
+        url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "admin_id": admin_id,
+            "type": "note",
+            "message_type": "comment",
+            "body": message,
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return response.status, data
+                else:
+                    return response.status, None
+
     def create_user(self, email: str) -> Tuple[int, Dict | None]:
         url: str = self.base_url + "/contacts"
         headers = {

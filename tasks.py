@@ -51,3 +51,10 @@ def translate_message_for_admin_bengali(
         )
     )
     return 'note send to admin'
+
+
+@celery_app.task(name="handle_admin_note")
+def handle_admin_note(conversation_id: str, admin_id: str, admin_note: str):
+    asyncio.run(CeleryTasksService().handle_admin_note(conversation_id=conversation_id, admin_id=admin_id,
+                                                       admin_note=admin_note))
+    return 'admin message send'
