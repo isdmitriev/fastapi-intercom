@@ -10,17 +10,18 @@ class ConversationPartsService:
         self.intercom_client = IntercomAPIService()
 
     async def handle_conversation_parts_async(
-            self,
-            conversation_id: str,
-            admin_id: str,
-            admin_message: str,
-            conversation_parts: Dict[str, Any],
+        self,
+        conversation_id: str,
+        admin_id: str,
+        admin_message: str,
+        conversation_parts: Dict[str, Any],
     ):
         parts: List[Dict] = conversation_parts.get("conversation_parts", {}).get(
             "conversation_parts", []
         )
 
-        parts_reversed: List[Dict] = parts.reverse()
+        parts_reversed: List[Dict] = list(reversed(parts))
+
         for part in parts_reversed:
             body: str = part.get("body", "")
             part_type: str = part.get("part_type", "")
@@ -56,15 +57,17 @@ class ConversationPartsService:
                     return
 
     async def handle_admin_note(
-            self, conversation_id: str, admin_id: str, admin_note: str
+        self, conversation_id: str, admin_id: str, admin_note: str
     ):
-        status_code, conversation_parts = await self.intercom_client.get_conversation_parts_by_id_async(
-            conversation_id=conversation_id
+        status_code, conversation_parts = (
+            await self.intercom_client.get_conversation_parts_by_id_async(
+                conversation_id=conversation_id
+            )
         )
 
         await self.handle_conversation_parts_async(
             conversation_id=conversation_id,
             conversation_parts=conversation_parts,
             admin_id=admin_id,
-            admin_note=admin_note,
+            admin_message=admin_note,
         )

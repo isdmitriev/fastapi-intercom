@@ -101,14 +101,18 @@ class WebHookProcessor:
         print("conversation.admin.replied")
 
     async def handle_conversation_admin_noted(self, data: Dict):
-        admin_translator_id: str = ""
+        print("conversation.admin.noted")
+        admin_translator_id: str = "8024055"
         admin_note: Dict = data["data"]["item"]["conversation_parts"][
             "conversation_parts"
         ][0]
         message: str = admin_note.get("body", "")
         clean_message: str = BeautifulSoup(message, "html.parser").getText()
+        print(clean_message)
         admin_id: str = admin_note.get("author", {}).get("id", "")
+        print(admin_id)
         conversation_id: str = data["data"]["item"]["id"]
+        print(conversation_id)
         if admin_id != admin_translator_id:
             await self.conversation_parts_service.handle_admin_note(
                 conversation_id=conversation_id,

@@ -82,7 +82,10 @@ class OpenAIService:
                     "role": "system",
                     "content": "Ты переводчик, который переводит текст с английских языков на индийский.",
                 },
-                {"role": "user", "content": f"Переведи на индийский: {message}"},
+                {
+                    "role": "user",
+                    "content": f"Переведи на индийский,отправь мне только сам перевод: {message}",
+                },
             ],
         )
         result = response.choices[0].message.content.strip()
