@@ -78,9 +78,24 @@ class ConversationPartsService:
                     admin_id=admin_id,
                     message=admin_reply_message,
                 )
-            else:
+                return
+            elif first_user_message_language_code == "bn":
+                admin_reply_message: str = (
+                    await self.open_ai_client.translate_message_from_english_to_bengali_async(
+                        message=admin_message
+                    )
+                )
+                await self.intercom_client.add_admin_message_to_conversation_async(
+                    conversation_id=conversation_id,
+                    admin_id=admin_id,
+                    message=admin_reply_message,
+                )
                 return
 
+
+            else:
+
+                return
 
     async def handle_admin_note(
             self, conversation_id: str, admin_id: str, admin_note: str

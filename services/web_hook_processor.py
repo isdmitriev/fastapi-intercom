@@ -43,7 +43,9 @@ class WebHookProcessor:
 
     async def handle_conversation_user_created(self, data: Dict):
         conversation_id: str = data.get("data", {}).get("item", {}).get("id", "")
-        self.intercom_service.attach_admin_to_conversation(conversation_id=conversation_id, admin_id=8028082)
+        self.intercom_service.attach_admin_to_conversation(
+            conversation_id=conversation_id, admin_id=8028082
+        )
         user_data: Dict = data.get("data", {}).get("item", {}).get("source", {})
         message: str = user_data.get("body", "")
         clean_message: str = BeautifulSoup(message, "html.parser").getText()
@@ -106,14 +108,36 @@ class WebHookProcessor:
 
             return
         elif message_language_code == "bn":
-            translate_message_for_admin_bengali.apply_async(
-                kwargs={
-                    "message": clean_message,
-                    "admin_id": "8028082",
-                    "conversation_id": conversation_id,
-                },
-                queue="admin_notes",
+            message_for_admin: str = (
+                await self.openai_service.translate_message_from_bengali_to_english_async(
+                    message=clean_message
+                )
             )
+            response = await self.intercom_service.add_admin_note_to_conversation_async(
+                note=message_for_admin,
+                conversation_id=conversation_id,
+                admin_id="8024055",
+            )
+            user: User = User(type="user", id=user_id, email=user_email)
+            translation: MessageTranslated = MessageTranslated(
+                user=user,
+                language=message_language_code,
+                message=clean_message,
+                translated_message=message_for_admin,
+                translated_to="en",
+                time=datetime.datetime.now(),
+                conversation_id=conversation_id,
+            )
+            mongodb_task_async.apply_async(args=[translation.dict()], queue="mongo_db")
+
+            # translate_message_for_admin_bengali.apply_async(
+            #     kwargs={
+            #         "message": clean_message,
+            #         "admin_id": "8028082",
+            #         "conversation_id": conversation_id,
+            #     },
+            #     queue="admin_notes",
+            # )
             return
 
         else:

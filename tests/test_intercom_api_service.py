@@ -5,6 +5,8 @@ from typing import Dict
 import pytest
 import asyncio
 from services.openai_api_service import OpenAIService
+from di.di_container import Container
+from services.redis_cache_service import RedisService
 
 CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService
@@ -144,3 +146,7 @@ def test_get_admins():
 #     )
 #
 #     mongodb_task_async.apply_async(args=[translation.dict()], queue="celery")
+# def test_redis():
+#     redis_client:RedisService = Container().redis_service()
+#     assert redis_client.set_key('1234',1)==True
+
