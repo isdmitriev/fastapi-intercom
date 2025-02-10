@@ -42,6 +42,29 @@ class WebHookProcessor:
             return
 
     async def handle_conversation_user_created(self, data: Dict):
+        conversation_id: str = data.get("data", {}).get("item", {}).get("id", "")
+        self.intercom_service.attach_admin_to_conversation(conversation_id=conversation_id, admin_id=8028082)
+        user_data: Dict = data.get("data", {}).get("item", {}).get("source", {})
+        message: str = user_data.get("body", "")
+        clean_message: str = BeautifulSoup(message, "html.parser").getText()
+        user_id: str = data.get("author", {}).get("id", "")
+        user_email: str = data.get("author", {}).get("email", "")
+
+        message_language_code: str = await self.openai_service.detect_language_async(
+            clean_message
+        )
+        if message_language_code == "hi":
+            note_for_admin: str = (
+                await self.openai_service.translate_message_from_hindi_to_english_async(
+                    clean_message
+                )
+            )
+            response = await self.intercom_service.add_admin_note_to_conversation_async(
+                note=note_for_admin, admin_id=8024055, conversation_id=conversation_id
+            )
+        else:
+            return
+
         print("conversation.user.created")
 
     async def handle_conversation_user_replied(self, data: Dict):
