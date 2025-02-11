@@ -11,11 +11,18 @@ from services.conversation_parts_service import ConversationPartsService
 
 class WebHookProcessor:
 
-    def __init__(self):
-        self.mongo_db_service = MongodbService()
-        self.openai_service = OpenAIService()
-        self.intercom_service = IntercomAPIService()
-        self.conversation_parts_service = ConversationPartsService()
+    def __init__(
+        self,
+        mongo_db_service: MongodbService,
+        openai_service: OpenAIService,
+        intercom_service: IntercomAPIService,
+        conversation_parts_service: ConversationPartsService,
+    ):
+        self.mongo_db_service = mongo_db_service
+        self.openai_service = openai_service
+        self.intercom_service = intercom_service
+        self.conversation_parts_service = conversation_parts_service
+
 
     async def process_message(self, topic: str, message: Dict):
 
@@ -64,6 +71,16 @@ class WebHookProcessor:
             response = await self.intercom_service.add_admin_note_to_conversation_async(
                 note=note_for_admin, admin_id=8024055, conversation_id=conversation_id
             )
+        elif message_language_code == "bn":
+            note_for_admin: str = (
+                await self.openai_service.translate_message_from_bengali_to_english_async(
+                    message=clean_message
+                )
+            )
+            response = await self.intercom_service.add_admin_note_to_conversation_async(
+                note=note_for_admin, admin_id="8024055", conversation_id=conversation_id
+            )
+
         else:
             return
 

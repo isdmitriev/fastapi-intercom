@@ -6,16 +6,18 @@ from bs4 import BeautifulSoup
 
 
 class ConversationPartsService:
-    def __init__(self):
-        self.open_ai_client = OpenAIService()
-        self.intercom_client = IntercomAPIService()
+    def __init__(
+        self, open_ai_client: OpenAIService, intercom_client: IntercomAPIService
+    ):
+        self.open_ai_client = open_ai_client
+        self.intercom_client = intercom_client
 
     async def handle_conversation_parts_async(
-            self,
-            conversation_id: str,
-            admin_id: str,
-            admin_message: str,
-            conversation_parts: Dict[str, Any],
+        self,
+        conversation_id: str,
+        admin_id: str,
+        admin_message: str,
+        conversation_parts: Dict[str, Any],
     ):
         parts: List[Dict] = conversation_parts.get("conversation_parts", {}).get(
             "conversation_parts", []
@@ -92,13 +94,12 @@ class ConversationPartsService:
                 )
                 return
 
-
             else:
 
                 return
 
     async def handle_admin_note(
-            self, conversation_id: str, admin_id: str, admin_note: str
+        self, conversation_id: str, admin_id: str, admin_note: str
     ):
         status_code, conversation_parts = (
             await self.intercom_client.get_conversation_parts_by_id_async(
