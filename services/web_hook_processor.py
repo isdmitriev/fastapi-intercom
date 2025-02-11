@@ -23,7 +23,6 @@ class WebHookProcessor:
         self.intercom_service = intercom_service
         self.conversation_parts_service = conversation_parts_service
 
-
     async def process_message(self, topic: str, message: Dict):
 
         if topic == "conversation.user.created":
@@ -121,7 +120,7 @@ class WebHookProcessor:
                 time=datetime.datetime.now(),
                 conversation_id=conversation_id,
             )
-            mongodb_task_async.apply_async(args=[translation.dict()], queue="mongo_db")
+            # mongodb_task_async.apply_async(args=[translation.dict()], queue="mongo_db")
 
             return
         elif message_language_code == "bn":
@@ -145,7 +144,7 @@ class WebHookProcessor:
                 time=datetime.datetime.now(),
                 conversation_id=conversation_id,
             )
-            mongodb_task_async.apply_async(args=[translation.dict()], queue="mongo_db")
+            # mongodb_task_async.apply_async(args=[translation.dict()], queue="mongo_db")
 
             # translate_message_for_admin_bengali.apply_async(
             #     kwargs={

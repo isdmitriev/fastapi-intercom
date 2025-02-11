@@ -47,6 +47,7 @@ class ConversationPartsService:
                         conversation_id=conversation_id,
                         admin_id=admin_id,
                     )
+                    return
 
                 elif message_language == "bn":
 
@@ -58,6 +59,7 @@ class ConversationPartsService:
                         conversation_id=conversation_id,
                         admin_id=admin_id,
                     )
+                    return
 
                 else:
                     return
