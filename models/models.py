@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 
 class User(BaseModel):
@@ -18,3 +18,16 @@ class MessageTranslated(BaseModel):
     translated_to: str
     translated_message: str
     user: User
+
+
+class ConversationMessage(BaseModel):
+    conversation_id: str
+    time: datetime
+    message: str
+    user: User
+    language: str
+    message_type: str
+
+
+class ConversationMessages(BaseModel):
+    messages: List[ConversationMessage] = []

@@ -6,11 +6,12 @@ import pytest
 import asyncio
 from services.openai_api_service import OpenAIService
 from di.di_container import Container
-from services.redis_cache_service import RedisService
+from services.redis_cache_service import RedisService, MessagesCache
 
 CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService
 from models.models import MessageTranslated, User
+from models.models import ConversationMessages, ConversationMessage
 
 
 # @pytest.mark.asyncio
@@ -150,3 +151,24 @@ def test_get_admins():
 #     redis_client:RedisService = Container().redis_service()
 #     assert redis_client.set_key('1234',1)==True
 
+# def test_conversation_messages():
+#     messages_cache: MessagesCache = MessagesCache()
+#     user = User(id="123", name="John Doe", type='user', email='my@gmail.com')
+#     message = ConversationMessage(
+#         conversation_id="conv_1",
+#         time=datetime.datetime.now(),
+#         message="Привет!",
+#         user=user,
+#         language="en",
+#         message_type="text"
+#     )
+#
+#     conversations = ConversationMessages(messages=[message])
+#     json_string = conversations.model_dump_json()
+#     assert isinstance(json_string, str)
+#     messages: ConversationMessages = ConversationMessages.model_validate_json(json_string)
+#     assert isinstance(messages, ConversationMessages)
+#     messages_cache.set_conversation_messages('12345', messages)
+#
+#     list_messages: ConversationMessages = messages_cache.get_conversation_messages(conversation_id='12345')
+#     assert isinstance(list_messages, ConversationMessages)

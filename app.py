@@ -26,7 +26,6 @@ async def get_message(
         redis_service: RedisService = Depends(Provide[Container.redis_service]),
 ):
     try:
-
         payload: Dict = await request.json()
 
         notification_event_id: str | None = payload.get("id", None)
