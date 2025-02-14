@@ -53,8 +53,17 @@ class WebHookProcessor:
         elif topic == "conversation.admin.assigned":
             await self.handle_conversation_admin_assigned(data=message)
             return
+        elif topic == "conversation.admin.closed":
+            await self.handle_conversation_admin_closed(data=message)
+            return
+
+
         else:
             return
+
+    async def handle_conversation_admin_closed(self, data: Dict):
+        conversation_id: str = data.get("data", {}).get("item", {}).get("id", "")
+        self.messages_cache_service.delete_conversation(conversation_id=conversation_id)
 
     async def handle_conversation_user_created(self, data: Dict):
         conversation_id: str = data.get("data", {}).get("item", {}).get("id", "")
@@ -185,7 +194,7 @@ class WebHookProcessor:
             # mongodb_task_async.apply_async(args=[translation.dict()], queue="mongo_db")
 
             return
-        elif message_language_code == "bn":
+        elif message_language_code == "bn" or message_language_code == 'ben':
             message_for_admin: str = (
                 await self.openai_service.translate_message_from_bengali_to_english_async(
                     message=clean_message
@@ -253,7 +262,7 @@ class WebHookProcessor:
         )
         if message_language_code == "en":
             return
-        elif message_language_code == "bn":
+        elif message_language_code == "bn" or message_language_code == "ben":
             note_for_admin: str = (
                 await self.openai_service.translate_message_from_bengali_to_english_async(
                     message=clean_message
@@ -345,7 +354,7 @@ class WebHookProcessor:
                         )
                         return
 
-                    elif message.language == "bn":
+                    elif message.language == "bn" or message.language == "ben":
                         admin_reply_message: str = (
                             await self.openai_service.translate_message_from_english_to_bengali_async(
                                 message=clean_message
