@@ -3,13 +3,12 @@ import os
 from dotenv import load_dotenv
 from models.models import ConversationMessages
 
-
 load_dotenv()
 
 
 class RedisService:
     def __init__(self):
-        self.redis_client = Redis(host=os.getenv("REDIS_URI"), port=6379, db=1)
+        self.redis_client = Redis(host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=1)
 
     def get_redis_client(self):
         return self.redis_client
@@ -24,7 +23,7 @@ class RedisService:
 
 class MessagesCache:
     def __init__(self):
-        self.redis_client = Redis(host=os.getenv("REDIS_URI"), port=6379, db=2)
+        self.redis_client = Redis(host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=2)
 
     def set_key(self, key_name: str, key_value: str):
         self.redis_client.set(key_name, key_value)

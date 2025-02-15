@@ -271,6 +271,17 @@ class WebHookProcessor:
             await self.intercom_service.add_admin_note_to_conversation_async(
                 note=note_for_admin, conversation_id=conversation_id, admin_id="8024055"
             )
+            translation: MessageTranslated = MessageTranslated(
+                user=user,
+                language=message_language_code,
+                message=clean_message,
+                translated_message=note_for_admin,
+                translated_to="en",
+                time=datetime.datetime.now(),
+                conversation_id=conversation_id,
+            )
+            mongodb_task_async.apply_async(args=[translation.dict()], queue="mongo_db")
+
         elif message_language_code == "hi":
             note_for_admin: str = (
                 await self.openai_service.translate_message_from_hindi_to_english_async(
@@ -280,6 +291,18 @@ class WebHookProcessor:
             await self.intercom_service.add_admin_note_to_conversation_async(
                 note=note_for_admin, conversation_id=conversation_id, admin_id="8024055"
             )
+
+            translation: MessageTranslated = MessageTranslated(
+                user=user,
+                language=message_language_code,
+                message=clean_message,
+                translated_message=note_for_admin,
+                translated_to="en",
+                time=datetime.datetime.now(),
+                conversation_id=conversation_id,
+            )
+            # mongodb_task_async.apply_async(args=[translation.dict()], queue="mongo_db")
+
         else:
             return
 

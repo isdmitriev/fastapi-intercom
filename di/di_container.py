@@ -9,7 +9,16 @@ from services.redis_cache_service import MessagesCache
 
 
 class Container(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(packages=['app', 'services'])
+    # wiring_config = containers.WiringConfiguration(packages=['app', 'services'])
+    # wiring_config = containers.WiringConfiguration(
+    #     modules=[
+    #         "app",
+    #         "services.web_hook_processor",
+    #         "services.redis_cache_service",
+    #         "services.mongodb_service",
+    #     ]
+    # )
+
     mongo_db_service = providers.Singleton(MongodbService)
     redis_service = providers.Singleton(RedisService)
     intercom_api_service = providers.Singleton(IntercomAPIService)
@@ -19,7 +28,7 @@ class Container(containers.DeclarativeContainer):
     conversation_parts_service = providers.Singleton(
         ConversationPartsService,
         open_ai_client=open_ai_service,
-        intercom_client=intercom_api_service
+        intercom_client=intercom_api_service,
     )
 
     web_hook_processor = providers.Singleton(
@@ -28,6 +37,5 @@ class Container(containers.DeclarativeContainer):
         openai_service=open_ai_service,
         intercom_service=intercom_api_service,
         conversation_parts_service=conversation_parts_service,
-        messages_cache_service=messages_cache_service
-
+        messages_cache_service=messages_cache_service,
     )
