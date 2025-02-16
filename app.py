@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response, status, Request, Depends
+from fastapi import FastAPI, Response, status, Request, Depends, HTTPException
 from fastapi.responses import JSONResponse
 import uvicorn
 from typing import Dict

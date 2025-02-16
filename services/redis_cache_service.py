@@ -8,7 +8,9 @@ load_dotenv()
 
 class RedisService:
     def __init__(self):
-        self.redis_client = Redis(host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=1)
+        self.redis_client = Redis(
+            host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=1
+        )
 
     def get_redis_client(self):
         return self.redis_client
@@ -23,19 +25,21 @@ class RedisService:
 
 class MessagesCache:
     def __init__(self):
-        self.redis_client = Redis(host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=2)
+        self.redis_client = Redis(
+            host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=2
+        )
 
     def set_key(self, key_name: str, key_value: str):
         self.redis_client.set(key_name, key_value)
 
     def set_conversation_messages(
-            self, conversation_id: str, messages: ConversationMessages
+        self, conversation_id: str, messages: ConversationMessages
     ):
         key_value: str = messages.model_dump_json()
         self.set_key(conversation_id, key_value)
 
     def get_conversation_messages(
-            self, conversation_id: str
+        self, conversation_id: str
     ) -> ConversationMessages | None:
         value: str = self.redis_client.get(conversation_id)
         result: ConversationMessages = ConversationMessages.model_validate_json(value)

@@ -19,12 +19,12 @@ from typing import List
 class WebHookProcessor:
 
     def __init__(
-            self,
-            mongo_db_service: MongodbService,
-            openai_service: OpenAIService,
-            intercom_service: IntercomAPIService,
-            conversation_parts_service: ConversationPartsService,
-            messages_cache_service: MessagesCache,
+        self,
+        mongo_db_service: MongodbService,
+        openai_service: OpenAIService,
+        intercom_service: IntercomAPIService,
+        conversation_parts_service: ConversationPartsService,
+        messages_cache_service: MessagesCache,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -56,7 +56,6 @@ class WebHookProcessor:
         elif topic == "conversation.admin.closed":
             await self.handle_conversation_admin_closed(data=message)
             return
-
 
         else:
             return
@@ -194,7 +193,7 @@ class WebHookProcessor:
             # mongodb_task_async.apply_async(args=[translation.dict()], queue="mongo_db")
 
             return
-        elif message_language_code == "bn" or message_language_code == 'ben':
+        elif message_language_code == "bn" or message_language_code == "ben":
             message_for_admin: str = (
                 await self.openai_service.translate_message_from_bengali_to_english_async(
                     message=clean_message
@@ -341,14 +340,14 @@ class WebHookProcessor:
         clean_message: str = BeautifulSoup(message, "html.parser").getText()
         admin_id: str = admin_note.get("author", {}).get("id", "")
         conversation_id: str = data["data"]["item"]["id"]
-        if (admin_id != admin_translator_id):
+        if admin_id != admin_translator_id:
             user: User = User(id=admin_id, email="em@gmail.com", type="admin")
             message: ConversationMessage = ConversationMessage(
                 conversation_id=conversation_id,
                 time=datetime.datetime.now(),
                 message=clean_message,
                 user=user,
-                language='en',
+                language="en",
                 message_type="conversation.admin.noted",
             )
             conversation_messages: ConversationMessages = (
@@ -360,8 +359,9 @@ class WebHookProcessor:
                 reversed(conversation_messages.messages)
             )
             conversation_messages.messages.append(message)
-            self.messages_cache_service.set_conversation_messages(conversation_id=conversation_id,
-                                                                  messages=conversation_messages)
+            self.messages_cache_service.set_conversation_messages(
+                conversation_id=conversation_id, messages=conversation_messages
+            )
             for message in all_messages:
                 if message.user.type == "user":
                     if message.language == "hi":
