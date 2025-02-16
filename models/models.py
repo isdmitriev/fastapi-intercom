@@ -1,6 +1,14 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Any, Dict
+
+
+class HTTPResponseData(BaseModel):
+    is_success: bool
+    status_code: str
+    status_text: str
+    data: Optional[Dict[str, Any]] | None = None
+    exception_message: Optional[str | None] = None
 
 
 class User(BaseModel):
