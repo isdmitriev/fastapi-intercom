@@ -39,3 +39,25 @@ class ConversationMessage(BaseModel):
 
 class ConversationMessages(BaseModel):
     messages: List[ConversationMessage] = []
+
+
+class MessageAlternative(BaseModel):
+    original: str
+    english: str
+
+
+class MessageError(BaseModel):
+    original: str
+    english: str
+    suggested_correction_en: str
+    suggested_correction_origin: str
+    alternatives: List[MessageAlternative] = []
+
+
+class UserMessage(BaseModel):
+    corrected_message_origin: str
+    corrected_message_en: str
+    errors: List[MessageError] = []
+    message_language: str
+    status: str
+    original_message:str
