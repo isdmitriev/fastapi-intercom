@@ -14,7 +14,9 @@ async def dialog_process():
         user_id=user_id, message="मेरी वेबसाइट में समस्या आ रही है।"
     )
     new_conversatin_id: str = data.get("conversation_id", "")
-    intercom_client.attach_admin_to_conversation(admin_id=admin_id, conversation_id=new_conversatin_id)
+    intercom_client.attach_admin_to_conversation(
+        admin_id=admin_id, conversation_id=new_conversatin_id
+    )
     await asyncio.sleep(random.uniform(3, 5))
     status, data = await intercom_client.add_admin_note_to_conversation_async(
         conversation_id=new_conversatin_id, admin_id=admin_id, note="i will help you"

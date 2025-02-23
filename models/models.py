@@ -49,9 +49,7 @@ class MessageAlternative(BaseModel):
 class MessageError(BaseModel):
     original: str
     english: str
-    suggested_correction_en: str
-    suggested_correction_origin: str
-    alternatives: List[MessageAlternative] = []
+    error_description: str
 
 
 class UserMessage(BaseModel):
@@ -60,4 +58,4 @@ class UserMessage(BaseModel):
     errors: List[MessageError] = []
     message_language: str
     status: str
-    original_message:str
+    original_message: str

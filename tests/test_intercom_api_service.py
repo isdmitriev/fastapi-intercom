@@ -11,7 +11,7 @@ from services.redis_cache_service import RedisService, MessagesCache
 CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService
 from models.models import MessageTranslated, User
-from models.models import ConversationMessages, ConversationMessage
+from models.models import ConversationMessages, ConversationMessage, UserMessage
 
 
 # @pytest.mark.asyncio
@@ -151,6 +151,7 @@ def test_get_admins():
 #     redis_client:RedisService = Container().redis_service()
 #     assert redis_client.set_key('1234',1)==True
 
+
 # def test_conversation_messages():
 #     messages_cache: MessagesCache = MessagesCache()
 #     user = User(id="123", name="John Doe", type='user', email='my@gmail.com')
@@ -172,3 +173,10 @@ def test_get_admins():
 #
 #     list_messages: ConversationMessages = messages_cache.get_conversation_messages(conversation_id='12345')
 #     assert isinstance(list_messages, ConversationMessages)
+@pytest.mark.asyncio
+async def test_analyze_message():
+    open_ai_client = OpenAIService()
+    await open_ai_client.analyze_message_with_correction(
+        message='Mujhe mera petrol nahi mila abhi tak'
+
+    )

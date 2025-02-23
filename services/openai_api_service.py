@@ -146,140 +146,117 @@ class OpenAIService:
 
         return result
 
-    async def analyze_message_with_correction(self, message: str, language: str):
-
-        promt = """
-You are an AI assistant for an online casino and sports betting support team.
-
-Analyze the following message based on the gambling and betting context.
-
-- If there are no errors, return only the English translation.
-- If there are errors and you are confident in the correction, return the error and the corrected version.
-- If you are unsure about the correction, provide two alternative corrections.
-
-The message language will be provided as an input parameter.
-
-Return the response in the following JSON format:
-
-{
-  "original_message": "<input message>",
-  "language": "<detected language>",
-  "status": "<status of the message processing (no_error, error_fixed, error_uncertain)>",
-  "issues": [
-    {
-      "error": "<description of the issue>",
-      "suggested_correction": "<corrected text>",
-      "alternatives": ["<alternative correction 1>", "<alternative correction 2>"]
-    }
-  ],
-  "corrected_message_hindi": "<fully corrected version in Hindi (if applicable)>",
-  "corrected_message_english": "<English translation of the corrected message>",
-  "translation_only": "<English translation if no errors were found>"
-}
-"""
-
+    async def analyze_message_with_correction(self, message: str):
         response = await self.client_async.chat.completions.create(
-            model="gpt-4-turbo",
+            model="gpt-4o-mini-2024-07-18",
             messages=[
                 {
                     "role": "system",
-                    "content": promt,
+                    "content": """You are an AI assistant for an online casino and sports betting support team. 
+                           Your task is to analyze the player's message written in Hindi, Bengali, or Hinglish. 
+                           Identify any spelling mistakes, incorrect word choices, slang, or unclear meanings based on the gambling and betting context.
+
+                           ### Rules:
+                           - If the message is correct, return it as is.
+                           - If there is a clear mistake, correct it and explain why.
+                           - If you are unsure, provide two possible interpretations and an explanation in English.
+                           - Always include an English translation of the corrected message (if applicable).
+
+                           ### Response Format (Always return JSON):
+                           {
+                             "status": "ok" | "corrected" | "uncertain",
+                             "original_message": "<original message>",
+                             "corrected_message": "<corrected message, if applicable>",
+                             "correction_reason": "<reason for correction, if applicable>",
+                             "translated_message": "<English translation of the corrected message, if applicable>",
+                             "possible_interpretations": ["<interpretation 1>", "<interpretation 2>"] (if uncertain),
+                             "note": "<internal note for the support agent, if uncertain>",
+                             "explanation": "<detailed explanation in English>"
+                           }
+                           """
                 },
-                {
-                    "role": "user",
-                    "content": f"Language: {language}\nMessage: {message}",
-                },
+                {"role": "user", "content": message}
             ],
+            temperature=0.2,
+
         )
-        try:
-            response_dict: Dict = json.loads(response.choices[0].message.content)
-            status: str = response_dict.get("status", "")
-            language: str = response_dict.get("language", "")
-            original_message: str = response_dict.get("original_message", "")
 
-            if status == "no_error":
-                translated_message: str = response_dict.get("translation_only", "")
 
-                return UserMessage(
-                    status=status,
-                    message_language=language,
-                    errors=[],
-                    corrected_message_origin=original_message,
-                    corrected_message_en=translated_message,
-                    original_message=original_message,
-                )
-            elif status == "error_fixed":
-                issues: List[Dict] = response_dict.get("issues", [])
-                corrected_message_english: str = response_dict.get(
-                    "corrected_message_english", ""
-                )
-                corrected_message_origin: str = response_dict.get(
-                    "corrected_message_origin", ""
-                )
-                errors: List[MessageError] = []
-                for issue in issues:
-                    original: str = issue.get("error", {}).get("original", "")
-                    english: str = issue.get("error", {}).get("english", "")
-                    suggested_correction_en: str = issue.get(
-                        "suggested_correction", {}
-                    ).get("english", "")
-                    suggested_correction_origin: str = issue.get(
-                        "suggested_correction", {}
-                    ).get("original", "")
-                    errors.append(
-                        MessageError(
-                            original=original,
-                            english=english,
-                            suggested_correction_en=suggested_correction_en,
-                            suggested_correction_origin=suggested_correction_origin,
-                            alternatives=[],
-                        )
-                    )
-                return UserMessage(
-                    errors=errors,
-                    status=status,
-                    original_message=original_message,
-                    corrected_message_en=corrected_message_english,
-                    message_language=language,
-                    corrected_message_origin=corrected_message_origin,
-                )
-            elif status == "error_uncertain":
-                corrected_message_english = response_dict.get(
-                    "corrected_message_english",''
-                )
-                corrected_message_origin = response_dict.get(
-                    "corrected_message_origin",''
-                )
-
-                issues: List[Dict] = response_dict.get("issues", [])
-                errors: List[MessageError] = []
-                for issue in issues:
-                    alternatives_result: List[MessageAlternative] = []
-                    alternatives: List[Dict] = issue.get("alternatives", [])
-                    for alternative in alternatives:
-                        alternatives_result.append(
-                            MessageAlternative(
-                                original=alternative.get("original"),
-                                english=alternative.get("english"),
-                            )
-                        )
-                    original: str = issue.get("error", {}).get("original", "")
-                    english: str = issue.get("error", {}).get("english", "")
-                    errors.append(
-                        alternatives=alternatives_result,
-                        original=original,
-                        english=english,
-                        suggested_correction_en="",
-                        suggested_correction_origin="",
-                    )
-                return UserMessage(
-                    errors=errors,
-                    status=status,
-                    original_message=original_message,
-                    corrected_message_en=corrected_message_english,
-                    message_language=language,
-                    corrected_message_origin=corrected_message_origin,
-                )
-
-        except:
-            return None
+        response_dict: Dict = json.loads(response.choices[0].message.content)
+        print(response_dict)
+        # status: str = response_dict.get("status", "")
+        # language: str = response_dict.get("language", "")
+        # original_message: str = response_dict.get("original_message", "")
+        #
+        # if status == "no_error":
+        #     translated_message: str = response_dict.get("translation_only", "")
+        #     return UserMessage(
+        #         status=status,
+        #         message_language=language,
+        #         errors=[],
+        #         corrected_message_origin=original_message,
+        #         corrected_message_en=translated_message,
+        #         original_message=original_message,
+        #     )
+        #
+        # elif status == "error_fixed":
+        #     issues: List[Dict] = response_dict.get("
+        #     corrected_message_english: str = response_dict.get(
+        #         "corrected_message_english", ""
+        #     )
+        #     corrected_message_origin: str = response_dict.get(
+        #         "corrected_message_origin", ""
+        #     )
+        #     errors: List[MessageError] = []
+        #     for issue in issues:
+        #         original: str = issue.get("original", "")
+        #         english: str = issue.get("english", "")
+        #         error_description = issue.get("error_in_english", "")
+        #
+        #         errors.append(
+        #             MessageError(
+        #                 original=original,
+        #                 english=english,
+        #                 error_description=error_description,
+        #             )
+        #         )
+        #     return UserMessage(
+        #         errors=errors,
+        #         status=status,
+        #         original_message=original_message,
+        #         corrected_message_en=corrected_message_english,
+        #         message_language=language,
+        #         corrected_message_origin=corrected_message_origin,
+        #     )
+        # elif status == "error_uncertain":
+        #     issues: List[Dict] = response_dict.get("issues", [])
+        #     corrected_message_english: str = response_dict.get(
+        #         "corrected_message_english", ""
+        #     )
+        #     corrected_message_origin: str = response_dict.get(
+        #         "corrected_message_origin", ""
+        #     )
+        #     errors: List[MessageError] = []
+        #     for issue in issues:
+        #         original: str = issue.get("original", "")
+        #         english: str = issue.get("english", "")
+        #         error_description = issue.get("error_in_english", "")
+        #
+        #         errors.append(
+        #             MessageError(
+        #                 original=original,
+        #                 english=english,
+        #                 error_description=error_description,
+        #             )
+        #         )
+        #     return UserMessage(
+        #         errors=errors,
+        #         status=status,
+        #         original_message=original_message,
+        #         corrected_message_en=corrected_message_english,
+        #         message_language=language,
+        #         corrected_message_origin=corrected_message_origin,
+        #     )
+        #
+        # else:
+        #     return None
