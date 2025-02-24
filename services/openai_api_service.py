@@ -61,7 +61,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_hindi_to_english_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response: ChatCompletion = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -96,7 +96,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_bengali_to_english_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -113,7 +113,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_bengali_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -130,7 +130,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_hindi_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
