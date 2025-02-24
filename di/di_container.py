@@ -6,6 +6,7 @@ from services.intercom_api_service import IntercomAPIService
 from services.openai_api_service import OpenAIService
 from services.conversation_parts_service import ConversationPartsService
 from services.redis_cache_service import MessagesCache
+from services.openai_translator_service import OpenAITranslatorService
 
 
 class Container(containers.DeclarativeContainer):
@@ -23,6 +24,7 @@ class Container(containers.DeclarativeContainer):
     redis_service = providers.Singleton(RedisService)
     intercom_api_service = providers.Singleton(IntercomAPIService)
     open_ai_service = providers.Singleton(OpenAIService)
+    translations_service = providers.Singleton(OpenAITranslatorService)
     messages_cache_service: MessagesCache = providers.Singleton(MessagesCache)
 
     conversation_parts_service = providers.Singleton(
@@ -38,4 +40,5 @@ class Container(containers.DeclarativeContainer):
         intercom_service=intercom_api_service,
         conversation_parts_service=conversation_parts_service,
         messages_cache_service=messages_cache_service,
+        translations_service=translations_service
     )
