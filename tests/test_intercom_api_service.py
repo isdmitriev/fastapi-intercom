@@ -176,7 +176,9 @@ def test_get_admins():
 @pytest.mark.asyncio
 async def test_analyze_message():
     open_ai_client = OpenAIService()
-    await open_ai_client.analyze_message_with_correction(
-        message='Mujhe mera petrol nahi mila abhi tak'
+    message: UserMessage = await open_ai_client.analyze_message_with_correction(
+        message="Maine apna withdrawal request bheja hai 2 din pehle"
 
     )
+    print(message)
+    assert isinstance(message, UserMessage)
