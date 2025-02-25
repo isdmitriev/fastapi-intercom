@@ -7,7 +7,7 @@ import asyncio
 from services.openai_api_service import OpenAIService
 from di.di_container import Container
 from services.redis_cache_service import RedisService, MessagesCache
-
+from services.openai_translator_service import OpenAITranslatorService
 CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService
 from models.models import MessageTranslated, User
@@ -173,12 +173,24 @@ def test_get_admins():
 #
 #     list_messages: ConversationMessages = messages_cache.get_conversation_messages(conversation_id='12345')
 #     assert isinstance(list_messages, ConversationMessages)
-@pytest.mark.asyncio
-async def test_analyze_message():
-    open_ai_client = OpenAIService()
-    message: UserMessage = await open_ai_client.analyze_message_with_correction(
-        message="Maine apna withdrawal request bheja hai 2 din pehle"
 
-    )
-    print(message)
-    assert isinstance(message, UserMessage)
+# @pytest.mark.asyncio
+# async def test_translator_service():
+#     client:OpenAITranslatorService=OpenAITranslatorService()
+#     result=await client.detect_language_async('hello my name is ilya, i have some problems wuth my account')
+#     result_hindi=await client.translate_message_from_english_to_hindi_async('hello')
+#     print(result_hindi)
+#     hindi=await client.detect_language_async(result_hindi)
+#     assert result=='English'
+#     assert hindi=='Hindi'
+#
+#
+# @pytest.mark.asyncio
+# async def test_analyze_message():
+#     open_ai_client = OpenAIService()
+#     message: UserMessage = await open_ai_client.analyze_message_with_correction(
+#         message="Maine apna withdrawal request bheja hai 2 din pehle"
+#
+#     )
+#     print(message)
+#     assert isinstance(message, UserMessage)

@@ -39,7 +39,7 @@ class WebHookProcessor:
     async def process_message(self, topic: str, message: Dict):
 
         if topic == "conversation.user.created":
-            await self.handle_conversation_user_created_v2(data=message)
+            await self.handle_conversation_user_created_v3(data=message)
             return
 
         elif topic == "conversation.user.replied":
@@ -107,6 +107,7 @@ class WebHookProcessor:
         print("conversation.user.created")
 
     async def handle_conversation_user_created_v3(self, data: Dict):
+        print('conversation.user.created')
         conversation_id: str = data.get("data", {}).get("item", {}).get("id", "")
         self.intercom_service.attach_admin_to_conversation(
             conversation_id=conversation_id, admin_id=8028082

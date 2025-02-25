@@ -33,6 +33,38 @@ async def shutdown():
     await container.shutdown_resources()
 
 
+@app.post('/webhook/test')
+@inject
+async def get_message(
+        request: Request,
+        web_hook_processor: WebHookProcessor = Depends(
+            lambda: container.web_hook_processor()
+        ),
+        mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
+        redis_service: RedisService = Depends(lambda: container.redis_service()),
+):
+    payload: Dict = await request.json()
+
+    notification_event_id: str | None = payload.get("id", None)
+    if notification_event_id == None:
+        return Response(status_code=status.HTTP_200_OK)
+    is_event_handled = redis_service.set_key(notification_event_id, "1")
+    if is_event_handled == True:
+
+        # await mongo_db_service.add_document_to_collection(
+        #     "intercom_app", "event_logs", payload
+        # )
+
+        topic: str = payload.get("topic", "")
+        await web_hook_processor.process_message(topic, payload)
+
+        return Response(status_code=status.HTTP_200_OK)
+    else:
+        return Response(
+            status_code=status.HTTP_200_OK, content="event already processed"
+        )
+
+
 @app.post("/webhook/message")
 @inject
 async def get_message(

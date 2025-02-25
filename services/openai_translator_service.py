@@ -147,9 +147,9 @@ class OpenAITranslatorService:
 
     async def detect_language_async(self, message: str) -> str | None:
         promt = "You are an AI assistant for an online casino and sports betting customer support team. Your task is to determine the language of a player's message. Players may speak in English, Hindi (Devanagari script), Hinglish (Romanized Hindi), or Bengali (বাংলা script). If the language is unclear, return 'Uncertain' instead of guessing."
-        response = self.client_async.chat.completions.create(
+        response = await self.client_async.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
-            messages=[{"role": "system"}, {"content": message}],
+            messages=[{"role": "system", 'content': promt}, {'role':'user',"content": message}],
             temperature=0,
         )
         result = response.choices[0].message.content.strip()
