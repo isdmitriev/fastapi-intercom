@@ -21,13 +21,13 @@ from typing import List
 class WebHookProcessor:
 
     def __init__(
-        self,
-        mongo_db_service: MongodbService,
-        openai_service: OpenAIService,
-        intercom_service: IntercomAPIService,
-        conversation_parts_service: ConversationPartsService,
-        messages_cache_service: MessagesCache,
-        translations_service: OpenAITranslatorService,
+            self,
+            mongo_db_service: MongodbService,
+            openai_service: OpenAIService,
+            intercom_service: IntercomAPIService,
+            conversation_parts_service: ConversationPartsService,
+            messages_cache_service: MessagesCache,
+            translations_service: OpenAITranslatorService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -190,7 +190,7 @@ class WebHookProcessor:
                         message_language=message_language,
                     )
             elif analyzed_user_message.status == "uncertain":
-                note: str = self.create_admin_note(analyzed_user_message)
+                note: str = await self.create_admin_note(analyzed_user_message)
 
                 await self.send_admin_note_async(
                     conversation_id=conversation_id,
@@ -199,7 +199,7 @@ class WebHookProcessor:
                 )
 
     async def send_admin_note_async(
-        self, conversation_id: str, message: str, message_language
+            self, conversation_id: str, message: str, message_language
     ):
         admin_id: str = "8024055"
         if message_language == "Hindi":
@@ -246,7 +246,7 @@ class WebHookProcessor:
         else:
             return
 
-    def create_admin_note(self, message: UserMessage):
+    async def create_admin_note(self, message: UserMessage):
         note: str = "translated: " + message.translated_text + "\n" + message.note
         return note
 
@@ -429,7 +429,7 @@ class WebHookProcessor:
                     message_language=message_language,
                 )
             if analyzed_message.status == "uncertain":
-                note: str = self.create_admin_note(analyzed_message)
+                note: str = await self.create_admin_note(analyzed_message)
                 await self.send_admin_note_async(
                     conversation_id=conversation_id,
                     message=note,
@@ -610,8 +610,16 @@ class WebHookProcessor:
                             message=admin_reply_message,
                         )
                         return
-                    else:
+
+                    elif conv_message.language == "English":
+                        await self.intercom_service.add_admin_message_to_conversation_async(
+                            conversation_id=conversation_id,
+                            admin_id=admin_id,
+                            message=clean_message,
+                        )
                         return
+                    else:
+                        continue
 
     async def handle_conversation_admin_noted_v2(self, data: Dict):
         admin_translator_id: str = "8024055"

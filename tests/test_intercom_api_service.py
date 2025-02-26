@@ -179,12 +179,12 @@ def test_get_admins():
 async def test_translator_service():
     client: OpenAITranslatorService = OpenAITranslatorService()
     result = await client.detect_language_async(
-        'Yaar mera khata freeze ho gaya hai, kitna gas bacha hai balance mein check karo please')
+        'আমার গাড়ি থেমে গেছে, আজকে ফিউয়েল আসবে কি না জানান। আমি গতকাল টাকা দিয়েছি কিন্তু এখনও কিছু আসেনি।')
 
     result_hindi = await client.translate_message_from_english_to_hindi_async('hello')
     print(result_hindi)
     hindi = await client.detect_language_async(result_hindi)
-    assert result == 'Hinglish'
+    assert result == 'Bengali'
     assert hindi == 'Hindi'
 
 
@@ -192,7 +192,7 @@ async def test_translator_service():
 async def test_analyze_message():
     open_ai_client = OpenAIService()
     message: UserMessage = await open_ai_client.analyze_message_with_correction(
-        message="Yaar mera khata freeze ho gaya hai, kitna gas bacha hai balance mein check karo please"
+        message="আমার গাড়ি থেমে গেছে, আজকে ফিউয়েল আসবে কি না জানান। আমি গতকাল টাকা দিয়েছি কিন্তু এখনও কিছু আসেনি।"
 
     )
     print(message)
