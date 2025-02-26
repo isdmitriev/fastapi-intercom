@@ -177,15 +177,15 @@ def test_get_admins():
 
 @pytest.mark.asyncio
 async def test_translator_service():
-    client:OpenAITranslatorService=OpenAITranslatorService()
-    result=await client.detect_language_async('')
+    client: OpenAITranslatorService = OpenAITranslatorService()
+    result = await client.detect_language_async(
+        'Yaar mera khata freeze ho gaya hai, kitna gas bacha hai balance mein check karo please')
 
-
-    result_hindi=await client.translate_message_from_english_to_hindi_async('hello')
+    result_hindi = await client.translate_message_from_english_to_hindi_async('hello')
     print(result_hindi)
-    hindi=await client.detect_language_async(result_hindi)
-    assert result=='Hinglish'
-    assert hindi=='Hindi'
+    hindi = await client.detect_language_async(result_hindi)
+    assert result == 'Hinglish'
+    assert hindi == 'Hindi'
 
 
 @pytest.mark.asyncio
