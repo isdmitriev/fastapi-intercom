@@ -43,7 +43,7 @@ class WebHookProcessor:
             return
 
         elif topic == "conversation.user.replied":
-            await self.handle_conversation_user_replied_v2(data=message)
+            await self.handle_conversation_user_replied_v3(data=message)
             return
 
         elif topic == "conversation.admin.replied":
@@ -51,7 +51,7 @@ class WebHookProcessor:
             return
 
         elif topic == "conversation.admin.noted":
-            await self.handle_conversation_admin_noted_v2(data=message)
+            await self.handle_conversation_admin_noted_v3(data=message)
             return
 
         elif topic == "conversation.admin.assigned":
@@ -545,6 +545,7 @@ class WebHookProcessor:
         conversation_id: str = data["data"]["item"]["id"]
         if admin_id != admin_translator_id:
             user: User = User(id=admin_id, email="em@gmail.com", type="admin")
+            print(user)
             message: ConversationMessage = ConversationMessage(
                 conversation_id=conversation_id,
                 time=datetime.datetime.now(),
@@ -567,7 +568,7 @@ class WebHookProcessor:
             )
             for conv_message in all_messages:
                 if conv_message.user.type == "user":
-                    if message.language == "Hinglish":
+                    if conv_message.language == "Hinglish":
                         admin_reply_message: str = (
                             await self.translations_service.translate_message_from_english_to_hinglish_async(
                                 message=clean_message
@@ -579,7 +580,7 @@ class WebHookProcessor:
                             message=admin_reply_message,
                         )
                         return
-                    elif message.language == "Hindi":
+                    elif conv_message.language == "Hindi":
                         admin_reply_message: str = (
                             await self.translations_service.translate_message_from_english_to_hindi_async(
                                 message=clean_message
@@ -591,7 +592,7 @@ class WebHookProcessor:
                             message=admin_reply_message,
                         )
                         return
-                    elif message.language == "Bengali":
+                    elif conv_message.language == "Bengali":
                         admin_reply_message: str = (
                             await self.translations_service.translate_message_from_english_to_bengali_async(
                                 message=clean_message
