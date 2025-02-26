@@ -107,7 +107,7 @@ class WebHookProcessor:
         print("conversation.user.created")
 
     async def handle_conversation_user_created_v3(self, data: Dict):
-        print('conversation.user.created')
+        print("conversation.user.created")
         conversation_id: str = data.get("data", {}).get("item", {}).get("id", "")
         self.intercom_service.attach_admin_to_conversation(
             conversation_id=conversation_id, admin_id=8028082
@@ -143,6 +143,7 @@ class WebHookProcessor:
             )
             original_message = analyzed_user_message.original_text
             corrected_message = analyzed_user_message.corrected_text
+            translated_text = analyzed_user_message.translated_text
 
             if analyzed_user_message.status == "no_error":
                 if message_language == "Hindi":
@@ -189,7 +190,8 @@ class WebHookProcessor:
                         message_language=message_language,
                     )
             elif analyzed_user_message.status == "uncertain":
-                note: str = analyzed_user_message.note
+                note: str = self.create_admin_note(analyzed_user_message)
+
                 await self.send_admin_note_async(
                     conversation_id=conversation_id,
                     message=note,
@@ -243,6 +245,18 @@ class WebHookProcessor:
             return
         else:
             return
+
+    def create_admin_note(self, message: UserMessage):
+        note: str = (
+                "origin text: "
+                + message.original_text
+                + "\n"
+                + "translated: "
+                + message.translated_text
+                + "\n"
+                + message.note
+        )
+        return note
 
     async def handle_conversation_user_created_v2(self, data: Dict):
         conversation_id: str = data.get("data", {}).get("item", {}).get("id", "")
@@ -423,7 +437,7 @@ class WebHookProcessor:
                     message_language=message_language,
                 )
             if analyzed_message.status == "uncertain":
-                note: str = analyzed_message.note
+                note: str = self.create_admin_note(analyzed_message)
                 await self.send_admin_note_async(
                     conversation_id=conversation_id,
                     message=note,
