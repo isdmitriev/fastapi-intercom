@@ -192,7 +192,7 @@ async def test_translator_service():
 async def test_analyze_message():
     open_ai_client = OpenAIService()
     message: UserMessage = await open_ai_client.analyze_message_with_correction(
-        message="Bhai mujhe pata nahi kyu mera fuel ka payment abhi tak pending hai, kitna time lagega? Maine kal hi petrol ke liye request kiya tha"
+        message="Yaar mera khata freeze ho gaya hai, kitna gas bacha hai balance mein check karo please"
 
     )
     print(message)

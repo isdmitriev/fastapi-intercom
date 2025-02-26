@@ -21,13 +21,13 @@ from typing import List
 class WebHookProcessor:
 
     def __init__(
-            self,
-            mongo_db_service: MongodbService,
-            openai_service: OpenAIService,
-            intercom_service: IntercomAPIService,
-            conversation_parts_service: ConversationPartsService,
-            messages_cache_service: MessagesCache,
-            translations_service: OpenAITranslatorService,
+        self,
+        mongo_db_service: MongodbService,
+        openai_service: OpenAIService,
+        intercom_service: IntercomAPIService,
+        conversation_parts_service: ConversationPartsService,
+        messages_cache_service: MessagesCache,
+        translations_service: OpenAITranslatorService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -199,7 +199,7 @@ class WebHookProcessor:
                 )
 
     async def send_admin_note_async(
-            self, conversation_id: str, message: str, message_language
+        self, conversation_id: str, message: str, message_language
     ):
         admin_id: str = "8024055"
         if message_language == "Hindi":
@@ -247,15 +247,7 @@ class WebHookProcessor:
             return
 
     def create_admin_note(self, message: UserMessage):
-        note: str = (
-                "origin text: "
-                + message.original_text
-                + "\n"
-                + "translated: "
-                + message.translated_text
-                + "\n"
-                + message.note
-        )
+        note: str = "translated: " + message.translated_text + "\n" + message.note
         return note
 
     async def handle_conversation_user_created_v2(self, data: Dict):
