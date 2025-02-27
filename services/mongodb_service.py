@@ -12,7 +12,7 @@ class MongodbService:
         self.client = AsyncIOMotorClient(os.getenv("MONGO_DB_URI"))
 
     async def add_document_to_collection(
-        self, db_name: str, collection_name: str, document: Dict
+            self, db_name: str, collection_name: str, document: Dict
     ):
         db = self.client.get_database(db_name)
         collection = db.get_collection(collection_name)
