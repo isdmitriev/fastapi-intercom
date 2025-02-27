@@ -21,13 +21,13 @@ from typing import List
 class WebHookProcessor:
 
     def __init__(
-        self,
-        mongo_db_service: MongodbService,
-        openai_service: OpenAIService,
-        intercom_service: IntercomAPIService,
-        conversation_parts_service: ConversationPartsService,
-        messages_cache_service: MessagesCache,
-        translations_service: OpenAITranslatorService,
+            self,
+            mongo_db_service: MongodbService,
+            openai_service: OpenAIService,
+            intercom_service: IntercomAPIService,
+            conversation_parts_service: ConversationPartsService,
+            messages_cache_service: MessagesCache,
+            translations_service: OpenAITranslatorService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -119,8 +119,10 @@ class WebHookProcessor:
         user_email: str = data.get("author", {}).get("email", "")
         user: User = User(id=user_id, email=user_email, type="user")
         admin_id = "8024055"
-        message_language: str = await self.translations_service.detect_language_async_v2(
-            message=clean_message
+        message_language: str = (
+            await self.translations_service.detect_language_async_v2(
+                message=clean_message
+            )
         )
         message: ConversationMessage = ConversationMessage(
             conversation_id=conversation_id,
@@ -199,7 +201,7 @@ class WebHookProcessor:
                 )
 
     async def send_admin_note_async(
-        self, conversation_id: str, message: str, message_language
+            self, conversation_id: str, message: str, message_language
     ):
         admin_id: str = "8024055"
         if message_language == "Hindi":
@@ -386,8 +388,10 @@ class WebHookProcessor:
         user_email: str = user_reply.get("author", {}).get("email", "")
         user_id: str = user_reply.get("author", {}).get("id", "")
         conversation_id: str = data["data"]["item"]["id"]
-        message_language: str = await self.translations_service.detect_language_async_v2(
-            message=clean_message
+        message_language: str = (
+            await self.translations_service.detect_language_async_v2(
+                message=clean_message
+            )
         )
         user: User = User(id=user_id, email=user_email, type="user")
         message: ConversationMessage = ConversationMessage(
@@ -576,7 +580,7 @@ class WebHookProcessor:
                 if conv_message.user.type == "user":
                     if conv_message.language == "Hinglish":
                         admin_reply_message: str = (
-                            await self.translations_service.translate_message_from_english_to_hinglish_async(
+                            await self.translations_service.translate_message_from_english_to_hinglish_async_v2(
                                 message=clean_message
                             )
                         )

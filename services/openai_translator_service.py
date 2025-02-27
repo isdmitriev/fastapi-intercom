@@ -79,6 +79,33 @@ class OpenAITranslatorService:
 
         return result
 
+    async def translate_message_from_english_to_hinglish_async_v2(
+            self, message: str
+    ) -> str | None:
+        prompt = f"""You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India and Bangladesh. Your task is to translate the following English message into **Hinglish (Romanized Hindi)**, ensuring that the translation is written **entirely in the Latin alphabet** (English letters).
+
+        The translation must **not use Devanagari script** (हिंदी). Instead, it should be written in **a natural, easy-to-read Romanized Hindi style** that native Hindi speakers commonly use in chat or casual writing.
+
+        Maintain a **friendly and professional tone**, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Indian players commonly understand.
+
+        Example:
+        - **English:** "Your bet has been placed successfully."
+        - - **Correct Hinglish:** "Aapka bet successfully lag gaya hai."
+        - - **Incorrect (Devanagari):** "आपका बेट सफलतापूर्वक लग गया है।"
+
+        Now, translate the following message into **Hinglish (Romanized Hindi) only**:
+
+        "{message}"
+        """
+        response = await self.client_async.chat.completions.create(
+            model="gpt-4-turbo",
+            messages=[{"role": "system", "content": prompt}],
+            temperature=0.7
+
+        )
+        result = response.choices[0].message.content.strip()
+        return result
+
     async def translate_message_from_bengali_to_english_async(
             self, message: str
     ) -> str | None:
@@ -189,7 +216,7 @@ Return ONLY the language name without explanation."""
             model="gpt-4",
             messages=[{"role": "system", "content": prompt}],
             max_tokens=10,
-            temperature=0
+            temperature=0,
         )
         result = response.choices[0].message.content.strip()
         return result
