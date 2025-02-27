@@ -119,7 +119,7 @@ class WebHookProcessor:
         user_email: str = data.get("author", {}).get("email", "")
         user: User = User(id=user_id, email=user_email, type="user")
         admin_id = "8024055"
-        message_language: str = await self.translations_service.detect_language_async(
+        message_language: str = await self.translations_service.detect_language_async_v2(
             message=clean_message
         )
         message: ConversationMessage = ConversationMessage(
@@ -386,7 +386,7 @@ class WebHookProcessor:
         user_email: str = user_reply.get("author", {}).get("email", "")
         user_id: str = user_reply.get("author", {}).get("id", "")
         conversation_id: str = data["data"]["item"]["id"]
-        message_language: str = await self.translations_service.detect_language_async(
+        message_language: str = await self.translations_service.detect_language_async_v2(
             message=clean_message
         )
         user: User = User(id=user_id, email=user_email, type="user")

@@ -179,7 +179,7 @@ def test_get_admins():
 async def test_translator_service():
     client: OpenAITranslatorService = OpenAITranslatorService()
     result = await client.detect_language_async_v2(
-        'namaste, meri samasya hai.')
+        'Namaste')
 
     assert result == 'Hinglish'
 
@@ -188,7 +188,7 @@ async def test_translator_service():
 async def test_analyze_message():
     open_ai_client = OpenAIService()
     message: UserMessage = await open_ai_client.analyze_message_with_correction(
-        message="Bhai site par login nahi ho pa raha hai, mera engine start hi nahi ho raha, password dalte hi petrol khatam ho jata hai"
+        message="Namaste"
 
     )
     print(message)
