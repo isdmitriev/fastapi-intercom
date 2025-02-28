@@ -175,22 +175,19 @@ def test_get_admins():
 #     list_messages: ConversationMessages = messages_cache.get_conversation_messages(conversation_id='12345')
 #     assert isinstance(list_messages, ConversationMessages)
 
+
 @pytest.mark.asyncio
 async def test_translator_service():
     client: OpenAITranslatorService = OpenAITranslatorService()
     result = await client.translate_message_from_english_to_hinglish_async_v2(
-        'i am from ukraine, good day,have you problems?')
+        "! hey there how are you doing today?"
+    )
     print(result)
-
-
 
 
 @pytest.mark.asyncio
 async def test_analyze_message():
     open_ai_client = OpenAIService()
-    message: UserMessage = await open_ai_client.analyze_message_with_correction(
-        message="Namaste"
-
+    await open_ai_client.analyze_message_with_correction_async_v2(
+        message="Bhai site par login nahi ho pa raha hai, mera engine start hi nahi ho raha, password dalte hi petrol khatam ho jata hai"
     )
-    print(message)
-    assert isinstance(message, UserMessage)

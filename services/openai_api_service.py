@@ -61,7 +61,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_hindi_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response: ChatCompletion = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -96,7 +96,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_bengali_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -113,7 +113,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_bengali_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -130,7 +130,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_hindi_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -256,3 +256,48 @@ Example responses:
             )
         else:
             return None
+
+    async def analyze_message_with_correction_async_v2(self, message: str):
+        promt = """You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali.
+
+Always return JSON with the following structure:
+{
+    \"status\": \"[uncertain/error_fixed/no_error]\",
+    \"original_text\": \"original message\",
+    \"translated_text\": \"English translation\",
+    
+    // Only for status=uncertain:
+    \"possible_interpretations\": [
+        \"corrected version (Most likely meaning explanation)\",
+        \"original version (Alternative meaning explanation)\"
+    ],
+    \"note\": \"Note explaining unusual words with possible meanings AND two alternative translations:\\n1. [First translation - most probable]\\n2. [Second translation - alternative interpretation]\\nClarification needed.\"
+}
+
+Status codes:
+- \"uncertain\": When you're less than 95% confident about message meaning
+- \"error_fixed\": When you found and corrected mistakes
+- \"no_error\": When message is clear and no corrections needed
+
+Example for uncertain message:
+{
+    \"status\": \"uncertain\",
+    \"original_text\": \"Bhai site par login nahi ho pa raha hai, mera engine start hi nahi ho raha, password dalte hi petrol khatam ho jata hai\",
+    \"translated_text\": \"Brother, I cannot log in to the site, my engine is not starting, as soon as I enter the password, petrol runs out\",
+    \"possible_interpretations\": [
+        \"Bhai site par login nahi ho pa raha hai, mera page load hi nahi ho raha, password dalte hi session expire ho jata hai (Most likely: The player is experiencing a technical issue where the site fails to load after password entry)\",
+        \"Bhai site par login nahi ho pa raha hai, mera engine start hi nahi ho raha, password dalte hi petrol khatam ho jata hai (Unclear meaning, might refer to connection issues or error messages during login)\"
+    ],
+    \"note\": \"The player used the words 'engine' and 'petrol', which are unusual in a casino login context. Possible meanings:\\n1. Website/app not loading properly after password entry\\n2. Session expiring or connection dropping during login\\nAlternative translations:\\n1. 'Brother, I cannot log in to the site, the page doesn't load, session expires right after entering password'\\n2. 'Brother, I cannot log in to the site, the application crashes, an error appears right after entering password'\\nClarification needed.\"
+}"""
+
+        response = await self.client_async.chat.completions.create(
+            model="gpt-4",  # Используй нужную модель
+            messages=[
+                {"role": "system", "content": promt},
+                {"role": "user", "content": message}
+            ],
+            temperature=0
+        )
+        response_dict: Dict = json.loads(response.choices[0].message.content)
+        print(response_dict)

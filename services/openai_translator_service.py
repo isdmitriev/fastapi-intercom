@@ -84,26 +84,29 @@ class OpenAITranslatorService:
     ) -> str | None:
         prompt = f"""You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India and Bangladesh. Your task is to translate the following English message into **Hinglish (Romanized Hindi)**, ensuring that the translation is written **entirely in the Latin alphabet** (English letters).
 
-        The translation must **not use Devanagari script** (हिंदी). Instead, it should be written in **a natural, easy-to-read Romanized Hindi style** that native Hindi speakers commonly use in chat or casual writing.
+The translation must **not use Devanagari script** (हिंदी). Instead, it should be written in **a natural, easy-to-read Romanized Hindi style** that native Hindi speakers commonly use in chat or casual writing.
 
-        Maintain a **friendly and professional tone**, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Indian players commonly understand.
+Make sure that no extra symbols (such as exclamation marks, commas, or other punctuation marks) are added unless they are part of the original message.
 
-        Example:
-        - **English:** "Your bet has been placed successfully."
-        - - **Correct Hinglish:** "Aapka bet successfully lag gaya hai."
-        - - **Incorrect (Devanagari):** "आपका बेट सफलतापूर्वक लग गया है।"
+Maintain a **friendly and professional tone**, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Indian players commonly understand.
 
-        Now, translate the following message into **Hinglish (Romanized Hindi) only**:
+Example:
+- **English:** "Your bet has been placed successfully."
+- - **Correct Hinglish:** "Aapka bet successfully lag gaya hai."
+- - **Incorrect (Devanagari):** "आपका बेट सफलतापूर्वक लग गया है।"
 
-        "{message}"
-        """
+Now, translate the following message into **Hinglish (Romanized Hindi) only**:
+
+"{message}"
+"""
         response = await self.client_async.chat.completions.create(
             model="gpt-4-turbo",
             messages=[{"role": "system", "content": prompt}],
-            temperature=0.7
+            temperature=0.2
 
         )
-        result = response.choices[0].message.content.strip()
+        translated_text = response.choices[0].message.content
+        result = translated_text.strip('"')
         return result
 
     async def translate_message_from_bengali_to_english_async(
@@ -168,7 +171,8 @@ class OpenAITranslatorService:
             ],
             temperature=0.2,
         )
-        result = response.choices[0].message.content.strip()
+        translated_text = response.choices[0].message.content
+        result = translated_text.strip('"')
 
         return result
 
