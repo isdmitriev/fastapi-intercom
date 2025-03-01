@@ -134,10 +134,13 @@ class WebHookProcessor:
         )
         messages: ConversationMessages = ConversationMessages(messages=[message])
         self.messages_cache_service.set_conversation_messages(
-            conversation_id=conversation_id, messages=messages
+            conversation_id='conv:' + conversation_id, messages=messages
         )
 
         if message_language in ["English", "Hindi", "Hinglish", "Bengali"]:
+            self.messages_cache_service.set_conversation_language(
+                conversation_id=conversation_id, language=message_language
+            )
             analyzed_user_message: UserMessage = (
                 await self.openai_service.analyze_message_with_correction(
                     message=clean_message
@@ -404,15 +407,18 @@ class WebHookProcessor:
         )
         all_messages: ConversationMessages = (
             self.messages_cache_service.get_conversation_messages(
-                conversation_id=conversation_id
+                conversation_id='conv:' + conversation_id
             )
         )
         all_messages.messages.append(message)
         self.messages_cache_service.set_conversation_messages(
-            conversation_id=conversation_id, messages=all_messages
+            conversation_id='conv:' + conversation_id, messages=all_messages
         )
 
         if message_language in ["English", "Hindi", "Hinglish", "Bengali"]:
+            self.messages_cache_service.set_conversation_language(
+                conversation_id=conversation_id, language=message_language
+            )
             analyzed_message: UserMessage = (
                 await self.openai_service.analyze_message_with_correction(
                     message=clean_message
@@ -553,6 +559,11 @@ class WebHookProcessor:
         clean_message: str = BeautifulSoup(message, "html.parser").getText()
         admin_id: str = admin_note.get("author", {}).get("id", "")
         conversation_id: str = data["data"]["item"]["id"]
+        conversation_language: str = (
+            self.messages_cache_service.get_conversation_language(
+                conversation_id=conversation_id
+            )
+        )
         if admin_id != admin_translator_id:
             user: User = User(id=admin_id, email="em@gmail.com", type="admin")
             print(user)
@@ -566,7 +577,7 @@ class WebHookProcessor:
             )
             conversation_messages: ConversationMessages = (
                 self.messages_cache_service.get_conversation_messages(
-                    conversation_id=conversation_id
+                    conversation_id='conv:' + conversation_id
                 )
             )
             all_messages: List[ConversationMessage] = list(
@@ -574,56 +585,63 @@ class WebHookProcessor:
             )
             conversation_messages.messages.append(message)
             self.messages_cache_service.set_conversation_messages(
-                conversation_id=conversation_id, messages=conversation_messages
+                conversation_id='conv:' + conversation_id, messages=conversation_messages
             )
-            for conv_message in all_messages:
-                if conv_message.user.type == "user":
-                    if conv_message.language == "Hinglish":
-                        admin_reply_message: str = (
-                            await self.translations_service.translate_message_from_english_to_hinglish_async_v2(
-                                message=clean_message
-                            )
-                        )
-                        await self.intercom_service.add_admin_message_to_conversation_async(
-                            conversation_id=conversation_id,
-                            admin_id=admin_id,
-                            message=admin_reply_message,
-                        )
-                        return
-                    elif conv_message.language == "Hindi":
-                        admin_reply_message: str = (
-                            await self.translations_service.translate_message_from_english_to_hindi_async(
-                                message=clean_message
-                            )
-                        )
-                        await self.intercom_service.add_admin_message_to_conversation_async(
-                            conversation_id=conversation_id,
-                            admin_id=admin_id,
-                            message=admin_reply_message,
-                        )
-                        return
-                    elif conv_message.language == "Bengali":
-                        admin_reply_message: str = (
-                            await self.translations_service.translate_message_from_english_to_bengali_async(
-                                message=clean_message
-                            )
-                        )
-                        await self.intercom_service.add_admin_message_to_conversation_async(
-                            conversation_id=conversation_id,
-                            admin_id=admin_id,
-                            message=admin_reply_message,
-                        )
-                        return
+            await self.send_admin_reply_message(
+                conversation_id=conversation_id,
+                admin_id=admin_id,
+                target_language=conversation_language,
+                message=clean_message,
+            )
 
-                    elif conv_message.language == "English":
-                        await self.intercom_service.add_admin_message_to_conversation_async(
-                            conversation_id=conversation_id,
-                            admin_id=admin_id,
-                            message=clean_message,
-                        )
-                        return
-                    else:
-                        continue
+    async def send_admin_reply_message(
+            self, conversation_id: str, admin_id: str, message: str, target_language: str
+    ):
+        if target_language == "Hinglish":
+            admin_reply_message: str = (
+                await self.translations_service.translate_message_from_english_to_hinglish_async_v2(
+                    message=message
+                )
+            )
+            await self.intercom_service.add_admin_message_to_conversation_async(
+                conversation_id=conversation_id,
+                admin_id=admin_id,
+                message=admin_reply_message,
+            )
+            return
+        elif target_language == "Hindi":
+            admin_reply_message: str = (
+                await self.translations_service.translate_message_from_english_to_hindi_async(
+                    message=message
+                )
+            )
+            await self.intercom_service.add_admin_message_to_conversation_async(
+                conversation_id=conversation_id,
+                admin_id=admin_id,
+                message=admin_reply_message,
+            )
+            return
+        elif target_language == "Bengali":
+            admin_reply_message: str = (
+                await self.translations_service.translate_message_from_english_to_bengali_async(
+                    message=message
+                )
+            )
+            await self.intercom_service.add_admin_message_to_conversation_async(
+                conversation_id=conversation_id,
+                admin_id=admin_id,
+                message=admin_reply_message,
+            )
+            return
+        elif target_language == "English":
+            await self.intercom_service.add_admin_message_to_conversation_async(
+                conversation_id=conversation_id,
+                admin_id=admin_id,
+                message=message,
+            )
+            return
+        else:
+            return
 
     async def handle_conversation_admin_noted_v2(self, data: Dict):
         admin_translator_id: str = "8024055"

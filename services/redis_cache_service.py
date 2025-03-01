@@ -9,7 +9,7 @@ load_dotenv()
 class RedisService:
     def __init__(self):
         self.redis_client = Redis(
-            host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=1
+            host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=1
         )
 
     def get_redis_client(self):
@@ -26,7 +26,7 @@ class RedisService:
 class MessagesCache:
     def __init__(self):
         self.redis_client = Redis(
-            host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=2
+            host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=2
         )
 
     def set_key(self, key_name: str, key_value: str):
@@ -47,6 +47,13 @@ class MessagesCache:
 
     def delete_conversation(self, conversation_id: str):
         self.redis_client.delete(conversation_id)
+
+    def set_conversation_language(self, conversation_id: str, language: str):
+        self.set_key(conversation_id, language)
+
+    def get_conversation_language(self, conversation_id: str):
+        language: str = self.redis_client.get(conversation_id)
+        return language
 
     def close(self):
         self.redis_client.close()

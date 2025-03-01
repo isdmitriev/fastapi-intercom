@@ -174,7 +174,11 @@ def test_get_admins():
 #
 #     list_messages: ConversationMessages = messages_cache.get_conversation_messages(conversation_id='12345')
 #     assert isinstance(list_messages, ConversationMessages)
-
+def test_conversation_language():
+    redis_cache:MessagesCache=MessagesCache()
+    redis_cache.set_conversation_language(conversation_id='155',language='Hinglish')
+    language:str=redis_cache.get_conversation_language(conversation_id='155')
+    assert language=='Hinglish'
 
 @pytest.mark.asyncio
 async def test_translator_service():
