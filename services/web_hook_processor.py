@@ -575,18 +575,18 @@ class WebHookProcessor:
                 language="English",
                 message_type="conversation.admin.noted",
             )
-            conversation_messages: ConversationMessages = (
-                self.messages_cache_service.get_conversation_messages(
-                    conversation_id='conv:' + conversation_id
-                )
-            )
-            all_messages: List[ConversationMessage] = list(
-                reversed(conversation_messages.messages)
-            )
-            conversation_messages.messages.append(message)
-            self.messages_cache_service.set_conversation_messages(
-                conversation_id='conv:' + conversation_id, messages=conversation_messages
-            )
+            # conversation_messages: ConversationMessages = (
+            #     self.messages_cache_service.get_conversation_messages(
+            #         conversation_id='conv:' + conversation_id
+            #     )
+            # )
+            # all_messages: List[ConversationMessage] = list(
+            #     reversed(conversation_messages.messages)
+            # )
+            # conversation_messages.messages.append(message)
+            # self.messages_cache_service.set_conversation_messages(
+            #     conversation_id='conv:' + conversation_id, messages=conversation_messages
+            # )
             await self.send_admin_reply_message(
                 conversation_id=conversation_id,
                 admin_id=admin_id,

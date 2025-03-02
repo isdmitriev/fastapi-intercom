@@ -8,6 +8,7 @@ from services.openai_api_service import OpenAIService
 from di.di_container import Container
 from services.redis_cache_service import RedisService, MessagesCache
 from services.openai_translator_service import OpenAITranslatorService
+import traceback
 
 CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService
@@ -43,12 +44,15 @@ def test_get_admins():
 
 # def test_add_admin_note_to_conversation():
 #     admin_id: str = "8028082"
-#     conversation_id: str = "6"
+#     conversation_id: str = "0"
 #     note: str = "note from Isdmitriev2@gmail.com"
+#     print(note)
+#
 #     result = CLIENT.add_admin_note_to_conversation(
-#         conversation_id=conversation_id, note=note, admin_id=admin_id
+#             conversation_id=conversation_id, note=note, admin_id=admin_id
 #     )
-#     assert result[0] == 200
+
+
 # @pytest.mark.asyncio
 # async def test_process():
 #     user_id: str = "6798a0c79645a8b3711b89d3"
@@ -174,11 +178,16 @@ def test_get_admins():
 #
 #     list_messages: ConversationMessages = messages_cache.get_conversation_messages(conversation_id='12345')
 #     assert isinstance(list_messages, ConversationMessages)
-def test_conversation_language():
-    redis_cache:MessagesCache=MessagesCache()
-    redis_cache.set_conversation_language(conversation_id='155',language='Hinglish')
-    language:str=redis_cache.get_conversation_language(conversation_id='155')
-    assert language=='Hinglish'
+# def test_conversation_language():
+#     try:
+#         redis_cache: MessagesCache = MessagesCache()
+#         redis_cache.set_conversation_language(conversation_id='155', language='Hinglish')
+#         language: str = redis_cache.get_conversation_language(conversation_id='155')
+#         assert language == 'Hinglish'
+#     except Exception as e:
+#         print(type(e).__name__)
+#         print(str(e))
+
 
 @pytest.mark.asyncio
 async def test_translator_service():

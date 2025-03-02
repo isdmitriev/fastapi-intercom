@@ -11,7 +11,7 @@ async def dialog_process():
     admin_id: str = "8028082"
 
     status, data = intercom_client.create_conversation(
-        user_id=user_id, message="मेरी वेबसाइट में समस्या आ रही है।"
+        user_id=user_id, message="namaste"
     )
     new_conversatin_id: str = data.get("conversation_id", "")
     intercom_client.attach_admin_to_conversation(
