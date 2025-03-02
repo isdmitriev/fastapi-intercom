@@ -21,13 +21,13 @@ from typing import List
 class WebHookProcessor:
 
     def __init__(
-            self,
-            mongo_db_service: MongodbService,
-            openai_service: OpenAIService,
-            intercom_service: IntercomAPIService,
-            conversation_parts_service: ConversationPartsService,
-            messages_cache_service: MessagesCache,
-            translations_service: OpenAITranslatorService,
+        self,
+        mongo_db_service: MongodbService,
+        openai_service: OpenAIService,
+        intercom_service: IntercomAPIService,
+        conversation_parts_service: ConversationPartsService,
+        messages_cache_service: MessagesCache,
+        translations_service: OpenAITranslatorService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -134,7 +134,7 @@ class WebHookProcessor:
         )
         messages: ConversationMessages = ConversationMessages(messages=[message])
         self.messages_cache_service.set_conversation_messages(
-            conversation_id='conv:' + conversation_id, messages=messages
+            conversation_id="conv:" + conversation_id, messages=messages
         )
 
         if message_language in ["English", "Hindi", "Hinglish", "Bengali"]:
@@ -204,7 +204,7 @@ class WebHookProcessor:
                 )
 
     async def send_admin_note_async(
-            self, conversation_id: str, message: str, message_language
+        self, conversation_id: str, message: str, message_language
     ):
         admin_id: str = "8024055"
         if message_language == "Hindi":
@@ -407,12 +407,12 @@ class WebHookProcessor:
         )
         all_messages: ConversationMessages = (
             self.messages_cache_service.get_conversation_messages(
-                conversation_id='conv:' + conversation_id
+                conversation_id="conv:" + conversation_id
             )
         )
         all_messages.messages.append(message)
         self.messages_cache_service.set_conversation_messages(
-            conversation_id='conv:' + conversation_id, messages=all_messages
+            conversation_id="conv:" + conversation_id, messages=all_messages
         )
 
         if message_language in ["English", "Hindi", "Hinglish", "Bengali"]:
@@ -595,7 +595,7 @@ class WebHookProcessor:
             )
 
     async def send_admin_reply_message(
-            self, conversation_id: str, admin_id: str, message: str, target_language: str
+        self, conversation_id: str, admin_id: str, message: str, target_language: str
     ):
         if target_language == "Hinglish":
             admin_reply_message: str = (

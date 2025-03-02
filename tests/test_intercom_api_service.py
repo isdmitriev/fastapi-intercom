@@ -9,7 +9,9 @@ from di.di_container import Container
 from services.redis_cache_service import RedisService, MessagesCache
 from services.openai_translator_service import OpenAITranslatorService
 import traceback
-
+from services.http_service import IntercomAPIServiceV2
+from models.custom_exceptions import APPException
+import time
 CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService
 from models.models import MessageTranslated, User
@@ -189,18 +191,31 @@ def test_get_admins():
 #         print(str(e))
 
 
-@pytest.mark.asyncio
-async def test_translator_service():
-    client: OpenAITranslatorService = OpenAITranslatorService()
-    result = await client.translate_message_from_english_to_hinglish_async_v2(
-        "! hey there how are you doing today?"
-    )
-    print(result)
+# @pytest.mark.asyncio
+# async def test_translator_service():
+#     client: OpenAITranslatorService = OpenAITranslatorService()
+#     result = await client.translate_message_from_english_to_hinglish_async_v2(
+#         "! hey there how are you doing today?"
+#     )
+#     print(result)
+#
+#
+# @pytest.mark.asyncio
+# async def test_analyze_message():
+#     open_ai_client = OpenAIService()
+#     await open_ai_client.analyze_message_with_correction_async_v2(
+#         message="Bhai site par login nahi ho pa raha hai, mera engine start hi nahi ho raha, password dalte hi petrol khatam ho jata hai"
+#     )
 
 
-@pytest.mark.asyncio
-async def test_analyze_message():
-    open_ai_client = OpenAIService()
-    await open_ai_client.analyze_message_with_correction_async_v2(
-        message="Bhai site par login nahi ho pa raha hai, mera engine start hi nahi ho raha, password dalte hi petrol khatam ho jata hai"
-    )
+# @pytest.mark.asyncio
+# async def test_intercom_client_v2():
+#     admin_id: str = "8028082"
+#     client: IntercomAPIServiceV2 = IntercomAPIServiceV2()
+#     with pytest.raises(APPException) as app_exception:
+#         start = time.perf_counter()
+#         result = await client.add_admin_note_to_conversation_async(
+#             conversation_id="170", admin_id=admin_id, note="good day!"
+#         )
+#         end = time.perf_counter()
+#         print(f"Время выполнения: {end - start:.6f} seconds")
