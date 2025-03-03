@@ -32,7 +32,7 @@ class OpenAITranslatorService:
             temperature=0.2,
         )
         translated_text = response.choices[0].message.content
-        result = translated_text.strip('"')
+        result = translated_text.strip('"').lstrip('!')
 
         return result
 
@@ -55,7 +55,7 @@ class OpenAITranslatorService:
             temperature=0.2,
         )
         translated_text = response.choices[0].message.content
-        result = translated_text.strip('"')
+        result = translated_text.strip('"').lstrip('!')
 
         return result
 

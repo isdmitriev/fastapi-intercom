@@ -21,13 +21,13 @@ from typing import List
 class WebHookProcessor:
 
     def __init__(
-        self,
-        mongo_db_service: MongodbService,
-        openai_service: OpenAIService,
-        intercom_service: IntercomAPIService,
-        conversation_parts_service: ConversationPartsService,
-        messages_cache_service: MessagesCache,
-        translations_service: OpenAITranslatorService,
+            self,
+            mongo_db_service: MongodbService,
+            openai_service: OpenAIService,
+            intercom_service: IntercomAPIService,
+            conversation_parts_service: ConversationPartsService,
+            messages_cache_service: MessagesCache,
+            translations_service: OpenAITranslatorService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -204,7 +204,7 @@ class WebHookProcessor:
                 )
 
     async def send_admin_note_async(
-        self, conversation_id: str, message: str, message_language
+            self, conversation_id: str, message: str, message_language
     ):
         admin_id: str = "8024055"
         if message_language == "Hindi":
@@ -559,12 +559,13 @@ class WebHookProcessor:
         clean_message: str = BeautifulSoup(message, "html.parser").getText()
         admin_id: str = admin_note.get("author", {}).get("id", "")
         conversation_id: str = data["data"]["item"]["id"]
+        is_note_for_reply: bool = clean_message.startswith('!')
         conversation_language: str = (
             self.messages_cache_service.get_conversation_language(
                 conversation_id=conversation_id
             )
         )
-        if admin_id != admin_translator_id:
+        if admin_id != admin_translator_id and is_note_for_reply == True:
             user: User = User(id=admin_id, email="em@gmail.com", type="admin")
             print(user)
             message: ConversationMessage = ConversationMessage(
@@ -593,9 +594,11 @@ class WebHookProcessor:
                 target_language=conversation_language,
                 message=clean_message,
             )
+        else:
+            return
 
     async def send_admin_reply_message(
-        self, conversation_id: str, admin_id: str, message: str, target_language: str
+            self, conversation_id: str, admin_id: str, message: str, target_language: str
     ):
         if target_language == "Hinglish":
             admin_reply_message: str = (

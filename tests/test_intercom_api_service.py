@@ -219,3 +219,6 @@ def test_get_admins():
 #         )
 #         end = time.perf_counter()
 #         print(f"Время выполнения: {end - start:.6f} seconds")
+def test_string():
+    note='hello'
+    assert note.startswith('!')==True
