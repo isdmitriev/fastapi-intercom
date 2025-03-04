@@ -6,8 +6,11 @@ import logging
 from services.web_hook_processor import WebHookProcessor
 from services.redis_cache_service import RedisService
 from services.mongodb_service import MongodbService
+from services.es_service import ESService
 from di.di_container import Container
 from dependency_injector.wiring import inject
+from models.custom_exceptions import APPException
+from models.models import RequestInfo
 
 container = Container()
 container.init_resources()
@@ -23,6 +26,27 @@ app = FastAPI()
 logger = logging.getLogger(__name__)
 
 
+@app.exception_handler(APPException)
+async def handle_app_exception(
+    request: Request,
+    exception: APPException,
+    es_service: ESService = Depends(lambda: container.es_service),
+):
+    request_info: RequestInfo = RequestInfo(
+        exception=exception.__dict__,
+        status="error",
+        execution_time=None,
+        event_type=exception.event_type,
+    )
+    es_service.add_document(index_name="request", document=request_info.dict())
+    logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
+
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"error": exception.message},
+    )
+
+
 @app.on_event("startup")
 async def startup():
     container.init_resources()
@@ -33,15 +57,15 @@ async def shutdown():
     await container.shutdown_resources()
 
 
-@app.post('/webhook/test')
+@app.post("/webhook/test")
 @inject
 async def get_message(
-        request: Request,
-        web_hook_processor: WebHookProcessor = Depends(
-            lambda: container.web_hook_processor()
-        ),
-        mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
-        redis_service: RedisService = Depends(lambda: container.redis_service()),
+    request: Request,
+    web_hook_processor: WebHookProcessor = Depends(
+        lambda: container.web_hook_processor()
+    ),
+    mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
+    redis_service: RedisService = Depends(lambda: container.redis_service()),
 ):
     payload: Dict = await request.json()
 
@@ -68,12 +92,12 @@ async def get_message(
 @app.post("/webhook/message")
 @inject
 async def get_message(
-        request: Request,
-        web_hook_processor: WebHookProcessor = Depends(
-            lambda: container.web_hook_processor()
-        ),
-        mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
-        redis_service: RedisService = Depends(lambda: container.redis_service()),
+    request: Request,
+    web_hook_processor: WebHookProcessor = Depends(
+        lambda: container.web_hook_processor()
+    ),
+    mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
+    redis_service: RedisService = Depends(lambda: container.redis_service()),
 ):
     try:
         payload: Dict = await request.json()
@@ -98,7 +122,9 @@ async def get_message(
             )
     except ValueError as e:
 
-        return Response(status_code=status.HTTP_400_BAD_REQUEST, content="Invalid JSON")
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content="Invalid JSON"
+        )
 
     except Exception as ex:
 

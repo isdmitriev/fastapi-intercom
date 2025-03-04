@@ -7,6 +7,7 @@ from services.openai_api_service import OpenAIService
 from services.conversation_parts_service import ConversationPartsService
 from services.redis_cache_service import MessagesCache
 from services.openai_translator_service import OpenAITranslatorService
+from services.es_service import ESService
 
 
 class Container(containers.DeclarativeContainer):
@@ -22,6 +23,7 @@ class Container(containers.DeclarativeContainer):
 
     mongo_db_service = providers.Singleton(MongodbService)
     redis_service = providers.Singleton(RedisService)
+    es_service = providers.Singleton(ESService)
     intercom_api_service = providers.Singleton(IntercomAPIService)
     open_ai_service = providers.Singleton(OpenAIService)
     translations_service = providers.Singleton(OpenAITranslatorService)

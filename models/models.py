@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List, Any, Dict
+from models.custom_exceptions import APPException
 
 
 class HTTPResponseData(BaseModel):
@@ -52,5 +53,6 @@ class UserMessage(BaseModel):
 
 class RequestInfo(BaseModel):
     status: str
-    execution_time: float
+    execution_time: float | None
     event_type: str
+    exception: Optional[Dict[str, Any]] = None

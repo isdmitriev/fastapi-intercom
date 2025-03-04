@@ -8,3 +8,5 @@ class APPException(Exception):
         self.event_type = event_type
         self.ex_class = ex_class
         self.params = params
+        self.message=message
+

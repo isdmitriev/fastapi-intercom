@@ -221,10 +221,12 @@ def test_get_admins():
 #         )
 #         end = time.perf_counter()
 #         print(f"Время выполнения: {end - start:.6f} seconds")
-# def test_es_service():
-#     client: ESService = ESService()
-#     # client.create_index('requests')
-#     request_info: RequestInfo = RequestInfo(status='ok', execution_time=2, event_type='conversation.admin.noted')
-#     res=client.add_document(index_name='requests', document=request_info.dict())
-
-
+def test_es_service():
+    client: ESService = ESService()
+    # client.create_index('requests')
+    exception: APPException = APPException(message='error', event_type='conversation.admin.noted', ex_class='class',
+                                           params={})
+    request_info: RequestInfo = RequestInfo(exception=exception.__dict__, status='error', execution_time=None,
+                                            event_type='conversation.admin.noted')
+    res = client.add_document(index_name='requests', document=request_info.dict())
+    print(res)
