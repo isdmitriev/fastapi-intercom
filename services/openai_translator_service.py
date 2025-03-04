@@ -14,7 +14,7 @@ class OpenAITranslatorService:
         self.client_async = AsyncOpenAI(api_key=os.getenv("OPENAPI_KEY"))
 
     async def translate_message_from_english_to_hindi_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following English message into Hindi (हिन्दी) while preserving the exact meaning and making it easy to understand for a native Hindi speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Hindi-speaking players commonly understand."
         response = await self.client_async.chat.completions.create(
@@ -32,12 +32,12 @@ class OpenAITranslatorService:
             temperature=0.2,
         )
         translated_text = response.choices[0].message.content
-        result = translated_text.strip('"').lstrip('!')
+        result = translated_text.strip('"')
 
         return result
 
     async def translate_message_from_english_to_bengali_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from Bangladesh and India. Your task is to translate the following English message into Bengali (বাংলা) while preserving the exact meaning and making it easy to understand for a native Bengali speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Bengali-speaking players commonly understand"
         response = await self.client_async.chat.completions.create(
@@ -55,12 +55,12 @@ class OpenAITranslatorService:
             temperature=0.2,
         )
         translated_text = response.choices[0].message.content
-        result = translated_text.strip('"').lstrip('!')
+        result = translated_text.strip('"')
 
         return result
 
     async def translate_message_from_english_to_hinglish_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India and Bangladesh. Your task is to translate the following English message into Romanized Hindi (Hinglish) while preserving the exact meaning and making it easy to understand for a native Hindi speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Indian players commonly understand."
         response = await self.client_async.chat.completions.create(
@@ -82,7 +82,7 @@ class OpenAITranslatorService:
         return result
 
     async def translate_message_from_english_to_hinglish_async_v2(
-        self, message: str
+            self, message: str
     ) -> str | None:
         prompt = f"""You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India and Bangladesh. Your task is to translate the following English message into **Hinglish (Romanized Hindi)**, ensuring that the translation is written **entirely in the Latin alphabet** (English letters).
 
@@ -111,7 +111,7 @@ Now, translate the following message into **Hinglish (Romanized Hindi) only**:
         return result
 
     async def translate_message_from_bengali_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from Bangladesh and India. Your task is to translate the following Bengali (বাংলা) message into English while preserving the exact meaning and making it easy to understand for a native English speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that English-speaking players commonly understand."
         response = await self.client_async.chat.completions.create(
@@ -134,7 +134,7 @@ Now, translate the following message into **Hinglish (Romanized Hindi) only**:
         return result
 
     async def translate_message_from_hindi_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following Hindi (हिंदी) message into English while preserving the exact meaning and making it easy to understand for a native English speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that English-speaking players commonly understand."
         response = await self.client_async.chat.completions.create(
@@ -157,7 +157,7 @@ Now, translate the following message into **Hinglish (Romanized Hindi) only**:
         return result
 
     async def translate_message_from_hinglish_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following Hinglish (a mix of Hindi and English) message into proper English while preserving the exact meaning and making it easy to understand for a native English speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that English-speaking players commonly understand. Also, ensure that informal or slang expressions are appropriately adapted for clarity and professionalism."
         response = await self.client_async.chat.completions.create(

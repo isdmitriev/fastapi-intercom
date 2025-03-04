@@ -566,6 +566,7 @@ class WebHookProcessor:
             )
         )
         if admin_id != admin_translator_id and is_note_for_reply == True:
+            clean_message = clean_message.lstrip('!')
             user: User = User(id=admin_id, email="em@gmail.com", type="admin")
             print(user)
             message: ConversationMessage = ConversationMessage(
