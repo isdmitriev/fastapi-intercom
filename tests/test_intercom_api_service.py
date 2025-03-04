@@ -5,6 +5,7 @@ from typing import Dict
 import pytest
 import asyncio
 from services.openai_api_service import OpenAIService
+from services.es_service import ESService
 from di.di_container import Container
 from services.redis_cache_service import RedisService, MessagesCache
 from services.openai_translator_service import OpenAITranslatorService
@@ -12,9 +13,10 @@ import traceback
 from services.http_service import IntercomAPIServiceV2
 from models.custom_exceptions import APPException
 import time
+
 CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService
-from models.models import MessageTranslated, User
+from models.models import MessageTranslated, User, RequestInfo
 from models.models import ConversationMessages, ConversationMessage, UserMessage
 
 
@@ -219,7 +221,10 @@ def test_get_admins():
 #         )
 #         end = time.perf_counter()
 #         print(f"Время выполнения: {end - start:.6f} seconds")
-def test_string():
-    note='!hello!'
-    note=note.lstrip('!')
-    assert note=='hello!'
+# def test_es_service():
+#     client: ESService = ESService()
+#     # client.create_index('requests')
+#     request_info: RequestInfo = RequestInfo(status='ok', execution_time=2, event_type='conversation.admin.noted')
+#     res=client.add_document(index_name='requests', document=request_info.dict())
+
+

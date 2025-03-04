@@ -47,4 +47,10 @@ class UserMessage(BaseModel):
     translated_text: str
     note: str | None
     possible_interpretations: List[str] = []
-    corrected_text:str
+    corrected_text: str
+
+
+class RequestInfo(BaseModel):
+    status: str
+    execution_time: float
+    event_type: str
