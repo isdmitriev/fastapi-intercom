@@ -13,6 +13,7 @@ from models.custom_exceptions import APPException
 from models.models import RequestInfo
 from openai._exceptions import OpenAIError
 from redis.exceptions import RedisError
+from aiohttp.client_exceptions import ClientResponseError
 
 container = Container()
 container.init_resources()
@@ -85,6 +86,24 @@ async def handle_redis_error(
         exception=exception.__dict__, status="error", execution_time=None, event_type=""
     )
     es_service.add_document(index_name="requests", document=request_info.dict())
+    logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
+
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"error": exception.message},
+    )
+
+
+@app.exception_handler(ClientResponseError)
+async def handle_http_error(
+        request: Request,
+        error: ClientResponseError,
+        es_service: ESService = Depends(lambda: container.es_service),
+):
+    ex_class: str = type(error).__module__ + type(error).__name__
+    exception: APPException = APPException(message=str(error), ex_class=ex_class, event_type='', params={})
+    request_info: str = RequestInfo(exception=exception.__dict__, status='error', execution_time=None, event_type="")
+    es_service.add_document(index_name='requests', document=request_info.dict())
     logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
 
     return JSONResponse(

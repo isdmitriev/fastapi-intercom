@@ -56,3 +56,4 @@ class RequestInfo(BaseModel):
     execution_time: float | None
     event_type: str
     exception: Optional[Dict[str, Any]] = None
+    timestamp: Optional[datetime] = datetime.utcnow().isoformat()
