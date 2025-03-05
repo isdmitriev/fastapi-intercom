@@ -10,24 +10,28 @@ from models.models import (
     ConversationMessage,
     ConversationMessages,
 )
+from models.custom_exceptions import APPException
 from tasks import mongodb_task_async, translate_message_for_admin_bengali
 import datetime
 from services.conversation_parts_service import ConversationPartsService
 from services.redis_cache_service import MessagesCache
 from services.openai_translator_service import OpenAITranslatorService
 from typing import List
+from aiohttp.client_exceptions import ClientResponseError
+from openai._exceptions import OpenAIError
+from redis.exceptions import RedisError
 
 
 class WebHookProcessor:
 
     def __init__(
-        self,
-        mongo_db_service: MongodbService,
-        openai_service: OpenAIService,
-        intercom_service: IntercomAPIService,
-        conversation_parts_service: ConversationPartsService,
-        messages_cache_service: MessagesCache,
-        translations_service: OpenAITranslatorService,
+            self,
+            mongo_db_service: MongodbService,
+            openai_service: OpenAIService,
+            intercom_service: IntercomAPIService,
+            conversation_parts_service: ConversationPartsService,
+            messages_cache_service: MessagesCache,
+            translations_service: OpenAITranslatorService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -107,104 +111,141 @@ class WebHookProcessor:
         print("conversation.user.created")
 
     async def handle_conversation_user_created_v3(self, data: Dict):
-        print("conversation.user.created")
-        conversation_id: str = data.get("data", {}).get("item", {}).get("id", "")
-        self.intercom_service.attach_admin_to_conversation(
-            conversation_id=conversation_id, admin_id=8028082
-        )
-        user_data: Dict = data.get("data", {}).get("item", {}).get("source", {})
-        message: str = user_data.get("body", "")
-        clean_message: str = BeautifulSoup(message, "html.parser").getText()
-        user_id: str = data.get("author", {}).get("id", "")
-        user_email: str = data.get("author", {}).get("email", "")
-        user: User = User(id=user_id, email=user_email, type="user")
-        admin_id = "8024055"
-        message_language: str = (
-            await self.translations_service.detect_language_async_v2(
-                message=clean_message
+        try:
+            print("conversation.user.created")
+            conversation_id: str = data.get("data", {}).get("item", {}).get("id", "")
+            self.intercom_service.attach_admin_to_conversation(
+                conversation_id=conversation_id, admin_id=8028082
             )
-        )
-        message: ConversationMessage = ConversationMessage(
-            conversation_id=conversation_id,
-            time=datetime.datetime.now(),
-            message=clean_message,
-            user=user,
-            language=message_language,
-            message_type="conversation.user.created",
-        )
-        messages: ConversationMessages = ConversationMessages(messages=[message])
-        self.messages_cache_service.set_conversation_messages(
-            conversation_id="conv:" + conversation_id, messages=messages
-        )
-
-        if message_language in ["English", "Hindi", "Hinglish", "Bengali"]:
-            self.messages_cache_service.set_conversation_language(
-                conversation_id=conversation_id, language=message_language
-            )
-            analyzed_user_message: UserMessage = (
-                await self.openai_service.analyze_message_with_correction(
+            user_data: Dict = data.get("data", {}).get("item", {}).get("source", {})
+            message: str = user_data.get("body", "")
+            clean_message: str = BeautifulSoup(message, "html.parser").getText()
+            user_id: str = data.get("author", {}).get("id", "")
+            user_email: str = data.get("author", {}).get("email", "")
+            user: User = User(id=user_id, email=user_email, type="user")
+            admin_id = "8024055"
+            message_language: str = (
+                await self.translations_service.detect_language_async_v2(
                     message=clean_message
                 )
             )
-            original_message = analyzed_user_message.original_text
-            corrected_message = analyzed_user_message.corrected_text
-            translated_text = analyzed_user_message.translated_text
+            message: ConversationMessage = ConversationMessage(
+                conversation_id=conversation_id,
+                time=datetime.datetime.now(),
+                message=clean_message,
+                user=user,
+                language=message_language,
+                message_type="conversation.user.created",
+            )
+            messages: ConversationMessages = ConversationMessages(messages=[message])
+            self.messages_cache_service.set_conversation_messages(
+                conversation_id="conv:" + conversation_id, messages=messages
+            )
 
-            if analyzed_user_message.status == "no_error":
-                if message_language == "Hindi":
-                    await self.send_admin_note_async(
-                        conversation_id=conversation_id,
-                        message=clean_message,
-                        message_language=message_language,
-                    )
-
-                elif message_language == "Hinglish":
-                    await self.send_admin_note_async(
-                        conversation_id=conversation_id,
-                        message=clean_message,
-                        message_language=message_language,
-                    )
-
-                elif message_language == "Bengali":
-                    await self.send_admin_note_async(
-                        conversation_id=conversation_id,
-                        message=clean_message,
-                        message_language=message_language,
-                    )
-
-                else:
-                    return
-
-            elif analyzed_user_message.status == "error_fixed":
-                if message_language == "Hindi":
-                    await self.send_admin_note_async(
-                        conversation_id=conversation_id,
-                        message=corrected_message,
-                        message_language=message_language,
-                    )
-                if message_language == "Hinglish":
-                    await self.send_admin_note_async(
-                        conversation_id=conversation_id,
-                        message=corrected_message,
-                        message_language=message_language,
-                    )
-                if message_language == "Bengali":
-                    await self.send_admin_note_async(
-                        conversation_id=conversation_id,
-                        message=corrected_message,
-                        message_language=message_language,
-                    )
-            elif analyzed_user_message.status == "uncertain":
-                note: str = await self.create_admin_note(analyzed_user_message)
-
-                await self.send_admin_note_async(
-                    conversation_id=conversation_id,
-                    message=note,
-                    message_language="English",
+            if message_language in ["English", "Hindi", "Hinglish", "Bengali"]:
+                self.messages_cache_service.set_conversation_language(
+                    conversation_id=conversation_id, language=message_language
                 )
+                analyzed_user_message: UserMessage = (
+                    await self.openai_service.analyze_message_with_correction(
+                        message=clean_message
+                    )
+                )
+                original_message = analyzed_user_message.original_text
+                corrected_message = analyzed_user_message.corrected_text
+                translated_text = analyzed_user_message.translated_text
+
+                if analyzed_user_message.status == "no_error":
+                    if message_language == "Hindi":
+                        await self.send_admin_note_async(
+                            conversation_id=conversation_id,
+                            message=clean_message,
+                            message_language=message_language,
+                        )
+
+                    elif message_language == "Hinglish":
+                        await self.send_admin_note_async(
+                            conversation_id=conversation_id,
+                            message=clean_message,
+                            message_language=message_language,
+                        )
+
+                    elif message_language == "Bengali":
+                        await self.send_admin_note_async(
+                            conversation_id=conversation_id,
+                            message=clean_message,
+                            message_language=message_language,
+                        )
+
+                    else:
+                        return
+
+                elif analyzed_user_message.status == "error_fixed":
+                    if message_language == "Hindi":
+                        await self.send_admin_note_async(
+                            conversation_id=conversation_id,
+                            message=corrected_message,
+                            message_language=message_language,
+                        )
+                    if message_language == "Hinglish":
+                        await self.send_admin_note_async(
+                            conversation_id=conversation_id,
+                            message=corrected_message,
+                            message_language=message_language,
+                        )
+                    if message_language == "Bengali":
+                        await self.send_admin_note_async(
+                            conversation_id=conversation_id,
+                            message=corrected_message,
+                            message_language=message_language,
+                        )
+                elif analyzed_user_message.status == "uncertain":
+                    note: str = await self.create_admin_note(analyzed_user_message)
+
+                    await self.send_admin_note_async(
+                        conversation_id=conversation_id,
+                        message=note,
+                        message_language="English",
+                    )
+        except ClientResponseError as client_response_error:
+            full_exception_name = f"{type(client_response_error).__module__}.{type(client_response_error).__name__}"
+            exception_message: str = str(client_response_error)
+            app_exception: APPException = APPException(
+                message=exception_message,
+                ex_class=full_exception_name,
+                event_type="conversation.user.created",
+                params={"conversation_id": conversation_id},
+            )
+            raise app_exception
+        except OpenAIError as open_ai_error:
+            full_exception_name = (
+                f"{type(open_ai_error).__module__}.{type(open_ai_error).__name__}"
+            )
+            exception_message: str = str(open_ai_error)
+            app_exception: APPException = APPException(
+                message=exception_message,
+                ex_class=full_exception_name,
+                event_type="conversation.user.created",
+                params={"conversation_id": conversation_id},
+            )
+            raise app_exception
+        except RedisError as redis_error:
+            full_exception_name = (
+                f"{type(redis_error).__module__}.{type(redis_error).__name__}"
+            )
+            exception_message: str = str(redis_error)
+            app_exception: APPException = APPException(
+                message=exception_message,
+                ex_class=full_exception_name,
+                event_type="conversation.user.created",
+                params={"conversation_id": conversation_id},
+            )
+            raise app_exception
+        except Exception as e:
+            raise e
 
     async def send_admin_note_async(
-        self, conversation_id: str, message: str, message_language
+            self, conversation_id: str, message: str, message_language
     ):
         admin_id: str = "8024055"
         if message_language == "Hindi":
@@ -383,69 +424,106 @@ class WebHookProcessor:
             return
 
     async def handle_conversation_user_replied_v3(self, data: Dict):
-        user_reply: Dict = data["data"]["item"]["conversation_parts"][
-            "conversation_parts"
-        ][0]
-        message: str = user_reply.get("body", "")
-        clean_message: str = BeautifulSoup(message, "html.parser").getText()
-        user_email: str = user_reply.get("author", {}).get("email", "")
-        user_id: str = user_reply.get("author", {}).get("id", "")
-        conversation_id: str = data["data"]["item"]["id"]
-        message_language: str = (
-            await self.translations_service.detect_language_async_v2(
-                message=clean_message
-            )
-        )
-        user: User = User(id=user_id, email=user_email, type="user")
-        message: ConversationMessage = ConversationMessage(
-            conversation_id=conversation_id,
-            time=datetime.datetime.now(),
-            message=clean_message,
-            user=user,
-            language=message_language,
-            message_type="conversation.user.replied",
-        )
-        all_messages: ConversationMessages = (
-            self.messages_cache_service.get_conversation_messages(
-                conversation_id="conv:" + conversation_id
-            )
-        )
-        all_messages.messages.append(message)
-        self.messages_cache_service.set_conversation_messages(
-            conversation_id="conv:" + conversation_id, messages=all_messages
-        )
-
-        if message_language in ["English", "Hindi", "Hinglish", "Bengali"]:
-            self.messages_cache_service.set_conversation_language(
-                conversation_id=conversation_id, language=message_language
-            )
-            analyzed_message: UserMessage = (
-                await self.openai_service.analyze_message_with_correction(
+        try:
+            user_reply: Dict = data["data"]["item"]["conversation_parts"][
+                "conversation_parts"
+            ][0]
+            message: str = user_reply.get("body", "")
+            clean_message: str = BeautifulSoup(message, "html.parser").getText()
+            user_email: str = user_reply.get("author", {}).get("email", "")
+            user_id: str = user_reply.get("author", {}).get("id", "")
+            conversation_id: str = data["data"]["item"]["id"]
+            message_language: str = (
+                await self.translations_service.detect_language_async_v2(
                     message=clean_message
                 )
             )
-            if analyzed_message.status == "no_error":
-                if message_language != "English":
+            user: User = User(id=user_id, email=user_email, type="user")
+            message: ConversationMessage = ConversationMessage(
+                conversation_id=conversation_id,
+                time=datetime.datetime.now(),
+                message=clean_message,
+                user=user,
+                language=message_language,
+                message_type="conversation.user.replied",
+            )
+            all_messages: ConversationMessages = (
+                self.messages_cache_service.get_conversation_messages(
+                    conversation_id="conv:" + conversation_id
+                )
+            )
+            all_messages.messages.append(message)
+            self.messages_cache_service.set_conversation_messages(
+                conversation_id="conv:" + conversation_id, messages=all_messages
+            )
+
+            if message_language in ["English", "Hindi", "Hinglish", "Bengali"]:
+                self.messages_cache_service.set_conversation_language(
+                    conversation_id=conversation_id, language=message_language
+                )
+                analyzed_message: UserMessage = (
+                    await self.openai_service.analyze_message_with_correction(
+                        message=clean_message
+                    )
+                )
+                if analyzed_message.status == "no_error":
+                    if message_language != "English":
+                        await self.send_admin_note_async(
+                            conversation_id=conversation_id,
+                            message=clean_message,
+                            message_language=message_language,
+                        )
+                if analyzed_message.status == "error_fixed":
+                    corrected_message: str = analyzed_message.corrected_text
                     await self.send_admin_note_async(
                         conversation_id=conversation_id,
-                        message=clean_message,
+                        message=corrected_message,
                         message_language=message_language,
                     )
-            if analyzed_message.status == "error_fixed":
-                corrected_message: str = analyzed_message.corrected_text
-                await self.send_admin_note_async(
-                    conversation_id=conversation_id,
-                    message=corrected_message,
-                    message_language=message_language,
-                )
-            if analyzed_message.status == "uncertain":
-                note: str = await self.create_admin_note(analyzed_message)
-                await self.send_admin_note_async(
-                    conversation_id=conversation_id,
-                    message=note,
-                    message_language="English",
-                )
-        return
+                if analyzed_message.status == "uncertain":
+                    note: str = await self.create_admin_note(analyzed_message)
+                    await self.send_admin_note_async(
+                        conversation_id=conversation_id,
+                        message=note,
+                        message_language="English",
+                    )
+            return
+        except ClientResponseError as client_response_error:
+            full_exception_name = f"{type(client_response_error).__module__}.{type(client_response_error).__name__}"
+            exception_message: str = str(client_response_error)
+            app_exception: APPException = APPException(
+                message=exception_message,
+                ex_class=full_exception_name,
+                event_type="conversation.user.replied",
+                params={"conversation_id": conversation_id},
+            )
+            raise app_exception
+        except OpenAIError as open_ai_error:
+            full_exception_name = (
+                f"{type(open_ai_error).__module__}.{type(open_ai_error).__name__}"
+            )
+            exception_message: str = str(open_ai_error)
+            app_exception: APPException = APPException(
+                message=exception_message,
+                ex_class=full_exception_name,
+                event_type="conversation.user.replied",
+                params={"conversation_id": conversation_id},
+            )
+            raise app_exception
+        except RedisError as redis_error:
+            full_exception_name = (
+                f"{type(redis_error).__module__}.{type(redis_error).__name__}"
+            )
+            exception_message: str = str(redis_error)
+            app_exception: APPException = APPException(
+                message=exception_message,
+                ex_class=full_exception_name,
+                event_type="conversation.user.replied",
+                params={"conversation_id": conversation_id},
+            )
+            raise app_exception
+        except Exception as e:
+            raise e
 
     async def handle_conversation_user_replied_v2(self, data: Dict):
         user_reply: Dict = data["data"]["item"]["conversation_parts"][
@@ -550,56 +628,93 @@ class WebHookProcessor:
         print("conversation.admin.noted")
 
     async def handle_conversation_admin_noted_v3(self, data: Dict):
-        print("conversation.admin.noted")
-        admin_translator_id: str = "8024055"
-        admin_note: Dict = data["data"]["item"]["conversation_parts"][
-            "conversation_parts"
-        ][0]
-        message: str = admin_note.get("body", "")
-        clean_message: str = BeautifulSoup(message, "html.parser").getText()
-        admin_id: str = admin_note.get("author", {}).get("id", "")
-        conversation_id: str = data["data"]["item"]["id"]
-        is_note_for_reply: bool = clean_message.startswith("!")
-        conversation_language: str = (
-            self.messages_cache_service.get_conversation_language(
-                conversation_id=conversation_id
+        try:
+            print("conversation.admin.noted")
+            admin_translator_id: str = "8024055"
+            admin_note: Dict = data["data"]["item"]["conversation_parts"][
+                "conversation_parts"
+            ][0]
+            message: str = admin_note.get("body", "")
+            clean_message: str = BeautifulSoup(message, "html.parser").getText()
+            admin_id: str = admin_note.get("author", {}).get("id", "")
+            conversation_id: str = data["data"]["item"]["id"]
+            is_note_for_reply: bool = clean_message.startswith("!")
+            conversation_language: str = (
+                self.messages_cache_service.get_conversation_language(
+                    conversation_id=conversation_id
+                )
             )
-        )
-        if admin_id != admin_translator_id and is_note_for_reply == True:
-            clean_message = clean_message.lstrip("!")
-            user: User = User(id=admin_id, email="em@gmail.com", type="admin")
-            print(user)
-            message: ConversationMessage = ConversationMessage(
-                conversation_id=conversation_id,
-                time=datetime.datetime.now(),
-                message=clean_message,
-                user=user,
-                language="English",
-                message_type="conversation.admin.noted",
+            if admin_id != admin_translator_id and is_note_for_reply == True:
+                clean_message = clean_message.lstrip("!")
+                user: User = User(id=admin_id, email="em@gmail.com", type="admin")
+                print(user)
+                message: ConversationMessage = ConversationMessage(
+                    conversation_id=conversation_id,
+                    time=datetime.datetime.now(),
+                    message=clean_message,
+                    user=user,
+                    language="English",
+                    message_type="conversation.admin.noted",
+                )
+                # conversation_messages: ConversationMessages = (
+                #     self.messages_cache_service.get_conversation_messages(
+                #         conversation_id='conv:' + conversation_id
+                #     )
+                # )
+                # all_messages: List[ConversationMessage] = list(
+                #     reversed(conversation_messages.messages)
+                # )
+                # conversation_messages.messages.append(message)
+                # self.messages_cache_service.set_conversation_messages(
+                #     conversation_id='conv:' + conversation_id, messages=conversation_messages
+                # )
+                await self.send_admin_reply_message(
+                    conversation_id=conversation_id,
+                    admin_id=admin_id,
+                    target_language=conversation_language,
+                    message=clean_message,
+                )
+            else:
+                return
+        except ClientResponseError as client_response_error:
+            full_exception_name = f"{type(client_response_error).__module__}.{type(client_response_error).__name__}"
+            exception_message: str = str(client_response_error)
+            app_exception: APPException = APPException(
+                message=exception_message,
+                ex_class=full_exception_name,
+                event_type="conversation.admin.noted",
+                params={"conversation_id": conversation_id},
             )
-            # conversation_messages: ConversationMessages = (
-            #     self.messages_cache_service.get_conversation_messages(
-            #         conversation_id='conv:' + conversation_id
-            #     )
-            # )
-            # all_messages: List[ConversationMessage] = list(
-            #     reversed(conversation_messages.messages)
-            # )
-            # conversation_messages.messages.append(message)
-            # self.messages_cache_service.set_conversation_messages(
-            #     conversation_id='conv:' + conversation_id, messages=conversation_messages
-            # )
-            await self.send_admin_reply_message(
-                conversation_id=conversation_id,
-                admin_id=admin_id,
-                target_language=conversation_language,
-                message=clean_message,
+            raise app_exception
+        except OpenAIError as open_ai_error:
+            full_exception_name = (
+                f"{type(open_ai_error).__module__}.{type(open_ai_error).__name__}"
             )
-        else:
-            return
+            exception_message: str = str(open_ai_error)
+            app_exception: APPException = APPException(
+                message=exception_message,
+                ex_class=full_exception_name,
+                event_type="conversation.admin.noted",
+                params={"conversation_id": conversation_id},
+            )
+            raise app_exception
+        except RedisError as redis_error:
+            full_exception_name = (
+                f"{type(redis_error).__module__}.{type(redis_error).__name__}"
+            )
+            exception_message: str = str(redis_error)
+            app_exception: APPException = APPException(
+                message=exception_message,
+                ex_class=full_exception_name,
+                event_type="conversation.admin.noted",
+                params={"conversation_id": conversation_id},
+            )
+            raise app_exception
+        except Exception as e:
+            raise e
 
     async def send_admin_reply_message(
-        self, conversation_id: str, admin_id: str, message: str, target_language: str
+            self, conversation_id: str, admin_id: str, message: str, target_language: str
     ):
         if target_language == "Hinglish":
             admin_reply_message: str = (

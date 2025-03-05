@@ -15,7 +15,7 @@ class HTTPRequestService:
         pass
 
     async def get_request_async(
-            self, url: str, headers: Dict[str, Any]
+        self, url: str, headers: Dict[str, Any]
     ) -> Tuple[int, Dict]:
         async with aiohttp.ClientSession() as session:
             async with session.get(url=url, headers=headers) as response:
@@ -26,7 +26,7 @@ class HTTPRequestService:
                     raise await response.raise_for_status()
 
     async def post_request_async(
-            self, url: str, headers: Dict[str, Any], payload: Dict[str, Any]
+        self, url: str, headers: Dict[str, Any], payload: Dict[str, Any]
     ) -> Tuple[int, Dict]:
         async with aiohttp.ClientSession() as session:
             async with session.post(url=url, headers=headers, json=payload) as response:
@@ -43,7 +43,7 @@ class IntercomAPIServiceV2:
         self.token = os.getenv("INTERCOM_KEY")
 
     async def add_admin_note_to_conversation_async(
-            self, conversation_id: str, admin_id: str, note: str
+        self, conversation_id: str, admin_id: str, note: str
     ):
         url: str = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         headers = {
@@ -80,7 +80,7 @@ class IntercomAPIServiceV2:
             raise e
 
     async def add_admin_message_to_conversation_async(
-            self, conversation_id: str, admin_id: str, message: str
+        self, conversation_id: str, admin_id: str, message: str
     ):
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         headers = {
