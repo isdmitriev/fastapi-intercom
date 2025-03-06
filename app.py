@@ -14,6 +14,7 @@ from models.models import RequestInfo
 from openai._exceptions import OpenAIError
 from redis.exceptions import RedisError
 from aiohttp.client_exceptions import ClientResponseError
+import time
 
 container = Container()
 container.init_resources()
@@ -23,25 +24,33 @@ container.wire(
         "services.web_hook_processor",
         "services.redis_cache_service",
         "services.mongodb_service",
+        "services.es_service",
     ]
 )
 app = FastAPI()
 logger = logging.getLogger(__name__)
 
 
+@app.on_event("startup")
+async def startup():
+    container.init_resources()
+
+
 @app.exception_handler(APPException)
+@inject
 async def handle_app_exception(
         request: Request,
         exception: APPException,
-        es_service: ESService = Depends(lambda: container.es_service),
+        # es_service: ESService = Depends(lambda: container.es_service()),
 ):
+    es_service: ESService = container.es_service()
     request_info: RequestInfo = RequestInfo(
         exception=exception.__dict__,
         status="error",
         execution_time=None,
         event_type=exception.event_type,
     )
-    es_service.add_document(index_name="request", document=request_info.dict())
+    es_service.add_document(index_name="requests", document=request_info.dict())
     logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
 
     return JSONResponse(
@@ -51,12 +60,14 @@ async def handle_app_exception(
 
 
 @app.exception_handler(OpenAIError)
+@inject
 async def handle_open_ai_exception(
         request: Request,
         openai_error: OpenAIError,
-        es_service: ESService = Depends(lambda: container.es_service),
+        es_service: ESService = Depends(lambda: container.es_service()),
 ):
-    ex_class: str = type(openai_error).__module__ + type(openai_error).__name__
+    es_service: ESService = container.es_service()
+    ex_class: str = type(openai_error).__module__ + "." + type(openai_error).__name__
     exception: APPException = APPException(
         message=str(openai_error), event_type="", ex_class=ex_class, params={}
     )
@@ -73,11 +84,14 @@ async def handle_open_ai_exception(
 
 
 @app.exception_handler(RedisError)
+@inject
 async def handle_redis_error(
         request: Request,
         error: RedisError,
-        es_service: ESService = Depends(lambda: container.es_service),
+        # es_service: ESService = Depends(lambda: container.es_service()),
 ):
+    es_service: ESService = container.es_service()
+
     ex_class: str = type(error).__module__ + type(error).__name__
     exception: APPException = APPException(
         message=str(error), event_type="", ex_class=ex_class, params={}
@@ -95,15 +109,20 @@ async def handle_redis_error(
 
 
 @app.exception_handler(ClientResponseError)
+@inject
 async def handle_http_error(
         request: Request,
         error: ClientResponseError,
-        es_service: ESService = Depends(lambda: container.es_service),
+        es_service: ESService = Depends(lambda: container.es_service()),
 ):
     ex_class: str = type(error).__module__ + type(error).__name__
-    exception: APPException = APPException(message=str(error), ex_class=ex_class, event_type='', params={})
-    request_info: str = RequestInfo(exception=exception.__dict__, status='error', execution_time=None, event_type="")
-    es_service.add_document(index_name='requests', document=request_info.dict())
+    exception: APPException = APPException(
+        message=str(error), ex_class=ex_class, event_type="", params={}
+    )
+    request_info: str = RequestInfo(
+        exception=exception.__dict__, status="error", execution_time=None, event_type=""
+    )
+    es_service.add_document(index_name="requests", document=request_info.dict())
     logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
 
     return JSONResponse(
@@ -112,9 +131,9 @@ async def handle_http_error(
     )
 
 
-@app.on_event("startup")
-async def startup():
-    container.init_resources()
+# @app.on_event("startup")
+# async def startup():
+#     container.init_resources()
 
 
 @app.on_event("shutdown")
@@ -163,8 +182,10 @@ async def get_message(
         ),
         mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
         redis_service: RedisService = Depends(lambda: container.redis_service()),
+        es_service: ESService = Depends(lambda: container.es_service()),
 ):
     try:
+
         payload: Dict = await request.json()
 
         notification_event_id: str | None = payload.get("id", None)
@@ -172,6 +193,7 @@ async def get_message(
             return Response(status_code=status.HTTP_200_OK)
         is_event_handled = redis_service.set_key(notification_event_id, "1")
         if is_event_handled == True:
+            start_time = time.perf_counter()
 
             # await mongo_db_service.add_document_to_collection(
             #     "intercom_app", "event_logs", payload
@@ -179,6 +201,14 @@ async def get_message(
 
             topic: str = payload.get("topic", "")
             await web_hook_processor.process_message(topic, payload)
+            end_time = time.perf_counter()
+            request_info: RequestInfo = RequestInfo(
+                exception=None,
+                status="ok",
+                execution_time=end_time - start_time,
+                event_type='',
+            )
+            es_service.add_document(index_name="requests", document=request_info.dict())
 
             return Response(status_code=status.HTTP_200_OK)
         else:

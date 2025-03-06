@@ -1,16 +1,32 @@
-from redis import Redis
+from redis import Redis, RedisError
 import os
 from dotenv import load_dotenv
 from models.models import ConversationMessages
+from models.custom_exceptions import APPException
 
 load_dotenv()
 
 
 class RedisService:
     def __init__(self):
-        self.redis_client = Redis(
-            host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=1
-        )
+        try:
+            self.redis_client = Redis(
+                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=1
+            )
+        except RedisError as redis_error:
+            full_exception_name = (
+                f"{type(redis_error).__module__}.{type(redis_error).__name__}"
+            )
+            exception_message: str = str(redis_error)
+            app_exception: APPException = APPException(
+                message=exception_message,
+                ex_class=full_exception_name,
+                event_type="MessagesCache_Init",
+                params={},
+            )
+            raise app_exception
+        except Exception as e:
+            raise e
 
     def get_redis_client(self):
         return self.redis_client
@@ -25,9 +41,24 @@ class RedisService:
 
 class MessagesCache:
     def __init__(self):
-        self.redis_client = Redis(
-            host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=2
-        )
+        try:
+            self.redis_client = Redis(
+                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=2
+            )
+        except RedisError as redis_error:
+            full_exception_name = (
+                f"{type(redis_error).__module__}.{type(redis_error).__name__}"
+            )
+            exception_message: str = str(redis_error)
+            app_exception: APPException = APPException(
+                message=exception_message,
+                ex_class=full_exception_name,
+                event_type="MessagesCache_Init",
+                params={},
+            )
+            raise app_exception
+        except Exception as e:
+            raise e
 
     def set_key(self, key_name: str, key_value: str):
         self.redis_client.set(key_name, key_value)

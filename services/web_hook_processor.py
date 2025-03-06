@@ -25,13 +25,13 @@ from redis.exceptions import RedisError
 class WebHookProcessor:
 
     def __init__(
-            self,
-            mongo_db_service: MongodbService,
-            openai_service: OpenAIService,
-            intercom_service: IntercomAPIService,
-            conversation_parts_service: ConversationPartsService,
-            messages_cache_service: MessagesCache,
-            translations_service: OpenAITranslatorService,
+        self,
+        mongo_db_service: MongodbService,
+        openai_service: OpenAIService,
+        intercom_service: IntercomAPIService,
+        conversation_parts_service: ConversationPartsService,
+        messages_cache_service: MessagesCache,
+        translations_service: OpenAITranslatorService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -245,7 +245,7 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_note_async(
-            self, conversation_id: str, message: str, message_language
+        self, conversation_id: str, message: str, message_language
     ):
         admin_id: str = "8024055"
         if message_language == "Hindi":
@@ -714,7 +714,7 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_reply_message(
-            self, conversation_id: str, admin_id: str, message: str, target_language: str
+        self, conversation_id: str, admin_id: str, message: str, target_language: str
     ):
         if target_language == "Hinglish":
             admin_reply_message: str = (

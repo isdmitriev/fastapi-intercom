@@ -4,14 +4,31 @@ from dotenv import load_dotenv
 import json
 from typing import Dict, List
 from models.models import UserMessage
+from models.custom_exceptions import APPException
+from openai._exceptions import OpenAIError
 
 load_dotenv()
 
 
 class OpenAIService:
     def __init__(self):
-        self.open_ai_client = OpenAI(api_key=os.getenv("OPENAPI_KEY"))
-        self.client_async = AsyncOpenAI(api_key=os.getenv("OPENAPI_KEY"))
+        try:
+            self.open_ai_client = OpenAI(api_key=os.getenv("OPENAPI_KEY"))
+            self.client_async = AsyncOpenAI(api_key=os.getenv("OPENAPI_KEY"))
+        except OpenAIError as open_ai_error:
+            full_exception_name = (
+                f"{type(open_ai_error).__module__}.{type(open_ai_error).__name__}"
+            )
+            exception_message: str = str(open_ai_error)
+            app_exception: APPException = APPException(
+                message=exception_message,
+                ex_class=full_exception_name,
+                event_type="OpenAIService_Init",
+                params={},
+            )
+            raise app_exception
+        except Exception as e:
+            raise e
 
     def detect_language(self, message: str) -> str | None:
         response = self.open_ai_client.chat.completions.create(
