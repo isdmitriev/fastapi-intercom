@@ -6,6 +6,8 @@ from typing import Dict, List
 from models.models import UserMessage
 from models.custom_exceptions import APPException
 from openai._exceptions import OpenAIError
+from services.redis_cache_service import MessagesCache
+from models.models import ConversationMessages, ConversationMessage
 
 load_dotenv()
 
@@ -78,7 +80,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_hindi_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response: ChatCompletion = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -113,7 +115,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_bengali_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -130,7 +132,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_bengali_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -147,7 +149,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_hindi_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -273,6 +275,120 @@ Example responses:
             )
         else:
             return None
+
+    async def analyze_message_with_correction_v3(
+            self, message: str, conversation_id: str
+    ):
+        system_promt = """You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali.
+
+IMPORTANT: You must carefully analyze the chat history provided to understand the context of the conversation before interpreting the current message.
+
+Always return JSON with the following structure: 
+{ 
+  "status": "[uncertain/error_fixed/no_error]", 
+  "original_text": "original message", 
+  "translated_text": "English translation", 
+  // Only for status=uncertain: 
+  "possible_interpretations": [ 
+    "corrected version (Most likely meaning explanation)", 
+    "original version (Alternative meaning explanation)" 
+  ], 
+  "note": "Note explaining unusual words, possible meanings and need for clarification",
+  "context_analysis": "Brief summary of how chat history influences interpretation of current message" 
+}
+
+Status codes:
+- "uncertain": When you're less than 95% confident about message meaning
+- "error_fixed": When you found and corrected mistakes
+- "no_error": When message is clear and no corrections needed
+
+When detecting messages with typos or misspellings:
+- Correct common substitutions (e.g., "withdrawl" → "withdrawal", "bonuss" → "bonus")
+- Fix incorrect word combinations (e.g., "with drawl" → "withdrawal")
+- Handle digit/letter confusion (e.g., "b0nus" → "bonus")
+- Correct phonetic spelling mistakes (e.g., "vishdraal" → "withdrawal")
+- Fix incorrect gambler terminology (e.g., "jackpot machine" → "slot machine")
+- Use the chat history to better understand player-specific terminology or recurring issues"""
+        messages = [{"role": "system", "content": system_promt}]
+        chat_history = self.get_chat_history(conversation_id=conversation_id)
+        for message in chat_history:
+            messages.append(message)
+        messages.append(
+            {
+                "role": "user",
+                "content": f"Analyze this message in the context of our conversation: {message}",
+            }
+        )
+        try:
+            response = self.client_async.chat.completions.create(
+                model="gpt-4-turbo-preview", messages=messages, temperature=0.1,
+                response_format={"type": "json_object"}
+            )
+            response_dict: Dict = json.loads(response.choices[0].message.content)
+            status: str = response_dict.get("status", "")
+            if status == "no_error":
+                original_text: str = response_dict.get("original_text", "")
+                translated_text: str = response_dict.get("translated_text", "")
+                return UserMessage(
+                    status=status,
+                    original_text=original_text,
+                    translated_text=translated_text,
+                    note=None,
+                    corrected_text=original_text,
+                    possible_interpretations=[],
+                )
+            elif status == "error_fixed":
+                original_text: str = response_dict.get("original_text", "")
+                translated_text: str = response_dict.get("translated_text", "")
+                corrected_text: str = response_dict.get("corrected_text", "")
+                return UserMessage(
+                    status=status,
+                    original_text=original_text,
+                    translated_text=translated_text,
+                    note=None,
+                    corrected_text=corrected_text,
+                    possible_interpretations=[],
+                )
+            elif status == "uncertain":
+                original_text: str = response_dict.get("original_text", "")
+                translated_text: str = response_dict.get("translated_text", "")
+                note: str = response_dict.get("note", "")
+                interpretations: List[str] = response_dict.get(
+                    "possible_interpretations", []
+                )
+                return UserMessage(
+                    status=status,
+                    original_text=original_text,
+                    translated_text=translated_text,
+                    possible_interpretations=interpretations,
+                    note=note,
+                    corrected_text="",
+                )
+            else:
+                return None
+
+        except Exception as e:
+            raise e
+
+    def get_chat_history(self, conversation_id: str) -> List[Dict]:
+        messages_cache: MessagesCache = MessagesCache()
+        chat_mesages: ConversationMessages = messages_cache.get_conversation_messages(
+            conversation_id=conversation_id
+        )
+        messages: List[ConversationMessage] = chat_mesages.messages
+        result_messages: List[Dict] = []
+        for chat_message in messages:
+            if chat_message.user.type == "admin":
+                result_messages.append(
+                    {"role": "assistant", "content": chat_message.message}
+                )
+                continue
+            if chat_message.user.type == "user":
+                result_messages.append(
+                    {"role": "user", "content": chat_message.message}
+                )
+                continue
+        return result_messages
 
     async def analyze_message_with_correction_async_v2(self, message: str):
         promt = """You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali.
