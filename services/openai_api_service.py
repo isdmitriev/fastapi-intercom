@@ -80,7 +80,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_hindi_to_english_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response: ChatCompletion = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -115,7 +115,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_bengali_to_english_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -132,7 +132,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_bengali_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -149,7 +149,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_hindi_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -277,7 +277,7 @@ Example responses:
             return None
 
     async def analyze_message_with_correction_v3(
-            self, message: str, conversation_id: str
+        self, message: str, conversation_id: str
     ):
         system_promt = """You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali.
 
@@ -321,8 +321,10 @@ When detecting messages with typos or misspellings:
         )
         try:
             response = self.client_async.chat.completions.create(
-                model="gpt-4-turbo-preview", messages=messages, temperature=0.1,
-                response_format={"type": "json_object"}
+                model="gpt-4-turbo-preview",
+                messages=messages,
+                temperature=0.1,
+                response_format={"type": "json_object"},
             )
             response_dict: Dict = json.loads(response.choices[0].message.content)
             status: str = response_dict.get("status", "")
