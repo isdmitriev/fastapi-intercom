@@ -204,3 +204,4 @@ spec:
     - name: inter-node
       port: 9300
       targetPort: 9300
+  type: LoadBalancer

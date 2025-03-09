@@ -195,10 +195,6 @@ async def get_message(
         if is_event_handled == True:
             start_time = time.perf_counter()
 
-            # await mongo_db_service.add_document_to_collection(
-            #     "intercom_app", "event_logs", payload
-            # )
-
             topic: str = payload.get("topic", "")
             await web_hook_processor.process_message(topic, payload)
             end_time = time.perf_counter()
