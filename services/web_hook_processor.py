@@ -198,7 +198,7 @@ class WebHookProcessor:
                             message=corrected_message,
                             message_language=message_language,
                         )
-                elif analyzed_user_message.status == "uncertain" and message_language != 'English':
+                elif analyzed_user_message.status == "uncertain":
                     note: str = await self.create_admin_note(analyzed_user_message)
 
                     await self.send_admin_note_async(
