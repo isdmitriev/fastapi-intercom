@@ -80,7 +80,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_hindi_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response: ChatCompletion = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -115,7 +115,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_bengali_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -132,7 +132,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_bengali_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -149,7 +149,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_hindi_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -277,56 +277,81 @@ Example responses:
             return None
 
     async def analyze_message_with_correction_v3(
-        self, message: str, conversation_id: str
+            self, message: str, conversation_id: str
     ):
         system_promt = """You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali.
 
-IMPORTANT: You must carefully analyze the chat history provided to understand the context of the conversation before interpreting the current message.
+IMPORTANT: You must carefully analyze the chat history provided to understand the context before interpreting the current message. Agent responses in the chat history are provided in both English (original) and translated form. 
 
-Always return JSON with the following structure: 
-{ 
-  "status": "[uncertain/error_fixed/no_error]", 
-  "original_text": "original message", 
-  "translated_text": "English translation", 
-  // Only for status=uncertain: 
-  "possible_interpretations": [ 
-    "corrected version (Most likely meaning explanation)", 
-    "original version (Alternative meaning explanation)" 
-  ], 
-  "note": "Note explaining unusual words, possible meanings and need for clarification",
-  "context_analysis": "Brief summary of how chat history influences interpretation of current message" 
+When forming possible interpretations for uncertain messages, ALWAYS consider what topics were previously discussed in the chat history. This context should significantly influence your interpretations of ambiguous terms.
+
+ALWAYS return JSON in this format:
+{
+    \"status\": \"[uncertain/error_fixed/no_error]\",
+    \"original_text\": \"original message\",
+    \"translated_text\": \"English translation\",
+    \"context_analysis\": \"Brief summary of how chat history influences interpretation of current message\",
+    
+    // Only for status=error_fixed (REQUIRED FOR ERROR_FIXED STATUS):
+    \"corrected_text\": \"message with all spelling and terminology corrections\",
+    
+    // Only for status=uncertain:
+    \"possible_interpretations\": [
+        \"Interpretation 1: English translation with most likely meaning\",
+        \"Interpretation 2: Alternative English translation with different possible meaning\"
+    ],
+    \"note\": \"Note explaining unusual words, possible meanings AND two alternative translations:\\n1. [First translation - most probable]\\n2. [Second translation - alternative interpretation]\\nClarification needed.\"
 }
 
-Status codes:
-- "uncertain": When you're less than 95% confident about message meaning
-- "error_fixed": When you found and corrected mistakes
-- "no_error": When message is clear and no corrections needed
+### Status codes:
+- **\"uncertain\"** → When the message has **multiple possible meanings**, unusual words (like \"petrol\", \"engine\", \"fuel\" in casino context), slang, or lacks context for a clear answer.
+  - Example 1: \"Mera petrol add nahi huwa?\" (Is user asking about withdrawal, bonus or something else?)
+  - Example 2: \"Bhai mera khata me paisa nahi aaya, diesel payment ka wait kar raha hu\" (What does diesel payment refer to?)
+  - Example 3: \"Mera engine start nahi ho raha\" (What does engine refer to in casino context?)
+  
+  IMPORTANT: For uncertain status, you MUST consider the entire chat history to form your interpretations. For example:
+  - If user previously discussed withdrawals, \"petrol\" likely refers to withdrawal
+  - If chat history mentions bonus issues, \"fuel\" likely means bonus
+  - If user reported login problems before, \"engine not starting\" probably relates to those login issues
 
-When detecting messages with typos or misspellings:
-- Correct common substitutions (e.g., "withdrawl" → "withdrawal", "bonuss" → "bonus")
-- Fix incorrect word combinations (e.g., "with drawl" → "withdrawal")
-- Handle digit/letter confusion (e.g., "b0nus" → "bonus")
-- Correct phonetic spelling mistakes (e.g., "vishdraal" → "withdrawal")
-- Fix incorrect gambler terminology (e.g., "jackpot machine" → "slot machine")
-- Use the chat history to better understand player-specific terminology or recurring issues"""
-        messages = [{"role": "system", "content": system_promt}]
-        chat_history = self.get_chat_history(conversation_id=conversation_id)
-        for message in chat_history:
-            messages.append(message)
-        messages.append(
-            {
-                "role": "user",
-                "content": f"Analyze this message in the context of our conversation: {message}",
-            }
-        )
+- **\"error_fixed\"** → When you find and correct **spelling mistakes, typos, or wrong gambling terminology**.
+  - Example: \"withdrawl\" → \"withdrawal\"
+  - Example: \"bonoos\" → \"bonus\"
+  - Example: \"deopsit\" → \"deposit\"
+  YOU MUST ALWAYS include the \"corrected_text\" field for status=\"error_fixed\". 
+  For example, if original message is \"Bhai maine 1000 ruppe ka deopsit kiya hai lekin mera bonoos nhi mila\", 
+  then corrected_text should be \"Bhai maine 1000 rupee ka deposit kiya hai lekin mera bonus nahi mila\"
+
+- **\"no_error\"** → When the message is **fully clear** with no mistakes or ambiguity.
+
+When detecting unusual gambling-related words:
+- Words like \"petrol\", \"diesel\", \"gas\", \"fuel\" often refer to \"withdrawal\" or payments
+- Terms like \"engine\", \"car\", \"tank\" may refer to account functionality or balance
+- Always use chat history context to improve understanding of these unusual words
+
+For \"uncertain\" status, always provide:
+1. Two possible interpretations as English translations only (no original language text)
+2. A note with explanation of unusual words
+3. Two complete alternative translations with different interpretations"""
+
+        messages: List[Dict] = [{"role": "system", "content": system_promt}]
+        chat_history: List[Dict] = self.get_chat_history(conversation_id=conversation_id)
+        print(chat_history)
+
+        for message_chat in chat_history:
+            messages.append({'role': message_chat.get('role'), 'content': message_chat.get('content')})
+
+        messages.append({'role': 'user', 'content': message})
+
         try:
-            response = self.client_async.chat.completions.create(
+            response = await self.client_async.chat.completions.create(
                 model="gpt-4-turbo-preview",
                 messages=messages,
-                temperature=0.1,
+                temperature=0.0,
                 response_format={"type": "json_object"},
             )
             response_dict: Dict = json.loads(response.choices[0].message.content)
+            print(response_dict)
             status: str = response_dict.get("status", "")
             if status == "no_error":
                 original_text: str = response_dict.get("original_text", "")
@@ -338,11 +363,13 @@ When detecting messages with typos or misspellings:
                     note=None,
                     corrected_text=original_text,
                     possible_interpretations=[],
+                    context_analysis=''
                 )
             elif status == "error_fixed":
                 original_text: str = response_dict.get("original_text", "")
                 translated_text: str = response_dict.get("translated_text", "")
                 corrected_text: str = response_dict.get("corrected_text", "")
+                context_analysis: str = response_dict.get('context_analysis', '')
                 return UserMessage(
                     status=status,
                     original_text=original_text,
@@ -350,6 +377,7 @@ When detecting messages with typos or misspellings:
                     note=None,
                     corrected_text=corrected_text,
                     possible_interpretations=[],
+                    context_analysis=context_analysis
                 )
             elif status == "uncertain":
                 original_text: str = response_dict.get("original_text", "")
@@ -358,6 +386,7 @@ When detecting messages with typos or misspellings:
                 interpretations: List[str] = response_dict.get(
                     "possible_interpretations", []
                 )
+                context_analysis = response_dict.get('context_analysis', '')
                 return UserMessage(
                     status=status,
                     original_text=original_text,
@@ -365,6 +394,7 @@ When detecting messages with typos or misspellings:
                     possible_interpretations=interpretations,
                     note=note,
                     corrected_text="",
+                    context_analysis=context_analysis
                 )
             else:
                 return None
@@ -384,12 +414,12 @@ When detecting messages with typos or misspellings:
                 result_messages.append(
                     {"role": "assistant", "content": chat_message.message}
                 )
-                continue
+
             if chat_message.user.type == "user":
                 result_messages.append(
                     {"role": "user", "content": chat_message.message}
                 )
-                continue
+
         return result_messages
 
     async def analyze_message_with_correction_async_v2(self, message: str):

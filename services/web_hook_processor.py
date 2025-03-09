@@ -25,13 +25,13 @@ from redis.exceptions import RedisError
 class WebHookProcessor:
 
     def __init__(
-            self,
-            mongo_db_service: MongodbService,
-            openai_service: OpenAIService,
-            intercom_service: IntercomAPIService,
-            conversation_parts_service: ConversationPartsService,
-            messages_cache_service: MessagesCache,
-            translations_service: OpenAITranslatorService,
+        self,
+        mongo_db_service: MongodbService,
+        openai_service: OpenAIService,
+        intercom_service: IntercomAPIService,
+        conversation_parts_service: ConversationPartsService,
+        messages_cache_service: MessagesCache,
+        translations_service: OpenAITranslatorService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -137,7 +137,9 @@ class WebHookProcessor:
                 language=message_language,
                 message_type="conversation.user.created",
             )
-            await self.save_first_message_to_cache(conversation_id=conversation_id, message=message)
+            await self.save_first_message_to_cache(
+                conversation_id=conversation_id, message=message
+            )
 
             if message_language in ["English", "Hindi", "Hinglish", "Bengali"]:
                 self.messages_cache_service.set_conversation_language(
@@ -242,7 +244,7 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_note_async(
-            self, conversation_id: str, message: str, message_language
+        self, conversation_id: str, message: str, message_language
     ):
         admin_id: str = "8024055"
         if message_language == "Hindi":
@@ -294,7 +296,7 @@ class WebHookProcessor:
         return note
 
     async def save_first_message_to_cache(
-            self, conversation_id: str, message: ConversationMessage
+        self, conversation_id: str, message: ConversationMessage
     ):
         messages: ConversationMessages = ConversationMessages(messages=[message])
         self.messages_cache_service.set_conversation_messages(
@@ -302,7 +304,7 @@ class WebHookProcessor:
         )
 
     async def save_message_to_cache(
-            self, conversation_id: str, message: ConversationMessage
+        self, conversation_id: str, message: ConversationMessage
     ):
         all_conversation_messages = (
             self.messages_cache_service.get_conversation_messages(
@@ -466,7 +468,9 @@ class WebHookProcessor:
                 language=message_language,
                 message_type="conversation.user.replied",
             )
-            await self.save_message_to_cache(conversation_id=conversation_id, message=message)
+            await self.save_message_to_cache(
+                conversation_id=conversation_id, message=message
+            )
 
             if message_language in ["English", "Hindi", "Hinglish", "Bengali"]:
                 self.messages_cache_service.set_conversation_language(
@@ -667,7 +671,9 @@ class WebHookProcessor:
                     language="English",
                     message_type="conversation.admin.noted",
                 )
-                await self.save_message_to_cache(conversation_id=conversation_id, message=message)
+                await self.save_message_to_cache(
+                    conversation_id=conversation_id, message=message
+                )
                 # conversation_messages: ConversationMessages = (
                 #     self.messages_cache_service.get_conversation_messages(
                 #         conversation_id='conv:' + conversation_id
@@ -726,7 +732,7 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_reply_message(
-            self, conversation_id: str, admin_id: str, message: str, target_language: str
+        self, conversation_id: str, admin_id: str, message: str, target_language: str
     ):
         if target_language == "Hinglish":
             admin_reply_message: str = (

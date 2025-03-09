@@ -185,9 +185,11 @@ def test_get_admins():
 def test_conversation_language():
     try:
         redis_cache: MessagesCache = MessagesCache()
-        redis_cache.set_conversation_language(conversation_id='155', language='Hinglish')
-        language: str = redis_cache.get_conversation_language(conversation_id='155')
-        assert language == 'Hinglish'
+        redis_cache.set_conversation_language(
+            conversation_id="155", language="Hinglish"
+        )
+        language: str = redis_cache.get_conversation_language(conversation_id="155")
+        assert language == "Hinglish"
     except Exception as e:
         print(type(e).__module__ + type(e).__name__)
         print(str(e))
@@ -221,12 +223,34 @@ def test_conversation_language():
 #         )
 #         end = time.perf_counter()
 #         print(f"Время выполнения: {end - start:.6f} seconds")
-def test_es_service():
-    client: ESService = ESService()
-    # client.create_index('requests')
-    exception: APPException = APPException(message='error', event_type='conversation.admin.noted', ex_class='class',
-                                           params={})
-    request_info: RequestInfo = RequestInfo(exception=exception.__dict__, status='error', execution_time=None,
-                                            event_type='conversation.admin.noted')
-    res = client.add_document(index_name='requests', document=request_info.dict())
-    print(res)
+
+
+# def test_es_service():
+#     client: ESService = ESService()
+#     # client.create_index('requests')
+#     exception: APPException = APPException(
+#         message="error",
+#         event_type="conversation.admin.noted",
+#         ex_class="class",
+#         params={},
+#     )
+#     request_info: RequestInfo = RequestInfo(
+#         exception=exception.__dict__,
+#         status="error",
+#         execution_time=None,
+#         event_type="conversation.admin.noted",
+#     )
+#     res = client.add_document(index_name="requests", document=request_info.dict())
+#     print(res)
+
+
+# @pytest.mark.asyncio
+# async def test_analyze_message_v3():
+#     conversation_id: str = "conv:199"
+#     client = OpenAIService()
+#     result: UserMessage = await client.analyze_message_with_correction_v3(
+#         message="Bhai site par login nahi ho pa raha hai, mera engine start hi nahi ho raha, password dalte hi petrol khatam ho jata hai",
+#         conversation_id=conversation_id
+#     )
+#     print(result.possible_interpretations)
+#     assert isinstance(result, UserMessage)
