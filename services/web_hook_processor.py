@@ -25,13 +25,13 @@ from redis.exceptions import RedisError
 class WebHookProcessor:
 
     def __init__(
-        self,
-        mongo_db_service: MongodbService,
-        openai_service: OpenAIService,
-        intercom_service: IntercomAPIService,
-        conversation_parts_service: ConversationPartsService,
-        messages_cache_service: MessagesCache,
-        translations_service: OpenAITranslatorService,
+            self,
+            mongo_db_service: MongodbService,
+            openai_service: OpenAIService,
+            intercom_service: IntercomAPIService,
+            conversation_parts_service: ConversationPartsService,
+            messages_cache_service: MessagesCache,
+            translations_service: OpenAITranslatorService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -146,8 +146,8 @@ class WebHookProcessor:
                     conversation_id=conversation_id, language=message_language
                 )
                 analyzed_user_message: UserMessage = (
-                    await self.openai_service.analyze_message_with_correction(
-                        message=clean_message
+                    await self.openai_service.analyze_message_with_correction_v3(
+                        message=clean_message, conversation_id="conv:" + conversation_id
                     )
                 )
                 original_message = analyzed_user_message.original_text
@@ -198,7 +198,7 @@ class WebHookProcessor:
                             message=corrected_message,
                             message_language=message_language,
                         )
-                elif analyzed_user_message.status == "uncertain":
+                elif analyzed_user_message.status == "uncertain" and message_language != 'English':
                     note: str = await self.create_admin_note(analyzed_user_message)
 
                     await self.send_admin_note_async(
@@ -244,7 +244,7 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_note_async(
-        self, conversation_id: str, message: str, message_language
+            self, conversation_id: str, message: str, message_language
     ):
         admin_id: str = "8024055"
         if message_language == "Hindi":
@@ -292,11 +292,23 @@ class WebHookProcessor:
             return
 
     async def create_admin_note(self, message: UserMessage):
-        note: str = "translated: " + message.translated_text + "\n" + message.note
+        possible_interpritations = message.possible_interpretations
+        one: str = possible_interpritations[0]
+        two: str = possible_interpritations[1]
+        note: str = (
+                "translated: "
+                + message.translated_text
+                + "\n"
+                + message.context_analysis
+                + "\n"
+                + one
+                + "\n"
+                + two
+        )
         return note
 
     async def save_first_message_to_cache(
-        self, conversation_id: str, message: ConversationMessage
+            self, conversation_id: str, message: ConversationMessage
     ):
         messages: ConversationMessages = ConversationMessages(messages=[message])
         self.messages_cache_service.set_conversation_messages(
@@ -304,7 +316,7 @@ class WebHookProcessor:
         )
 
     async def save_message_to_cache(
-        self, conversation_id: str, message: ConversationMessage
+            self, conversation_id: str, message: ConversationMessage
     ):
         all_conversation_messages = (
             self.messages_cache_service.get_conversation_messages(
@@ -477,8 +489,8 @@ class WebHookProcessor:
                     conversation_id=conversation_id, language=message_language
                 )
                 analyzed_message: UserMessage = (
-                    await self.openai_service.analyze_message_with_correction(
-                        message=clean_message
+                    await self.openai_service.analyze_message_with_correction_v3(
+                        message=clean_message, conversation_id='conv:' + conversation_id
                     )
                 )
                 if analyzed_message.status == "no_error":
@@ -674,18 +686,7 @@ class WebHookProcessor:
                 await self.save_message_to_cache(
                     conversation_id=conversation_id, message=message
                 )
-                # conversation_messages: ConversationMessages = (
-                #     self.messages_cache_service.get_conversation_messages(
-                #         conversation_id='conv:' + conversation_id
-                #     )
-                # )
-                # all_messages: List[ConversationMessage] = list(
-                #     reversed(conversation_messages.messages)
-                # )
-                # conversation_messages.messages.append(message)
-                # self.messages_cache_service.set_conversation_messages(
-                #     conversation_id='conv:' + conversation_id, messages=conversation_messages
-                # )
+
                 await self.send_admin_reply_message(
                     conversation_id=conversation_id,
                     admin_id=admin_id,
@@ -732,7 +733,7 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_reply_message(
-        self, conversation_id: str, admin_id: str, message: str, target_language: str
+            self, conversation_id: str, admin_id: str, message: str, target_language: str
     ):
         if target_language == "Hinglish":
             admin_reply_message: str = (

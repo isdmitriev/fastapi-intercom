@@ -80,7 +80,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_hindi_to_english_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response: ChatCompletion = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -115,7 +115,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_bengali_to_english_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -132,7 +132,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_bengali_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -149,7 +149,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_hindi_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -277,7 +277,7 @@ Example responses:
             return None
 
     async def analyze_message_with_correction_v3(
-            self, message: str, conversation_id: str
+        self, message: str, conversation_id: str
     ):
         system_promt = """You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali.
 
@@ -335,13 +335,20 @@ For \"uncertain\" status, always provide:
 3. Two complete alternative translations with different interpretations"""
 
         messages: List[Dict] = [{"role": "system", "content": system_promt}]
-        chat_history: List[Dict] = self.get_chat_history(conversation_id=conversation_id)
+        chat_history: List[Dict] = self.get_chat_history(
+            conversation_id=conversation_id
+        )
         print(chat_history)
 
         for message_chat in chat_history:
-            messages.append({'role': message_chat.get('role'), 'content': message_chat.get('content')})
+            messages.append(
+                {
+                    "role": message_chat.get("role"),
+                    "content": message_chat.get("content"),
+                }
+            )
 
-        messages.append({'role': 'user', 'content': message})
+        messages.append({"role": "user", "content": message})
 
         try:
             response = await self.client_async.chat.completions.create(
@@ -363,13 +370,13 @@ For \"uncertain\" status, always provide:
                     note=None,
                     corrected_text=original_text,
                     possible_interpretations=[],
-                    context_analysis=''
+                    context_analysis="",
                 )
             elif status == "error_fixed":
                 original_text: str = response_dict.get("original_text", "")
                 translated_text: str = response_dict.get("translated_text", "")
                 corrected_text: str = response_dict.get("corrected_text", "")
-                context_analysis: str = response_dict.get('context_analysis', '')
+                context_analysis: str = response_dict.get("context_analysis", "")
                 return UserMessage(
                     status=status,
                     original_text=original_text,
@@ -377,7 +384,7 @@ For \"uncertain\" status, always provide:
                     note=None,
                     corrected_text=corrected_text,
                     possible_interpretations=[],
-                    context_analysis=context_analysis
+                    context_analysis=context_analysis,
                 )
             elif status == "uncertain":
                 original_text: str = response_dict.get("original_text", "")
@@ -386,7 +393,7 @@ For \"uncertain\" status, always provide:
                 interpretations: List[str] = response_dict.get(
                     "possible_interpretations", []
                 )
-                context_analysis = response_dict.get('context_analysis', '')
+                context_analysis = response_dict.get("context_analysis", "")
                 return UserMessage(
                     status=status,
                     original_text=original_text,
@@ -394,7 +401,7 @@ For \"uncertain\" status, always provide:
                     possible_interpretations=interpretations,
                     note=note,
                     corrected_text="",
-                    context_analysis=context_analysis
+                    context_analysis=context_analysis,
                 )
             else:
                 return None
@@ -407,6 +414,7 @@ For \"uncertain\" status, always provide:
         chat_mesages: ConversationMessages = messages_cache.get_conversation_messages(
             conversation_id=conversation_id
         )
+        print(chat_mesages)
         messages: List[ConversationMessage] = chat_mesages.messages
         result_messages: List[Dict] = []
         for chat_message in messages:
