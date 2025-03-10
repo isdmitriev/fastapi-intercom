@@ -9,6 +9,7 @@ from models.models import (
     MessageTranslated,
     ConversationMessage,
     ConversationMessages,
+    RequestInfo,
 )
 from models.custom_exceptions import APPException
 from tasks import mongodb_task_async, translate_message_for_admin_bengali
@@ -20,18 +21,19 @@ from typing import List
 from aiohttp.client_exceptions import ClientResponseError
 from openai._exceptions import OpenAIError
 from redis.exceptions import RedisError
+from services.es_service import ESService
 
 
 class WebHookProcessor:
 
     def __init__(
-        self,
-        mongo_db_service: MongodbService,
-        openai_service: OpenAIService,
-        intercom_service: IntercomAPIService,
-        conversation_parts_service: ConversationPartsService,
-        messages_cache_service: MessagesCache,
-        translations_service: OpenAITranslatorService,
+            self,
+            mongo_db_service: MongodbService,
+            openai_service: OpenAIService,
+            intercom_service: IntercomAPIService,
+            conversation_parts_service: ConversationPartsService,
+            messages_cache_service: MessagesCache,
+            translations_service: OpenAITranslatorService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -157,7 +159,7 @@ class WebHookProcessor:
                 original_message = analyzed_user_message.original_text
                 corrected_message = analyzed_user_message.corrected_text
                 translated_text = analyzed_user_message.translated_text
-                context_analysis=analyzed_user_message.context_analysis
+                context_analysis = analyzed_user_message.context_analysis
 
                 if analyzed_user_message.status == "no_error":
                     if message_language == "Hindi":
@@ -249,7 +251,7 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_note_async(
-        self, conversation_id: str, message: str, message_language
+            self, conversation_id: str, message: str, message_language
     ):
         admin_id: str = "8024055"
         if message_language == "Hindi":
@@ -301,19 +303,28 @@ class WebHookProcessor:
         one: str = possible_interpritations[0]
         two: str = possible_interpritations[1]
         note: str = (
-            "translated: "
-            + message.translated_text
-            + "\n"
-            + message.context_analysis
-            + "\n"
-            + one
-            + "\n"
-            + two
+                "translated: "
+                + message.translated_text
+                + "\n"
+                + message.context_analysis
+                + "\n"
+                + one
+                + "\n"
+                + two
         )
         return note
 
+    async def save_request_info(
+            self, status: str, execution_time: float, event_type: str
+    ):
+        request_info: RequestInfo = RequestInfo(
+            status=status, execution_time=execution_time, event_type=event_type, exception=None
+        )
+        es_client: ESService = ESService()
+        es_client.add_document(index_name='requests', document=request_info.dict())
+
     async def save_first_message_to_cache(
-        self, conversation_id: str, message: ConversationMessage
+            self, conversation_id: str, message: ConversationMessage
     ):
         messages: ConversationMessages = ConversationMessages(messages=[message])
         self.messages_cache_service.set_conversation_messages(
@@ -321,7 +332,7 @@ class WebHookProcessor:
         )
 
     async def save_message_to_cache(
-        self, conversation_id: str, message: ConversationMessage
+            self, conversation_id: str, message: ConversationMessage
     ):
         all_conversation_messages = (
             self.messages_cache_service.get_conversation_messages(
@@ -742,7 +753,7 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_reply_message(
-        self, conversation_id: str, admin_id: str, message: str, target_language: str
+            self, conversation_id: str, admin_id: str, message: str, target_language: str
     ):
         if target_language == "Hinglish":
             admin_reply_message: str = (
