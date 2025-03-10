@@ -80,7 +80,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_hindi_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response: ChatCompletion = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -115,7 +115,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_bengali_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -132,7 +132,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_bengali_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -149,7 +149,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_hindi_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -233,7 +233,7 @@ Example responses:
         )
 
         response_dict: Dict = json.loads(response.choices[0].message.content)
-        print(response_dict)
+
         status: str = response_dict.get("status", "")
         if status == "no_error":
             original_text: str = response_dict.get("original_text", "")
@@ -277,7 +277,7 @@ Example responses:
             return None
 
     async def analyze_message_with_correction_v3(
-        self, message: str, conversation_id: str
+            self, message: str, conversation_id: str
     ):
         system_promt = """You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali.
 
@@ -338,7 +338,6 @@ For \"uncertain\" status, always provide:
         chat_history: List[Dict] = self.get_chat_history(
             conversation_id=conversation_id
         )
-        print(chat_history)
 
         for message_chat in chat_history:
             messages.append(
@@ -358,7 +357,7 @@ For \"uncertain\" status, always provide:
                 response_format={"type": "json_object"},
             )
             response_dict: Dict = json.loads(response.choices[0].message.content)
-            print(response_dict)
+
             status: str = response_dict.get("status", "")
             if status == "no_error":
                 original_text: str = response_dict.get("original_text", "")
@@ -414,7 +413,7 @@ For \"uncertain\" status, always provide:
         chat_mesages: ConversationMessages = messages_cache.get_conversation_messages(
             conversation_id=conversation_id
         )
-        print(chat_mesages)
+     
         messages: List[ConversationMessage] = chat_mesages.messages
         result_messages: List[Dict] = []
         for chat_message in messages:
