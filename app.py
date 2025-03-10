@@ -39,9 +39,9 @@ async def startup():
 @app.exception_handler(APPException)
 @inject
 async def handle_app_exception(
-        request: Request,
-        exception: APPException,
-        # es_service: ESService = Depends(lambda: container.es_service()),
+    request: Request,
+    exception: APPException,
+    # es_service: ESService = Depends(lambda: container.es_service()),
 ):
     es_service: ESService = container.es_service()
     request_info: RequestInfo = RequestInfo(
@@ -62,9 +62,9 @@ async def handle_app_exception(
 @app.exception_handler(OpenAIError)
 @inject
 async def handle_open_ai_exception(
-        request: Request,
-        openai_error: OpenAIError,
-        es_service: ESService = Depends(lambda: container.es_service()),
+    request: Request,
+    openai_error: OpenAIError,
+    es_service: ESService = Depends(lambda: container.es_service()),
 ):
     es_service: ESService = container.es_service()
     ex_class: str = type(openai_error).__module__ + "." + type(openai_error).__name__
@@ -86,9 +86,9 @@ async def handle_open_ai_exception(
 @app.exception_handler(RedisError)
 @inject
 async def handle_redis_error(
-        request: Request,
-        error: RedisError,
-        # es_service: ESService = Depends(lambda: container.es_service()),
+    request: Request,
+    error: RedisError,
+    # es_service: ESService = Depends(lambda: container.es_service()),
 ):
     es_service: ESService = container.es_service()
 
@@ -111,9 +111,9 @@ async def handle_redis_error(
 @app.exception_handler(ClientResponseError)
 @inject
 async def handle_http_error(
-        request: Request,
-        error: ClientResponseError,
-        es_service: ESService = Depends(lambda: container.es_service()),
+    request: Request,
+    error: ClientResponseError,
+    es_service: ESService = Depends(lambda: container.es_service()),
 ):
     ex_class: str = type(error).__module__ + type(error).__name__
     exception: APPException = APPException(
@@ -144,12 +144,12 @@ async def shutdown():
 @app.post("/webhook/test")
 @inject
 async def get_message(
-        request: Request,
-        web_hook_processor: WebHookProcessor = Depends(
-            lambda: container.web_hook_processor()
-        ),
-        mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
-        redis_service: RedisService = Depends(lambda: container.redis_service()),
+    request: Request,
+    web_hook_processor: WebHookProcessor = Depends(
+        lambda: container.web_hook_processor()
+    ),
+    mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
+    redis_service: RedisService = Depends(lambda: container.redis_service()),
 ):
     payload: Dict = await request.json()
 
@@ -176,13 +176,13 @@ async def get_message(
 @app.post("/webhook/message")
 @inject
 async def get_message(
-        request: Request,
-        web_hook_processor: WebHookProcessor = Depends(
-            lambda: container.web_hook_processor()
-        ),
-        mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
-        redis_service: RedisService = Depends(lambda: container.redis_service()),
-        es_service: ESService = Depends(lambda: container.es_service()),
+    request: Request,
+    web_hook_processor: WebHookProcessor = Depends(
+        lambda: container.web_hook_processor()
+    ),
+    mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
+    redis_service: RedisService = Depends(lambda: container.redis_service()),
+    es_service: ESService = Depends(lambda: container.es_service()),
 ):
     try:
 
@@ -193,18 +193,9 @@ async def get_message(
             return Response(status_code=status.HTTP_200_OK)
         is_event_handled = redis_service.set_key(notification_event_id, "1")
         if is_event_handled == True:
-            start_time = time.perf_counter()
 
             topic: str = payload.get("topic", "")
             await web_hook_processor.process_message(topic, payload)
-            end_time = time.perf_counter()
-            request_info: RequestInfo = RequestInfo(
-                exception=None,
-                status="ok",
-                execution_time=end_time - start_time,
-                event_type='',
-            )
-            es_service.add_document(index_name="requests", document=request_info.dict())
 
             return Response(status_code=status.HTTP_200_OK)
         else:
