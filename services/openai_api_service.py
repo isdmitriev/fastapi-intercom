@@ -359,16 +359,24 @@ ALWAYS return JSON in this format:
 }
 
 ### Status codes:
-- **\"uncertain\"** → When the message has **multiple possible meanings**, unusual words (like \"petrol\", \"engine\", \"fuel\" in casino context), slang, or lacks context for a clear answer. ALSO use this status when message meaning is vague or unclear, even if there are no spelling errors or unusual words (e.g., \"My deposit has gone through, can someone help me?\" - unclear what help is needed).
+- **\"uncertain\"** → When the message has **multiple possible meanings**, unusual words (like \"petrol\", \"engine\", \"fuel\" in casino context), slang, or lacks context for a clear answer. ALSO use this status when message meaning is vague or unclear, even if there are no spelling errors or unusual words. This includes:
+  - Messages with non-specific complaints (e.g., \"My account is not working\")
+  - Messages lacking details about which specific feature/function has issues
+  - General requests for help without specifying the problem
+  - Messages with ambiguous references to previous issues
+
   - Example 1: \"Mera petrol add nahi huwa?\" (Is user asking about withdrawal, bonus or something else?)
   - Example 2: \"Bhai mera khata me paisa nahi aaya, diesel payment ka wait kar raha hu\" (What does diesel payment refer to?)
   - Example 3: \"Mera engine start nahi ho raha\" (What does engine refer to in casino context?)
   - Example 4: \"My deposit has gone through, can someone help me?\" (Unclear what help is needed after successful deposit)
+  - Example 5: \"मेरा खाता काम नहीं कर रहा है\" (Unclear what specific account issue the player is experiencing)
+  - Example 6: \"Maine amount transfer kar diya hai. Kya hogaya?\" (Ambiguous whether asking about status or reporting a problem)
   
   IMPORTANT: For uncertain status, you MUST consider the entire chat history to form your interpretations. For example:
   - If user previously discussed withdrawals, \"petrol\" likely refers to withdrawal
   - If chat history mentions bonus issues, \"fuel\" likely means bonus
   - If user reported login problems before, \"engine not starting\" probably relates to those login issues
+  - If player mentioned account issues before, a vague message likely refers to the same problem
 
 - **\"error_fixed\"** → When you find and correct **spelling mistakes, typos, or wrong gambling terminology**.
   - Example: \"withdrawl\" → \"withdrawal\"
@@ -378,7 +386,11 @@ ALWAYS return JSON in this format:
   For example, if original message is \"Bhai maine 1000 ruppe ka deopsit kiya hai lekin mera bonoos nhi mila\", 
   then corrected_text should be \"Bhai maine 1000 rupee ka deposit kiya hai lekin mera bonus nahi mila\"
 
-- **\"no_error\"** → When the message is **fully clear** with no mistakes or ambiguity.
+- **\"no_error\"** → When the message is **fully clear** with no mistakes or ambiguity. For a message to qualify as \"no_error\", it must:
+  - Have a clear, specific request or statement
+  - Not contain any vague references to problems
+  - Be specific about what feature, function, or service is being discussed
+  - Not require guesswork to understand the player's intention
 
 When detecting unusual gambling-related words:
 - Words like \"petrol\", \"diesel\", \"gas\", \"fuel\" often refer to \"withdrawal\" or payments
@@ -403,13 +415,13 @@ For \"uncertain\" status, always provide:
                 }
             )
 
-        messages.append({"role": "user", "content": message})
+        messages.append({"role": "user", "content": f'CURRENT MESSAGE:{message}'})
 
         try:
             response = await self.client_async.chat.completions.create(
                 model="gpt-4-turbo-preview",
                 messages=messages,
-                temperature=0.0,
+                temperature=0.2,
                 response_format={"type": "json_object"},
             )
             response_dict: Dict = json.loads(response.choices[0].message.content)
