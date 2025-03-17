@@ -194,7 +194,6 @@ def test_conversation_language():
         print(type(e).__module__ + type(e).__name__)
         print(str(e))
 
-
 # @pytest.mark.asyncio
 # async def test_translator_service():
 #     client: OpenAITranslatorService = OpenAITranslatorService()
@@ -249,8 +248,9 @@ def test_conversation_language():
 #     conversation_id: str = "conv:199"
 #     client = OpenAIService()
 #     result: UserMessage = await client.analyze_message_with_correction_v3(
-#         message="Bhai site par login nahi ho pa raha hai, mera engine start hi nahi ho raha, password dalte hi petrol khatam ho jata hai",
+#         message="Maine amount transfer kar diya hai. Kya hogaya?",
 #         conversation_id=conversation_id
 #     )
-#     print(result.possible_interpretations)
+#     print(result)
+#     print(result.context_analysis)
 #     assert isinstance(result, UserMessage)
