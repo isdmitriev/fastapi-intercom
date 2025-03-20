@@ -13,10 +13,11 @@ load_dotenv()
 
 
 class OpenAIService:
-    def __init__(self):
+    def __init__(self, messages_cache_service: MessagesCache):
         try:
             self.open_ai_client = OpenAI(api_key=os.getenv("OPENAPI_KEY"))
             self.client_async = AsyncOpenAI(api_key=os.getenv("OPENAPI_KEY"))
+            self.messages_cache_service = messages_cache_service
         except OpenAIError as open_ai_error:
             full_exception_name = (
                 f"{type(open_ai_error).__module__}.{type(open_ai_error).__name__}"
@@ -416,7 +417,7 @@ For \"uncertain\" status, always provide:
                 }
             )
 
-        messages.append({"role": "user", "content": f'CURRENT MESSAGE:{message}'})
+        messages.append({"role": "user", "content": f"CURRENT MESSAGE:{message}"})
 
         try:
             response = await self.client_async.chat.completions.create(
@@ -479,8 +480,8 @@ For \"uncertain\" status, always provide:
             raise e
 
     def get_chat_history(self, conversation_id: str) -> List[Dict]:
-        messages_cache: MessagesCache = MessagesCache()
-        chat_mesages: ConversationMessages = messages_cache.get_conversation_messages(
+
+        chat_mesages: ConversationMessages = self.messages_cache_service.get_conversation_messages(
             conversation_id=conversation_id
         )
 

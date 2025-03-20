@@ -64,13 +64,13 @@ class MessagesCache:
         self.redis_client.set(key_name, key_value, ex=21600)
 
     def set_conversation_messages(
-            self, conversation_id: str, messages: ConversationMessages
+        self, conversation_id: str, messages: ConversationMessages
     ):
         key_value: str = messages.model_dump_json()
         self.set_key(conversation_id, key_value)
 
     def get_conversation_messages(
-            self, conversation_id: str
+        self, conversation_id: str
     ) -> ConversationMessages | None:
         value: str = self.redis_client.get(conversation_id)
         result: ConversationMessages = ConversationMessages.model_validate_json(value)

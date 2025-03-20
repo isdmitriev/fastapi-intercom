@@ -26,7 +26,7 @@ class Container(containers.DeclarativeContainer):
     es_service = providers.Singleton(ESService)
     intercom_api_service = providers.Singleton(IntercomAPIService)
     messages_cache_service: MessagesCache = providers.Singleton(MessagesCache)
-    open_ai_service = providers.Singleton(OpenAIService)
+    open_ai_service = providers.Singleton(OpenAIService, messages_cache_service=messages_cache_service)
     translations_service = providers.Singleton(OpenAITranslatorService)
 
     conversation_parts_service = providers.Singleton(
