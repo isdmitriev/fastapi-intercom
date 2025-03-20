@@ -61,7 +61,7 @@ class MessagesCache:
             raise e
 
     def set_key(self, key_name: str, key_value: str):
-        self.redis_client.set(key_name, key_value)
+        self.redis_client.set(key_name, key_value, ex=21600)
 
     def set_conversation_messages(
             self, conversation_id: str, messages: ConversationMessages

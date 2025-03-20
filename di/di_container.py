@@ -25,9 +25,9 @@ class Container(containers.DeclarativeContainer):
     redis_service = providers.Singleton(RedisService)
     es_service = providers.Singleton(ESService)
     intercom_api_service = providers.Singleton(IntercomAPIService)
+    messages_cache_service: MessagesCache = providers.Singleton(MessagesCache)
     open_ai_service = providers.Singleton(OpenAIService)
     translations_service = providers.Singleton(OpenAITranslatorService)
-    messages_cache_service: MessagesCache = providers.Singleton(MessagesCache)
 
     conversation_parts_service = providers.Singleton(
         ConversationPartsService,
