@@ -11,7 +11,7 @@ class RedisService:
     def __init__(self):
         try:
             self.redis_client = Redis(
-                host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=1
+                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=1
             )
         except RedisError as redis_error:
             full_exception_name = (
@@ -43,7 +43,7 @@ class MessagesCache:
     def __init__(self):
         try:
             self.redis_client = Redis(
-                host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=2
+                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=2
             )
         except RedisError as redis_error:
             full_exception_name = (
@@ -64,13 +64,13 @@ class MessagesCache:
         self.redis_client.set(key_name, key_value, ex=21600)
 
     def set_conversation_messages(
-        self, conversation_id: str, messages: ConversationMessages
+            self, conversation_id: str, messages: ConversationMessages
     ):
         key_value: str = messages.model_dump_json()
         self.set_key(conversation_id, key_value)
 
     def get_conversation_messages(
-        self, conversation_id: str
+            self, conversation_id: str
     ) -> ConversationMessages | None:
         value: str = self.redis_client.get(conversation_id)
         result: ConversationMessages = ConversationMessages.model_validate_json(value)
