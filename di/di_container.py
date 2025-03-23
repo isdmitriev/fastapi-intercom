@@ -42,5 +42,6 @@ class Container(containers.DeclarativeContainer):
         intercom_service=intercom_api_service,
         conversation_parts_service=conversation_parts_service,
         messages_cache_service=messages_cache_service,
-        translations_service=translations_service
+        translations_service=translations_service,
+        es_service=es_service
     )

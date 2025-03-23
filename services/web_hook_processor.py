@@ -28,13 +28,14 @@ import time
 class WebHookProcessor:
 
     def __init__(
-        self,
-        mongo_db_service: MongodbService,
-        openai_service: OpenAIService,
-        intercom_service: IntercomAPIService,
-        conversation_parts_service: ConversationPartsService,
-        messages_cache_service: MessagesCache,
-        translations_service: OpenAITranslatorService,
+            self,
+            mongo_db_service: MongodbService,
+            openai_service: OpenAIService,
+            intercom_service: IntercomAPIService,
+            conversation_parts_service: ConversationPartsService,
+            messages_cache_service: MessagesCache,
+            translations_service: OpenAITranslatorService,
+            es_service: ESService
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -42,6 +43,7 @@ class WebHookProcessor:
         self.conversation_parts_service = conversation_parts_service
         self.messages_cache_service = messages_cache_service
         self.translations_service = translations_service
+        self.es_service = es_service
 
     async def process_message(self, topic: str, message: Dict):
 
@@ -258,7 +260,7 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_note_async(
-        self, conversation_id: str, message: str, message_language
+            self, conversation_id: str, message: str, message_language
     ):
         admin_id: str = "8024055"
         if message_language == "Hindi":
@@ -310,19 +312,19 @@ class WebHookProcessor:
         one: str = possible_interpritations[0]
         two: str = possible_interpritations[1]
         note: str = (
-            "translated: "
-            + message.translated_text
-            + "\n"
-            + message.context_analysis
-            + "\n"
-            + one
-            + "\n"
-            + two
+                "translated: "
+                + message.translated_text
+                + "\n"
+                + message.context_analysis
+                + "\n"
+                + one
+                + "\n"
+                + two
         )
         return note
 
     async def save_request_info(
-        self, status: str, execution_time: float, event_type: str
+            self, status: str, execution_time: float, event_type: str
     ):
         request_info: RequestInfo = RequestInfo(
             status=status,
@@ -330,11 +332,13 @@ class WebHookProcessor:
             event_type=event_type,
             exception=None,
         )
-        es_client: ESService = ESService()
-        es_client.add_document(index_name="requests", document=request_info.dict())
+        self.es_service.add_document(index_name="requests", document=request_info.dict())
+
+        # es_client: ESService = ESService()
+        # es_client.add_document(index_name="requests", document=request_info.dict())
 
     async def save_first_message_to_cache(
-        self, conversation_id: str, message: ConversationMessage
+            self, conversation_id: str, message: ConversationMessage
     ):
         messages: ConversationMessages = ConversationMessages(messages=[message])
         self.messages_cache_service.set_conversation_messages(
@@ -342,7 +346,7 @@ class WebHookProcessor:
         )
 
     async def save_message_to_cache(
-        self, conversation_id: str, message: ConversationMessage
+            self, conversation_id: str, message: ConversationMessage
     ):
         all_conversation_messages = (
             self.messages_cache_service.get_conversation_messages(
@@ -696,7 +700,7 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_reply_message(
-        self, conversation_id: str, admin_id: str, message: str, target_language: str
+            self, conversation_id: str, admin_id: str, message: str, target_language: str
     ):
         if target_language == "Hinglish":
             admin_reply_message: str = (
