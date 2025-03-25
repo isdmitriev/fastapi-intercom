@@ -435,6 +435,7 @@ ALWAYS return JSON in this format:
   - Messages with ambiguous references to previous issues
   - Messages referring to \"the problem\" or \"the issue\" when user has mentioned MULTIPLE different problems in chat history (e.g., \"I still have the same problem\" - which problem?)
   - Messages about problems NOT related to casino, betting, or gambling (e.g., questions about banking apps, mobile devices, or other unrelated services)
+  - Messages mentioning problems without details when NO specific problems were described in chat history (e.g., \"I have a problem\", \"I'm facing issues\", \"I have several problems\" without prior context)
 
   - Example 1: \"Mera petrol add nahi huwa?\" (Is user asking about withdrawal, bonus or something else?)
   - Example 2: \"Bhai mera khata me paisa nahi aaya, diesel payment ka wait kar raha hu\" (What does diesel payment refer to?)
@@ -444,6 +445,7 @@ ALWAYS return JSON in this format:
   - Example 6: \"Maine amount transfer kar diya hai. Kya hogaya?\" (Ambiguous whether asking about status or reporting a problem)
   - Example 7: \"Problem abhi bhi hai\" (Player previously mentioned multiple problems, unclear which one they're referring to)
   - Example 8: \"Can you help me with my tax filing issue?\" (Not related to casino or betting services)
+  - Example 9: \"I have a problem with your service\" (No specific problem described and no prior context in chat history)
   
   IMPORTANT: For uncertain status, you MUST consider the entire chat history to form your interpretations. For example:
   - If user previously discussed withdrawals, \"petrol\" likely refers to withdrawal
@@ -452,6 +454,7 @@ ALWAYS return JSON in this format:
   - If player mentioned account issues before, a vague message likely refers to the same problem
   - If player discussed MULTIPLE issues (e.g., login problems AND withdrawal issues), and then sends a vague message like \"Still facing the issue\", use \"uncertain\" status as it's unclear which problem they're referring to
   - If player asks about topics outside of gambling, betting, and casino operations, mark as \"uncertain\" and note that the query is unrelated to our services
+  - If player mentions having a problem or issues without details, and NO specific problems were described in chat history, mark as \"uncertain\" and note that clarification is needed about what problem they're experiencing
 
 - **\"error_fixed\"** → When you find and correct **spelling mistakes, typos, or wrong gambling terminology**.
   - Example: \"withdrawl\" → \"withdrawal\"
