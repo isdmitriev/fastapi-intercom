@@ -100,7 +100,7 @@ class WebHookProcessor:
                     message=clean_message
                 )
             )
-            message: ConversationMessage = ConversationMessage(
+            conv_message: ConversationMessage = ConversationMessage(
                 conversation_id=conversation_id,
                 time=datetime.datetime.now(),
                 message=clean_message,
@@ -115,9 +115,9 @@ class WebHookProcessor:
                 self.messages_cache_service.set_conversation_language(
                     conversation_id=conversation_id, language=message_language
                 )
-                message.translated_en = clean_message
+                conv_message.translated_en = clean_message
                 await self.save_first_message_to_cache(
-                    conversation_id=conversation_id, message=message
+                    conversation_id=conversation_id, message=conv_message
                 )
                 await self.save_request_info(
                     status="ok",
@@ -138,9 +138,9 @@ class WebHookProcessor:
                 corrected_message = analyzed_user_message.corrected_text
                 translated_text = analyzed_user_message.translated_text
                 context_analysis = analyzed_user_message.context_analysis
-                message.translated_en = translated_text
+                conv_message.translated_en = translated_text
                 await self.save_first_message_to_cache(
-                    conversation_id=conversation_id, message=message
+                    conversation_id=conversation_id, message=conv_message
                 )
 
                 if analyzed_user_message.status == "no_error":

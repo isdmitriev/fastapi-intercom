@@ -512,8 +512,8 @@ For \"uncertain\" status, always provide:
 2. A note with explanation of unusual words or why the meaning is unclear
 3. Two complete alternative translations with different interpretations"""
 
-        messages: List[Dict] = [{"role": "system", "content": system_promt3}]
-        chat_history: List[Dict] = self.get_chat_history(
+        messages: List[Dict] = [{"role": "system", "content": system_promt}]
+        chat_history: List[Dict] = self.get_chat_history_v2(
             conversation_id=conversation_id
         )
         for message_chat in chat_history:
@@ -611,11 +611,13 @@ For \"uncertain\" status, always provide:
 
     def get_chat_history_v2(self, conversation_id: str) -> List[Dict]:
 
-        chat_mesages: ConversationMessages = (
+        chat_mesages: ConversationMessages | None = (
             self.messages_cache_service.get_conversation_messages(
                 conversation_id=conversation_id
             )
         )
+        if (chat_mesages == None):
+            return []
 
         messages: List[ConversationMessage] = chat_mesages.messages
         result_messages: List[Dict] = []
