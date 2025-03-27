@@ -36,6 +36,7 @@ class ConversationMessage(BaseModel):
     user: User
     language: str
     message_type: str
+    translated_en: Optional[str] = None
 
 
 class ConversationMessages(BaseModel):

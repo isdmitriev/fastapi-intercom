@@ -243,14 +243,14 @@ def test_conversation_language():
 #     print(res)
 
 
-# @pytest.mark.asyncio
-# async def test_analyze_message_v3():
-#     conversation_id: str = "conv:199"
-#     client = OpenAIService()
-#     result: UserMessage = await client.analyze_message_with_correction_v3(
-#         message="Maine amount transfer kar diya hai. Kya hogaya?",
-#         conversation_id=conversation_id
-#     )
-#     print(result)
-#     print(result.context_analysis)
-#     assert isinstance(result, UserMessage)
+@pytest.mark.asyncio
+async def test_analyze_message_v3():
+    conversation_id: str = "conv:199"
+    client = OpenAIService()
+    result: UserMessage = await client.analyze_message_with_correction_v3(
+        message="namaste",
+        conversation_id=conversation_id
+    )
+    print(result)
+    print(result.context_analysis)
+    assert isinstance(result, UserMessage)
