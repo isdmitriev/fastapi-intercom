@@ -451,7 +451,7 @@ class WebHookProcessor:
                 )
             )
             user: User = User(id=user_id, email=user_email, type="user")
-            message: ConversationMessage = ConversationMessage(
+            conv_message: ConversationMessage = ConversationMessage(
                 conversation_id=conversation_id,
                 time=datetime.datetime.now(),
                 message=clean_message,
@@ -466,9 +466,9 @@ class WebHookProcessor:
                 self.messages_cache_service.set_conversation_language(
                     conversation_id=conversation_id, language=message_language
                 )
-                message.translated_en = clean_message
+                conv_message.translated_en = clean_message
                 await self.save_message_to_cache(
-                    conversation_id=conversation_id, message=message
+                    conversation_id=conversation_id, message=conv_message
                 )
 
                 await self.save_request_info(
@@ -486,9 +486,9 @@ class WebHookProcessor:
                         message=clean_message, conversation_id="conv:" + conversation_id
                     )
                 )
-                message.translated_en = analyzed_message.translated_text
+                conv_message.translated_en = analyzed_message.translated_text
                 await self.save_message_to_cache(
-                    conversation_id=conversation_id, message=message
+                    conversation_id=conversation_id, message=conv_message
                 )
                 if analyzed_message.status == "no_error":
                     if message_language != "English":
@@ -667,7 +667,7 @@ class WebHookProcessor:
                 clean_message = clean_message.lstrip("!")
                 user: User = User(id=admin_id, email="em@gmail.com", type="admin")
                 print(user)
-                message: ConversationMessage = ConversationMessage(
+                conv_message: ConversationMessage = ConversationMessage(
                     conversation_id=conversation_id,
                     time=datetime.datetime.now(),
                     message=clean_message,
@@ -675,9 +675,9 @@ class WebHookProcessor:
                     language="English",
                     message_type="conversation.admin.noted",
                 )
-                await self.save_message_to_cache(
-                    conversation_id=conversation_id, message=message
-                )
+                # await self.save_message_to_cache(
+                #     conversation_id=conversation_id, message=conv_message
+                # )
 
                 await self.send_admin_reply_message(
                     conversation_id=conversation_id,
@@ -754,6 +754,7 @@ class WebHookProcessor:
                 admin_id=admin_id,
                 message=admin_reply_message,
             )
+            await self.save_message_to_cache(conversation_id=conversation_id, message=conv_message)
             return
         elif target_language == "Hindi":
             admin_reply_message: str = (
@@ -767,6 +768,7 @@ class WebHookProcessor:
                 admin_id=admin_id,
                 message=admin_reply_message,
             )
+            await self.save_message_to_cache(conversation_id=conversation_id, message=conv_message)
             return
         elif target_language == "Bengali":
             admin_reply_message: str = (
@@ -780,6 +782,7 @@ class WebHookProcessor:
                 admin_id=admin_id,
                 message=admin_reply_message,
             )
+            await self.save_message_to_cache(conversation_id=conversation_id, message=conv_message)
             return
         elif target_language == "English":
             await self.intercom_service.add_admin_message_to_conversation_async(
@@ -788,6 +791,7 @@ class WebHookProcessor:
                 message=message,
             )
             conv_message.translated_en = message
+            await self.save_message_to_cache(conversation_id=conversation_id, message=conv_message)
             return
         else:
             return
