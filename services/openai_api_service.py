@@ -524,7 +524,7 @@ For \"uncertain\" status, always provide:
                 }
             )
 
-        messages.append({"role": "user", "content": f"CURRENT MESSAGE:{message}"})
+        messages.append({"role": "user", "content": f"CURRENT MESSAGE: {message}"})
 
         try:
             response = await self.client_async.chat.completions.create(
@@ -626,13 +626,13 @@ For \"uncertain\" status, always provide:
                 result_messages.append(
                     {"role": "assistant", "content": chat_message.message}
                 )
-                result_messages.append({'role': 'assistant', 'content': f'[TRANSLATED]:{chat_message.translated_en}'})
+                result_messages.append({'role': 'assistant', 'content': f'[TRANSLATED]: {chat_message.translated_en}'})
 
             if chat_message.user.type == "user":
                 result_messages.append(
                     {"role": "user", "content": chat_message.message}
                 )
-                result_messages.append({'role': 'user', 'content': f'[ENGLISH]:{chat_message.translated_en}'})
+                result_messages.append({'role': 'user', 'content': f'[ENGLISH]: {chat_message.translated_en}'})
 
         return result_messages
 
