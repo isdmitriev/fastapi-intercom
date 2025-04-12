@@ -46,12 +46,17 @@ class WebHookProcessor:
         self.es_service = es_service
 
     async def process_message(self, topic: str, message: Dict):
+        conversation_id: str = message.get("data", {}).get("item", {}).get("id", "")
+        conv_status: str | None = self.messages_cache_service.get_conversation_status(conversation_id=conversation_id)
 
         if topic == "conversation.user.created":
             await self.handle_conversation_user_created_v3(data=message)
             return
 
         elif topic == "conversation.user.replied":
+            if (conv_status == 'stoped'):
+                return
+
             await self.handle_conversation_user_replied_v3(data=message)
             return
 
@@ -380,6 +385,9 @@ class WebHookProcessor:
             messages=all_conversation_messages,
         )
 
+    async def set_conversation_status(self, conversation_id: str, status: str):
+        self.messages_cache_service.set_conversation_status(conversation_d=conversation_id, status=status)
+
     async def handle_conversation_user_created_v2(self, data: Dict):
         conversation_id: str = data.get("data", {}).get("item", {}).get("id", "")
         self.intercom_service.attach_admin_to_conversation(
@@ -647,6 +655,7 @@ class WebHookProcessor:
 
     async def handle_conversation_admin_noted_v3(self, data: Dict):
         try:
+
             start_time = time.perf_counter()
             print("conversation.admin.noted")
             admin_translator_id: str = "8024055"
@@ -657,13 +666,25 @@ class WebHookProcessor:
             clean_message: str = BeautifulSoup(message, "html.parser").getText()
             admin_id: str = admin_note.get("author", {}).get("id", "")
             conversation_id: str = data["data"]["item"]["id"]
+            conv_status: str | None = self.messages_cache_service.get_conversation_status(
+                conversation_id=conversation_id)
             is_note_for_reply: bool = clean_message.startswith("!")
             conversation_language: str = (
                 self.messages_cache_service.get_conversation_language(
                     conversation_id=conversation_id
                 )
             )
-            if admin_id != admin_translator_id and is_note_for_reply == True:
+            if (clean_message == '!force stop' or clean_message == '!force start'):
+                status: str = ''
+                if (clean_message == '!force stop'):
+                    status = 'stoped'
+                else:
+                    status = 'started'
+
+                await self.set_conversation_status(conversation_id=conversation_id, status=status)
+                return
+
+            if admin_id != admin_translator_id and is_note_for_reply == True and conv_status != 'stoped':
                 clean_message = clean_message.lstrip("!")
                 user: User = User(id=admin_id, email="em@gmail.com", type="admin")
                 print(user)

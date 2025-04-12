@@ -11,7 +11,7 @@ class RedisService:
     def __init__(self):
         try:
             self.redis_client = Redis(
-                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=1
+                host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=1
             )
         except RedisError as redis_error:
             full_exception_name = (
@@ -43,7 +43,7 @@ class MessagesCache:
     def __init__(self):
         try:
             self.redis_client = Redis(
-                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=2
+                host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=2
             )
         except RedisError as redis_error:
             full_exception_name = (
@@ -88,6 +88,14 @@ class MessagesCache:
     def get_conversation_language(self, conversation_id: str):
         language: str = self.redis_client.get(conversation_id)
         return language
+
+    def set_conversation_status(self, conversation_d: str, status: str):
+        conv_status: str = 'conv_status:' + conversation_d
+        self.set_key(conv_status, status)
+
+    def get_conversation_status(self, conversation_id: str) -> str | None:
+        status: str = self.redis_client.get('conv_status:' + conversation_id)
+        return status
 
     def close(self):
         self.redis_client.close()
