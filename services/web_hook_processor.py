@@ -684,7 +684,7 @@ class WebHookProcessor:
                 await self.set_conversation_status(conversation_id=conversation_id, status=status)
                 return
 
-            if admin_id != admin_translator_id and is_note_for_reply == True and conv_status != 'stoped':
+            if is_note_for_reply == True and conv_status != 'stoped':
                 clean_message = clean_message.lstrip("!")
                 user: User = User(id=admin_id, email="em@gmail.com", type="admin")
                 print(user)

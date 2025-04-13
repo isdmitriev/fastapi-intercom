@@ -8,7 +8,7 @@ load_dotenv()
 
 class ESService:
     def __init__(self):
-        self.client = Elasticsearch(os.getenv("ESEARCH_URI_KS"))
+        self.client = Elasticsearch(os.getenv("ESEARCH_URI"))
 
     def create_index(self, index_name: str):
         self.client.indices.create(index=index_name)
