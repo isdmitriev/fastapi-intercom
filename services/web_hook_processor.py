@@ -84,6 +84,7 @@ class WebHookProcessor:
         self.messages_cache_service.delete_conversation(
             conversation_id="conv:" + conversation_id
         )
+        self.messages_cache_service.delete_conversation('conv_status:' + conversation_id)
 
     async def handle_conversation_user_created_v3(self, data: Dict):
         try:
