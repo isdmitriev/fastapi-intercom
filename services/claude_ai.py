@@ -192,6 +192,7 @@ Your response will be programmatically parsed, so any text outside the JSON stru
                 model="claude-3-7-sonnet-20250219",
                 max_tokens=1024,
                 system=system_promt,
+                temperature=0.2,
 
                 messages=[
                     {"role": 'user', "content": f"CURRENT MESSAGE: {message}"}],
