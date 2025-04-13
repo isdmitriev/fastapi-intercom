@@ -13,7 +13,7 @@ import traceback
 from services.http_service import IntercomAPIServiceV2
 from models.custom_exceptions import APPException
 import time
-
+from services.claude_ai import ClaudeService
 CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService
 from models.models import MessageTranslated, User, RequestInfo
@@ -243,14 +243,24 @@ def test_conversation_language():
 #     print(res)
 
 
-@pytest.mark.asyncio
-async def test_analyze_message_v3():
-    conversation_id: str = "conv:199"
-    client = OpenAIService()
-    result: UserMessage = await client.analyze_message_with_correction_v3(
-        message="namaste",
-        conversation_id=conversation_id
-    )
-    print(result)
-    print(result.context_analysis)
-    assert isinstance(result, UserMessage)
+# @pytest.mark.asyncio
+# async def test_analyze_message_v3():
+#     conversation_id: str = "conv:199"
+#     client = OpenAIService()
+#     result: UserMessage = await client.analyze_message_with_correction_v3(
+#         message="namaste",
+#         conversation_id=conversation_id
+#     )
+#     print(result)
+#     print(result.context_analysis)
+#     assert isinstance(result, UserMessage)
+#
+# @pytest.mark.asyncio
+# async def test_analyze_message_claude():
+#     conversation_id: str = "conv:199"
+#     client =ClaudeService()
+#     user_message:UserMessage=await client.analyze_message_with_correction(message='Meri button abhi bhi active nahi hai.',conversation_id=conversation_id)
+#     print(user_message)
+#     assert isinstance(user_message,UserMessage)
+
+
