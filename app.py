@@ -15,6 +15,7 @@ from openai._exceptions import OpenAIError
 from redis.exceptions import RedisError
 from aiohttp.client_exceptions import ClientResponseError
 import time
+from prometheus_fastapi_instrumentator import Instrumentator
 
 container = Container()
 container.init_resources()
@@ -29,6 +30,7 @@ container.wire(
 )
 app = FastAPI()
 logger = logging.getLogger(__name__)
+Instrumentator().instrument(app).expose(app)
 
 
 @app.on_event("startup")
@@ -39,9 +41,9 @@ async def startup():
 @app.exception_handler(APPException)
 @inject
 async def handle_app_exception(
-    request: Request,
-    exception: APPException,
-    # es_service: ESService = Depends(lambda: container.es_service()),
+        request: Request,
+        exception: APPException,
+        # es_service: ESService = Depends(lambda: container.es_service()),
 ):
     es_service: ESService = container.es_service()
     request_info: RequestInfo = RequestInfo(
@@ -62,9 +64,9 @@ async def handle_app_exception(
 @app.exception_handler(OpenAIError)
 @inject
 async def handle_open_ai_exception(
-    request: Request,
-    openai_error: OpenAIError,
-    es_service: ESService = Depends(lambda: container.es_service()),
+        request: Request,
+        openai_error: OpenAIError,
+        es_service: ESService = Depends(lambda: container.es_service()),
 ):
     es_service: ESService = container.es_service()
     ex_class: str = type(openai_error).__module__ + "." + type(openai_error).__name__
@@ -86,9 +88,9 @@ async def handle_open_ai_exception(
 @app.exception_handler(RedisError)
 @inject
 async def handle_redis_error(
-    request: Request,
-    error: RedisError,
-    # es_service: ESService = Depends(lambda: container.es_service()),
+        request: Request,
+        error: RedisError,
+        # es_service: ESService = Depends(lambda: container.es_service()),
 ):
     es_service: ESService = container.es_service()
 
@@ -111,9 +113,9 @@ async def handle_redis_error(
 @app.exception_handler(ClientResponseError)
 @inject
 async def handle_http_error(
-    request: Request,
-    error: ClientResponseError,
-    es_service: ESService = Depends(lambda: container.es_service()),
+        request: Request,
+        error: ClientResponseError,
+        es_service: ESService = Depends(lambda: container.es_service()),
 ):
     ex_class: str = type(error).__module__ + type(error).__name__
     exception: APPException = APPException(
@@ -144,12 +146,12 @@ async def shutdown():
 @app.post("/webhook/test")
 @inject
 async def get_message(
-    request: Request,
-    web_hook_processor: WebHookProcessor = Depends(
-        lambda: container.web_hook_processor()
-    ),
-    mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
-    redis_service: RedisService = Depends(lambda: container.redis_service()),
+        request: Request,
+        web_hook_processor: WebHookProcessor = Depends(
+            lambda: container.web_hook_processor()
+        ),
+        mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
+        redis_service: RedisService = Depends(lambda: container.redis_service()),
 ):
     payload: Dict = await request.json()
 
@@ -176,13 +178,13 @@ async def get_message(
 @app.post("/webhook/message")
 @inject
 async def get_message(
-    request: Request,
-    web_hook_processor: WebHookProcessor = Depends(
-        lambda: container.web_hook_processor()
-    ),
-    mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
-    redis_service: RedisService = Depends(lambda: container.redis_service()),
-    es_service: ESService = Depends(lambda: container.es_service()),
+        request: Request,
+        web_hook_processor: WebHookProcessor = Depends(
+            lambda: container.web_hook_processor()
+        ),
+        mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
+        redis_service: RedisService = Depends(lambda: container.redis_service()),
+        es_service: ESService = Depends(lambda: container.es_service()),
 ):
     try:
 
