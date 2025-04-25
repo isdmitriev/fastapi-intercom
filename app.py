@@ -15,6 +15,7 @@ from openai._exceptions import OpenAIError
 from redis.exceptions import RedisError
 from aiohttp.client_exceptions import ClientResponseError
 import time
+import psutil
 from prometheus_fastapi_instrumentator import Instrumentator
 
 container = Container()
@@ -141,6 +142,19 @@ async def handle_http_error(
 @app.on_event("shutdown")
 async def shutdown():
     await container.shutdown_resources()
+
+
+@app.middleware('http')
+async def process_metrics(request: Request, call_next):
+    process = psutil.Process()
+    
+    memory_before = process.memory_info().rss / (1024 * 1024)
+    print(memory_before)
+    response = await call_next(request)
+    memory_after = process.memory_info().rss / (1024 * 1024)
+    print(memory_after)
+
+    return response
 
 
 @app.post("/webhook/test")
