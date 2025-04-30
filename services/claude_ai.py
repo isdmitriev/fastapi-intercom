@@ -408,9 +408,7 @@ Your response will be programmatically parsed, so any text outside the JSON stru
                 max_tokens=1024,
                 system=system_promt,
                 temperature=0.2,
-
-                messages=[
-                    {"role": 'user', "content": f"CURRENT MESSAGE: {message}"}],
+                messages=[{"role": "user", "content": f"CURRENT MESSAGE: {message}"}],
             )
 
             response_dict: Dict = json.loads(response.content[0].text)

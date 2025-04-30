@@ -52,7 +52,11 @@ class WebHookProcessor:
         )
 
         if topic == "conversation.user.created":
-            await self.handle_conversation_user_created_v3(data=message)
+            # await self.handle_conversation_user_created_v3(data=message)
+
+            await self.set_conversation_status(
+                conversation_id=conversation_id, status="stoped"
+            )
             return
 
         elif topic == "conversation.user.replied":
@@ -387,6 +391,10 @@ class WebHookProcessor:
                 conversation_id="conv:" + conversation_id
             )
         )
+        if (all_conversation_messages == None):
+            await self.save_first_message_to_cache(conversation_id=conversation_id, message=message)
+            return
+
         all_conversation_messages.messages.append(message)
         self.messages_cache_service.set_conversation_messages(
             conversation_id="conv:" + conversation_id,

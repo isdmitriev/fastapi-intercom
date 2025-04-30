@@ -31,7 +31,9 @@ container.wire(
 )
 app = FastAPI()
 logger = logging.getLogger(__name__)
-Instrumentator().instrument(app).expose(app)
+
+
+# Instrumentator().instrument(app).expose(app)
 
 
 @app.on_event("startup")
@@ -144,17 +146,17 @@ async def shutdown():
     await container.shutdown_resources()
 
 
-@app.middleware('http')
-async def process_metrics(request: Request, call_next):
-    process = psutil.Process()
-    
-    memory_before = process.memory_info().rss / (1024 * 1024)
-    print(memory_before)
-    response = await call_next(request)
-    memory_after = process.memory_info().rss / (1024 * 1024)
-    print(memory_after)
-
-    return response
+# @app.middleware('http')
+# async def process_metrics(request: Request, call_next):
+#     process = psutil.Process()
+#
+#     memory_before = process.memory_info().rss / (1024 * 1024)
+#     print(memory_before)
+#     response = await call_next(request)
+#     memory_after = process.memory_info().rss / (1024 * 1024)
+#     print(memory_after)
+#
+#     return response
 
 
 @app.post("/webhook/test")

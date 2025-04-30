@@ -23,6 +23,7 @@ class IntercomAPIService:
         }
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
+
             return response.status_code, response.json()
         else:
             return response.status_code, None
