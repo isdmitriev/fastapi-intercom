@@ -15,7 +15,7 @@ from models.custom_exceptions import APPException
 import time
 from services.claude_ai import ClaudeService
 from services.kafka_producer_service import KafkaProducerService
-
+from services.web_hook_processor import WebHookProcessor
 CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService
 from models.models import MessageTranslated, User, RequestInfo
@@ -208,6 +208,10 @@ async def test_translator_service():
 
 @pytest.mark.asyncio
 async def test_kafka_service():
+    processor=Container.web_hook_processor()
+    assert isinstance(processor,WebHookProcessor)
+    assert processor.intercom_service is not None
+    assert processor.openai_service is not None
     kafka_client: KafkaProducerService = KafkaProducerService()
     payload: Dict = {'name': 'ilya', 'age': 32}
     await kafka_client.send_message_async(payload=payload,key='first')

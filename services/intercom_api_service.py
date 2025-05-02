@@ -12,7 +12,7 @@ load_dotenv()
 
 class IntercomAPIService:
     def __init__(self):
-        self.access_token = os.getenv("INTERCOM_KEY_TEST")
+        self.access_token = os.getenv("INTERCOM_KEY")
         self.base_url = "https://api.intercom.io"
 
     def get_all_admins(self) -> Tuple[int, Dict | None]:
@@ -44,7 +44,7 @@ class IntercomAPIService:
             return response.status_code, None
 
     def create_conversation(
-        self, user_id: str, message: str
+            self, user_id: str, message: str
     ) -> Tuple[int, Dict | None]:
         url: str = self.base_url + "/conversations"
         headers = {
@@ -60,7 +60,7 @@ class IntercomAPIService:
             return response.status_code, None
 
     def attach_admin_to_conversation(
-        self, admin_id: str, conversation_id: str
+            self, admin_id: str, conversation_id: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/parts"
         headers = {
@@ -83,7 +83,7 @@ class IntercomAPIService:
             return response.status_code, None
 
     async def attach_admin_to_conversation_async(
-        self, admin_id: str, conversation_id: str
+            self, admin_id: str, conversation_id: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/parts"
         headers = {
@@ -107,7 +107,7 @@ class IntercomAPIService:
                 return response.status_code, None
 
     def add_admin_note_to_conversation(
-        self, conversation_id: str, admin_id: str, note: str
+            self, conversation_id: str, admin_id: str, note: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         headers = {
@@ -129,7 +129,7 @@ class IntercomAPIService:
             return response.status_code, None
 
     def add_admin_message_to_conversation(
-        self, conversation_id: str, admin_id: str, message: str
+            self, conversation_id: str, admin_id: str, message: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         headers = {
@@ -150,7 +150,7 @@ class IntercomAPIService:
             return response.status_code, None
 
     async def add_admin_message_to_conversation_async(
-        self, conversation_id: str, admin_id: str, message: str
+            self, conversation_id: str, admin_id: str, message: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         headers = {
@@ -217,7 +217,7 @@ class IntercomAPIService:
             return 0, None
 
     async def add_user_replied_to_conversation(
-        self, conversation_id: str, user_id: str, message: str
+            self, conversation_id: str, user_id: str, message: str
     ) -> Tuple[int, Dict | None]:
         headers = {
             "Authorization": f"Bearer {self.access_token}",
@@ -233,9 +233,9 @@ class IntercomAPIService:
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                f"{self.base_url}/conversations/{conversation_id}/reply",
-                headers=headers,
-                json=payload,
+                    f"{self.base_url}/conversations/{conversation_id}/reply",
+                    headers=headers,
+                    json=payload,
             ) as response:
                 response.raise_for_status()
                 if response.status == 200:
@@ -245,7 +245,7 @@ class IntercomAPIService:
                     return response.status, None
 
     async def add_admin_note_to_conversation_async(
-        self, conversation_id: str, admin_id: str, note: str
+            self, conversation_id: str, admin_id: str, note: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         headers = {
@@ -268,7 +268,7 @@ class IntercomAPIService:
                     return response.status, None
 
     async def get_conversation_parts_by_id_async(
-        self, conversation_id: str
+            self, conversation_id: str
     ) -> Tuple[int, Dict | None]:
         url: str = f"https://api.intercom.io/conversations/{conversation_id}"
         headers = {
