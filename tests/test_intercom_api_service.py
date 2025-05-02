@@ -14,6 +14,7 @@ from services.http_service import IntercomAPIServiceV2
 from models.custom_exceptions import APPException
 import time
 from services.claude_ai import ClaudeService
+from services.kafka_producer_service import KafkaProducerService
 
 CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService
@@ -205,10 +206,11 @@ async def test_translator_service():
     print(result)
 
 
-def test_intercom_api():
-    client: IntercomAPIService = IntercomAPIService()
-    response = client.get_all_admins()
-    print(response[1])
+@pytest.mark.asyncio
+async def test_kafka_service():
+    kafka_client: KafkaProducerService = KafkaProducerService()
+    payload: Dict = {'name': 'ilya', 'age': 32}
+    await kafka_client.send_message_async(payload=payload,key='first')
 
 # @pytest.mark.asyncio
 # async def test_analyze_message():

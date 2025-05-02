@@ -8,6 +8,7 @@ from services.conversation_parts_service import ConversationPartsService
 from services.redis_cache_service import MessagesCache
 from services.openai_translator_service import OpenAITranslatorService
 from services.es_service import ESService
+from services.kafka_producer_service import KafkaProducerService
 
 
 class Container(containers.DeclarativeContainer):
@@ -28,6 +29,7 @@ class Container(containers.DeclarativeContainer):
     messages_cache_service: MessagesCache = providers.Singleton(MessagesCache)
     open_ai_service = providers.Singleton(OpenAIService, messages_cache_service=messages_cache_service)
     translations_service = providers.Singleton(OpenAITranslatorService)
+    kafka_producer_service = providers.Singleton(KafkaProducerService)
 
     conversation_parts_service = providers.Singleton(
         ConversationPartsService,

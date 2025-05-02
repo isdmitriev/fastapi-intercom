@@ -7,6 +7,7 @@ from services.web_hook_processor import WebHookProcessor
 from services.redis_cache_service import RedisService
 from services.mongodb_service import MongodbService
 from services.es_service import ESService
+from services.kafka_producer_service import KafkaProducerService
 from di.di_container import Container
 from dependency_injector.wiring import inject
 from models.custom_exceptions import APPException
@@ -27,6 +28,7 @@ container.wire(
         "services.redis_cache_service",
         "services.mongodb_service",
         "services.es_service",
+        "services.kafka_producer_service"
     ]
 )
 app = FastAPI()
@@ -157,6 +159,12 @@ async def shutdown():
 #     print(memory_after)
 #
 #     return response
+@app.post('/webhook/kafka')
+async def test_kafka(request: Request):
+    payload: Dict = await request.json()
+    kafka_service = container.kafka_producer_service()
+    await kafka_service.send_message_async(key='test', payload=payload)
+    return Response(status_code=status.HTTP_200_OK)
 
 
 @app.post("/webhook/test")
