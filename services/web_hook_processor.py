@@ -284,7 +284,8 @@ class WebHookProcessor:
     async def send_admin_note_async(
             self, conversation_id: str, message: str, message_language
     ):
-        admin_id: str = "8024055"
+        # admin_id: str = "8024055"
+        admin_id: str = "4687718"
         if message_language == "Hindi":
             note_for_admin: str = (
                 await self.translations_service.translate_message_from_hindi_to_english_async(
@@ -690,7 +691,7 @@ class WebHookProcessor:
                 )
             )
             is_note_for_reply: bool = clean_message.startswith("!")
-            conversation_language: str = (
+            conversation_language: str | None = (
                 self.messages_cache_service.get_conversation_language(
                     conversation_id=conversation_id
                 )
@@ -782,6 +783,8 @@ class WebHookProcessor:
             message: str,
             target_language: str,
     ):
+        if (target_language == None):
+            return
         conv_message: ConversationMessage = ConversationMessage(
             conversation_id=conversation_id,
             time=datetime.datetime.now(),
