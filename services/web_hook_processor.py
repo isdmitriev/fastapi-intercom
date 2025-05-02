@@ -28,14 +28,14 @@ import time
 class WebHookProcessor:
 
     def __init__(
-        self,
-        mongo_db_service: MongodbService,
-        openai_service: OpenAIService,
-        intercom_service: IntercomAPIService,
-        conversation_parts_service: ConversationPartsService,
-        messages_cache_service: MessagesCache,
-        translations_service: OpenAITranslatorService,
-        es_service: ESService,
+            self,
+            mongo_db_service: MongodbService,
+            openai_service: OpenAIService,
+            intercom_service: IntercomAPIService,
+            conversation_parts_service: ConversationPartsService,
+            messages_cache_service: MessagesCache,
+            translations_service: OpenAITranslatorService,
+            es_service: ESService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -163,6 +163,7 @@ class WebHookProcessor:
                             conversation_id=conversation_id,
                             message=clean_message,
                             message_language=message_language,
+                            original=clean_message
                         )
                         await self.save_request_info(
                             status="ok",
@@ -175,6 +176,7 @@ class WebHookProcessor:
                             conversation_id=conversation_id,
                             message=clean_message,
                             message_language=message_language,
+                            original=clean_message
                         )
                         await self.save_request_info(
                             status="ok",
@@ -187,6 +189,7 @@ class WebHookProcessor:
                             conversation_id=conversation_id,
                             message=clean_message,
                             message_language=message_language,
+                            original=clean_message
                         )
                         await self.save_request_info(
                             status="ok",
@@ -203,6 +206,7 @@ class WebHookProcessor:
                             conversation_id=conversation_id,
                             message=corrected_message,
                             message_language=message_language,
+                            original=clean_message
                         )
                         await self.save_request_info(
                             status="ok",
@@ -214,6 +218,7 @@ class WebHookProcessor:
                             conversation_id=conversation_id,
                             message=corrected_message,
                             message_language=message_language,
+                            original=clean_message
                         )
                         await self.save_request_info(
                             status="ok",
@@ -225,6 +230,7 @@ class WebHookProcessor:
                             conversation_id=conversation_id,
                             message=corrected_message,
                             message_language=message_language,
+                            original=clean_message
                         )
                         await self.save_request_info(
                             status="ok",
@@ -238,6 +244,7 @@ class WebHookProcessor:
                         conversation_id=conversation_id,
                         message=note,
                         message_language="English",
+                        original=clean_message
                     )
                     await self.save_request_info(
                         status="ok",
@@ -282,7 +289,7 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_note_async(
-        self, conversation_id: str, message: str, message_language
+            self, conversation_id: str, message: str, message_language, original: str
     ):
         admin_id: str = "8024055"
         # admin_id: str = "4687718"
@@ -292,6 +299,8 @@ class WebHookProcessor:
                     message=message
                 )
             )
+            note_for_admin='original:'+original+"\n"+note_for_admin
+
             await self.intercom_service.add_admin_note_to_conversation_async(
                 conversation_id=conversation_id,
                 admin_id=admin_id,
@@ -304,6 +313,9 @@ class WebHookProcessor:
                     message=message
                 )
             )
+            note_for_admin = 'original:' + original + "\n" + note_for_admin
+
+
             await self.intercom_service.add_admin_note_to_conversation_async(
                 conversation_id=conversation_id,
                 admin_id=admin_id,
@@ -316,6 +328,8 @@ class WebHookProcessor:
                     message=message
                 )
             )
+            note_for_admin = 'original:' + original + "\n" + note_for_admin
+
             await self.intercom_service.add_admin_note_to_conversation_async(
                 conversation_id=conversation_id,
                 admin_id=admin_id,
@@ -323,8 +337,9 @@ class WebHookProcessor:
             )
             return
         elif message_language == "English":
+            note_for_admin: str = 'original:' + original + "\n" + message
             await self.intercom_service.add_admin_note_to_conversation_async(
-                conversation_id=conversation_id, admin_id=admin_id, note=message
+                conversation_id=conversation_id, admin_id=admin_id, note=note_for_admin
             )
             return
         else:
@@ -335,19 +350,19 @@ class WebHookProcessor:
         one: str = possible_interpritations[0]
         two: str = possible_interpritations[1]
         note: str = (
-            "translated: "
-            + message.translated_text
-            + "\n"
-            + message.context_analysis
-            + "\n"
-            + one
-            + "\n"
-            + two
+                "translated: "
+                + message.translated_text
+                + "\n"
+                + message.context_analysis
+                + "\n"
+                + one
+                + "\n"
+                + two
         )
         return note
 
     async def save_request_info(
-        self, status: str, execution_time: float, event_type: str
+            self, status: str, execution_time: float, event_type: str
     ):
         request_info: RequestInfo = RequestInfo(
             status=status,
@@ -363,7 +378,7 @@ class WebHookProcessor:
         # es_client.add_document(index_name="requests", document=request_info.dict())
 
     async def save_first_message_to_cache(
-        self, conversation_id: str, message: ConversationMessage
+            self, conversation_id: str, message: ConversationMessage
     ):
         messages: ConversationMessages = ConversationMessages(messages=[message])
         self.messages_cache_service.set_conversation_messages(
@@ -371,10 +386,10 @@ class WebHookProcessor:
         )
 
     async def save_first_message_to_cache_2(
-        self,
-        conversation_id: str,
-        message: ConversationMessage,
-        analyzed_message: UserMessage,
+            self,
+            conversation_id: str,
+            message: ConversationMessage,
+            analyzed_message: UserMessage,
     ):
         translated_message: str = analyzed_message.translated_text
         if analyzed_message.status == "no_error":
@@ -385,7 +400,7 @@ class WebHookProcessor:
             )
 
     async def save_message_to_cache(
-        self, conversation_id: str, message: ConversationMessage
+            self, conversation_id: str, message: ConversationMessage
     ):
         all_conversation_messages = (
             self.messages_cache_service.get_conversation_messages(
@@ -525,6 +540,7 @@ class WebHookProcessor:
                             conversation_id=conversation_id,
                             message=clean_message,
                             message_language=message_language,
+                            original=clean_message
                         )
                         await self.save_request_info(
                             status="ok",
@@ -537,6 +553,7 @@ class WebHookProcessor:
                         conversation_id=conversation_id,
                         message=corrected_message,
                         message_language=message_language,
+                        original=clean_message
                     )
                     await self.save_request_info(
                         status="ok",
@@ -550,6 +567,7 @@ class WebHookProcessor:
                         conversation_id=conversation_id,
                         message=note,
                         message_language="English",
+                        original=clean_message
                     )
                     await self.save_request_info(
                         status="ok",
@@ -778,12 +796,12 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_reply_message(
-        self,
-        user: User,
-        conversation_id: str,
-        admin_id: str,
-        message: str,
-        target_language: str,
+            self,
+            user: User,
+            conversation_id: str,
+            admin_id: str,
+            message: str,
+            target_language: str,
     ):
         if target_language == None:
             return
