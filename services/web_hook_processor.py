@@ -282,16 +282,17 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_note_async(
-            self, conversation_id: str, message: str, message_language
+            self, conversation_id: str, message: str, message_language, original: str
     ):
-        # admin_id: str = "8024055"
-        admin_id: str = "4687718"
+        admin_id: str = "8024055"
+        # admin_id: str = "4687718"
         if message_language == "Hindi":
             note_for_admin: str = (
                 await self.translations_service.translate_message_from_hindi_to_english_async(
                     message=message
                 )
             )
+            note_for_admin = 'original:' + original + '\n' + '\n' + note_for_admin
             await self.intercom_service.add_admin_note_to_conversation_async(
                 conversation_id=conversation_id,
                 admin_id=admin_id,
@@ -304,6 +305,7 @@ class WebHookProcessor:
                     message=message
                 )
             )
+            note_for_admin = 'original:' + original + '\n' + '\n' + note_for_admin
             await self.intercom_service.add_admin_note_to_conversation_async(
                 conversation_id=conversation_id,
                 admin_id=admin_id,
@@ -316,6 +318,7 @@ class WebHookProcessor:
                     message=message
                 )
             )
+            note_for_admin = 'original:' + original + '\n' + '\n' + note_for_admin
             await self.intercom_service.add_admin_note_to_conversation_async(
                 conversation_id=conversation_id,
                 admin_id=admin_id,
@@ -323,8 +326,9 @@ class WebHookProcessor:
             )
             return
         elif message_language == "English":
+            note_for_admin = 'original:' + original + '\n' + '\n' + message
             await self.intercom_service.add_admin_note_to_conversation_async(
-                conversation_id=conversation_id, admin_id=admin_id, note=message
+                conversation_id=conversation_id, admin_id=admin_id, note=note_for_admin
             )
             return
         else:
@@ -523,6 +527,7 @@ class WebHookProcessor:
                             conversation_id=conversation_id,
                             message=clean_message,
                             message_language=message_language,
+                            original=clean_message
                         )
                         await self.save_request_info(
                             status="ok",
@@ -535,6 +540,7 @@ class WebHookProcessor:
                         conversation_id=conversation_id,
                         message=corrected_message,
                         message_language=message_language,
+                        original=clean_message
                     )
                     await self.save_request_info(
                         status="ok",
@@ -548,6 +554,7 @@ class WebHookProcessor:
                         conversation_id=conversation_id,
                         message=note,
                         message_language="English",
+                        original=clean_message
                     )
                     await self.save_request_info(
                         status="ok",

@@ -12,7 +12,7 @@ load_dotenv()
 
 class IntercomAPIService:
     def __init__(self):
-        self.access_token = os.getenv("INTERCOM_KEY_TEST")
+        self.access_token = os.getenv("INTERCOM_KEY")
         self.base_url = "https://api.intercom.io"
 
     def get_all_admins(self) -> Tuple[int, Dict | None]:
