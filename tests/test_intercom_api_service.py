@@ -198,17 +198,25 @@ def test_conversation_language():
 
 @pytest.mark.asyncio
 async def test_translator_service():
+    start_time = time.perf_counter()
     client: OpenAITranslatorService = OpenAITranslatorService()
     result = await client.translate_message_from_english_to_hinglish_async_v2(
         "! hey there how are you doing today?"
     )
     print(result)
+    print(time.perf_counter()-start_time)
+@pytest.mark.asyncio
+async def test_openai():
+    start_time=time.perf_counter()
+    client:OpenAIService=Container.open_ai_service()
+    message:UserMessage=await client.analyze_message_with_correction('Mujhe problem ho rahi hai, withdraw option kaam nahi kar raha hai.')
+    assert isinstance(message,UserMessage)
+    print(time.perf_counter()-start_time)
 
-
-def test_intercom_api():
-    client: IntercomAPIService = IntercomAPIService()
-    response = client.get_all_admins()
-    print(response[1])
+# def test_intercom_api():
+#     client: IntercomAPIService = IntercomAPIService()
+#     response = client.get_all_admins()
+#     print(response[1])
 
 # @pytest.mark.asyncio
 # async def test_analyze_message():

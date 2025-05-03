@@ -234,6 +234,7 @@ Example responses:
         )
 
         response_dict: Dict = json.loads(response.choices[0].message.content)
+        print(response_dict)
 
         status: str = response_dict.get("status", "")
         if status == "no_error":
@@ -246,6 +247,7 @@ Example responses:
                 note=None,
                 corrected_text=original_text,
                 possible_interpretations=[],
+                context_analysis="",
             )
         elif status == "error_fixed":
             original_text: str = response_dict.get("original_text", "")
@@ -258,6 +260,7 @@ Example responses:
                 note=None,
                 corrected_text=corrected_text,
                 possible_interpretations=[],
+                context_analysis="",
             )
         elif status == "uncertain":
             original_text: str = response_dict.get("original_text", "")
@@ -273,6 +276,7 @@ Example responses:
                 possible_interpretations=interpretations,
                 note=note,
                 corrected_text="",
+                context_analysis="",
             )
         else:
             return None
@@ -643,85 +647,13 @@ Do not include any explanatory text, disclaimers, or formatting outside the JSON
 Your response will be programmatically parsed, so any text outside the JSON structure will cause errors.
 """
 
-        system_promt3 = """You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali.
+        system_promt3 = """
+  "system": "You are a Casino Support AI Assistant. Analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali. Use full chat history to interpret the message.",
+  "instruction": "Return ONLY valid JSON in this format: {\n  \"status\": \"[uncertain/error_fixed/no_error]\",\n  \"original_text\": \"...\",\n  \"translated_text\": \"...\",\n  \"context_analysis\": \"...\",\n  [\"corrected_text\" if error_fixed]\n  [\"possible_interpretations\" and \"note\" if uncertain]\n}\n\nSTATUS RULES:\n1. If prior messages clarify meaning fully → status = no_error\n2. If spelling/term mistakes → status = error_fixed (correct and return)\n3. If vague, idiomatic, or unclear → status = uncertain (provide 2 interpretations + note)\n\nALWAYS prefer 'uncertain' if not 100% clear. DO NOT return any text outside the JSON object.\n\nTERMS TO WATCH:\n- 'petrol', 'diesel', 'recharge', etc. = slang for withdrawal/deposit\n- 'engine', 'car', 'system slow' = may refer to account/app issues\n- 'problem abhi bhi hai' = check prior problems (bonus, withdrawal, etc.)\n\nEXAMPLES:\n- 'withdrawl' → correct to 'withdrawal'\n- 'problem abhi bhi hai' → give 2 interpretations if multiple issues mentioned before\n- 'Kitna time lagega?' → 'uncertain' unless specific process previously mentioned\n\nNO EXTRA TEXT ALLOWED — ONLY JSON."
 
-IMPORTANT: You must carefully analyze the chat history provided to understand the context before interpreting the current message. Agent responses in the chat history are provided in both English (original) and translated form. 
+"""
 
-When forming possible interpretations for uncertain messages, ALWAYS consider what topics were previously discussed in the chat history. This context should significantly influence your interpretations of ambiguous terms.
-
-ALWAYS return JSON in this format:
-{
-    \"status\": \"[uncertain/error_fixed/no_error]\",
-    \"original_text\": \"original message\",
-    \"translated_text\": \"English translation\",
-    \"context_analysis\": \"Brief summary of how chat history influences interpretation of current message\",
-    
-    // Only for status=error_fixed (REQUIRED FOR ERROR_FIXED STATUS):
-    \"corrected_text\": \"message with all spelling and terminology corrections\",
-    
-    // Only for status=uncertain:
-    \"possible_interpretations\": [
-        \"Interpretation 1: English translation with most likely meaning\",
-        \"Interpretation 2: Alternative English translation with different possible meaning\"
-    ],
-    \"note\": \"Note explaining unusual words, possible meanings AND two alternative translations:\\n1. [First translation - most probable]\\n2. [Second translation - alternative interpretation]\\nClarification needed.\"
-}
-
-### Status codes:
-- **\"uncertain\"** → When the message has **multiple possible meanings**, unusual words (like \"petrol\", \"engine\", \"fuel\" in casino context), slang, or lacks context for a clear answer. ALSO use this status when message meaning is vague or unclear, even if there are no spelling errors or unusual words. This includes:
-  - Messages with non-specific complaints (e.g., \"My account is not working\")
-  - Messages lacking details about which specific feature/function has issues
-  - General requests for help without specifying the problem
-  - Messages with ambiguous references to previous issues
-  - Messages referring to \"the problem\" or \"the issue\" when user has mentioned MULTIPLE different problems in chat history (e.g., \"I still have the same problem\" - which problem?)
-  - Messages about problems NOT related to casino, betting, or gambling (e.g., questions about banking apps, mobile devices, or other unrelated services)
-  - Messages mentioning problems without details when NO specific problems were described in chat history (e.g., \"I have a problem\", \"I'm facing issues\", \"I have several problems\" without prior context)
-
-  - Example 1: \"Mera petrol add nahi huwa?\" (Is user asking about withdrawal, bonus or something else?)
-  - Example 2: \"Bhai mera khata me paisa nahi aaya, diesel payment ka wait kar raha hu\" (What does diesel payment refer to?)
-  - Example 3: \"Mera engine start nahi ho raha\" (What does engine refer to in casino context?)
-  - Example 4: \"My deposit has gone through, can someone help me?\" (Unclear what help is needed after successful deposit)
-  - Example 5: \"मेरा खाता काम नहीं कर रहा है\" (Unclear what specific account issue the player is experiencing)
-  - Example 6: \"Maine amount transfer kar diya hai. Kya hogaya?\" (Ambiguous whether asking about status or reporting a problem)
-  - Example 7: \"Problem abhi bhi hai\" (Player previously mentioned multiple problems, unclear which one they're referring to)
-  - Example 8: \"Can you help me with my tax filing issue?\" (Not related to casino or betting services)
-  - Example 9: \"I have a problem with your service\" (No specific problem described and no prior context in chat history)
-  
-  IMPORTANT: For uncertain status, you MUST consider the entire chat history to form your interpretations. For example:
-  - If user previously discussed withdrawals, \"petrol\" likely refers to withdrawal
-  - If chat history mentions bonus issues, \"fuel\" likely means bonus
-  - If user reported login problems before, \"engine not starting\" probably relates to those login issues
-  - If player mentioned account issues before, a vague message likely refers to the same problem
-  - If player discussed MULTIPLE issues (e.g., login problems AND withdrawal issues), and then sends a vague message like \"Still facing the issue\", use \"uncertain\" status as it's unclear which problem they're referring to
-  - If player asks about topics outside of gambling, betting, and casino operations, mark as \"uncertain\" and note that the query is unrelated to our services
-  - If player mentions having a problem or issues without details, and NO specific problems were described in chat history, mark as \"uncertain\" and note that clarification is needed about what problem they're experiencing
-
-- **\"error_fixed\"** → When you find and correct **spelling mistakes, typos, or wrong gambling terminology**.
-  - Example: \"withdrawl\" → \"withdrawal\"
-  - Example: \"bonoos\" → \"bonus\"
-  - Example: \"deopsit\" → \"deposit\"
-  YOU MUST ALWAYS include the \"corrected_text\" field for status=\"error_fixed\". 
-  For example, if original message is \"Bhai maine 1000 ruppe ka deopsit kiya hai lekin mera bonoos nhi mila\", 
-  then corrected_text should be \"Bhai maine 1000 rupee ka deposit kiya hai lekin mera bonus nahi mila\"
-
-- **\"no_error\"** → When the message is **fully clear** with no mistakes or ambiguity. For a message to qualify as \"no_error\", it must:
-  - Have a clear, specific request or statement
-  - Not contain any vague references to problems
-  - Be specific about what feature, function, or service is being discussed
-  - Not require guesswork to understand the player's intention
-  - Relate to casino, betting, or gambling services
-
-When detecting unusual gambling-related words:
-- Words like \"petrol\", \"diesel\", \"gas\", \"fuel\" often refer to \"withdrawal\" or payments
-- Terms like \"engine\", \"car\", \"tank\" may refer to account functionality or balance
-- Always use chat history context to improve understanding of these unusual words
-
-For \"uncertain\" status, always provide:
-1. Two possible interpretations as English translations only (no original language text)
-2. A note with explanation of unusual words or why the meaning is unclear
-3. Two complete alternative translations with different interpretations"""
-
-        messages: List[Dict] = [{"role": "system", "content": system_promt2}]
+        messages: List[Dict] = [{"role": "system", "content": system_promt3}]
         chat_history: List[Dict] = self.get_chat_history(
             conversation_id=conversation_id
         )
