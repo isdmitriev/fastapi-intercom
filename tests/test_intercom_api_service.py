@@ -215,7 +215,7 @@ async def test_openai():
     start_time = time.perf_counter()
     client: OpenAIService = Container.open_ai_service()
     message: UserMessage = await client.analyze_message_with_correction(
-        'Yeh issue abhi tak solve nahi hua hai, kripya madad karein.')
+        'Bhai mera khata me paisa nahi aaya, diesel payment ka wait kar raha hu')
 
     assert isinstance(message, UserMessage)
     print(time.perf_counter() - start_time)

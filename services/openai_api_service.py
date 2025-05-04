@@ -352,53 +352,51 @@ To ensure maximum processing speed:
 4. For "context_analysis" field, always use a brief statement that no chat history was analyzed
 5. Keep processing focused on the specific current message only
 ```"""
-        system_promt_2 = """
-You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali.
+        system_promt_2 = """You are an AI assistant for a casino support team. Analyze a player’s message (in English, Hindi, Hinglish, or Bengali) and return valid JSON with these fields:
 
-First, determine the **language** of the message. Choose one of the following:
-- "Hindi" – Devanagari script (e.g., 'नमस्ते, मेरी समस्या है...')
-- "Hinglish" – Romanized Hindi (e.g., 'namaste, meri samasya hai...')
-- "English" – proper English
-- "Bengali" – Bengali script (বাংলা)
-- "Uncertain" – mixed/unclear
+- status: "no_error", "error_fixed", or "uncertain"
+- original_text: player’s message
+- translated_text: English translation
+- language: "English", "Hindi", "Hinglish", or "Bengali"
 
-Then, analyze the message for:
-- Typos, phonetic mistakes, incorrect terminology, digit/letter confusion
-- Whether the message is ambiguous or unclear
+For "error_fixed", also include:
+- corrected_text: English translation of corrected message
 
-Your goal is to output a **JSON object** with the following structure:
-{
-    "language": "<Hindi | Hinglish | English | Bengali | Uncertain>",
-    "status": "[uncertain | error_fixed | no_error]",
-    "original_text": "original message",
-    "translated_text": "English translation",
-    
-    // Only if status is "uncertain":
-    "possible_interpretations": [
-        "corrected version (Most likely meaning explanation)",
-        "original version (Alternative meaning explanation)"
-    ],
-    "note": "Explain unusual words, ambiguity, or reason for uncertainty"
-}
+For "uncertain", also include:
+- possible_interpretations: [interpretation 1, interpretation 2]
+- note: explain unusual terms, ambiguity, and need for clarification
 
-Rules:
-- If less than 95% confident in the meaning, set status = "uncertain"
-- If errors are confidently fixed, set status = "error_fixed"
-- If message is clear and error-free, set status = "no_error"
+**Rules:**
+- Focus only on the current message (ignore chat history)
+- If the message has ambiguity, vague commands, slang, or missing specifics → status="uncertain"
+- If clear but has typos/incorrect terms → status="error_fixed"
+- If clear, specific, and correct → status="no_error"
 
-Examples:
-1. {"status": "no_error", "language": "English", ...}
-2. {"status": "error_fixed", "language": "Hindi", ...}
-3. {"status": "uncertain", "language": "Hinglish", ...}
+**Examples of "uncertain":**
+- "Problem abhi bhi hai", "Please fix it", "Still waiting", "Petrol add nahi huwa?"
+
+**Examples of "error_fixed":**
+- "Withdrawl not done" → "Withdrawal not done"
+- "Bonoos kab milega?" → "When will I get the bonus?"
+
+**Examples of "no_error":**
+- "Maine 2000 rupees deposit kiya, account me nahi aaya"
+- "Teen Patti game disconnect ho gaya"
+
+**Important:**
+- Return JSON only — no extra text, no markdown
+- Entire response must be valid JSON
 """
 
         response = await self.client_async.chat.completions.create(
-            model="gpt-4o-mini-2024-07-18",
+            # model="gpt-4o-mini-2024-07-18",
+            model='gpt-3.5-turbo',
             messages=[
-                {"role": "system", "content": system_promt},
+                {"role": "system", "content": system_promt_2},
                 {"role": "user", "content": message},
             ],
             temperature=0,
+
             response_format={"type": "json_object"},
         )
 
