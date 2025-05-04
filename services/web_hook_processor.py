@@ -63,7 +63,7 @@ class WebHookProcessor:
             if conv_status == "stoped":
                 return
 
-            await self.handle_conversation_user_replied_v3(data=message)
+            await self.handle_conversation_user_replied_v2(data=message)
             return
 
         elif topic == "conversation.admin.replied":
@@ -795,7 +795,7 @@ class WebHookProcessor:
 
             start_time = time.perf_counter()
             print("conversation.admin.noted")
-            
+
             admin_note: Dict = data["data"]["item"]["conversation_parts"][
                 "conversation_parts"
             ][0]
