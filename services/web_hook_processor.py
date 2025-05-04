@@ -71,7 +71,7 @@ class WebHookProcessor:
             return
 
         elif topic == "conversation.admin.noted":
-            await self.handle_conversation_admin_noted_v3(data=message)
+            await self.handle_conversation_admin_noted_v2(data=message)
             return
 
         elif topic == "conversation.admin.assigned":
@@ -693,6 +693,7 @@ class WebHookProcessor:
             raise e
 
     async def handle_conversation_user_replied_v2(self, data: Dict):
+        start_time = time.perf_counter()
         user_reply: Dict = data["data"]["item"]["conversation_parts"][
             "conversation_parts"
         ][0]
@@ -753,6 +754,7 @@ class WebHookProcessor:
                     admin_id="8024055",
                     note=note_for_admin,
                 )
+                print(f'user.replied:{time.perf_counter() - start_time}')
             elif analyzed_message.status == "error_fixed":
                 note_for_admin: str = (
                         "original:"
@@ -766,6 +768,7 @@ class WebHookProcessor:
                     admin_id="8024055",
                     note=note_for_admin,
                 )
+                print(f'user.replied:{time.perf_counter() - start_time}')
             elif analyzed_message.status == "uncertain":
                 note_for_admin: str = await self.create_admin_note_v2(
                     message=analyzed_message
@@ -782,6 +785,7 @@ class WebHookProcessor:
                     admin_id="8024055",
                     note=note_for_admin,
                 )
+                print(f'user.replied:{time.perf_counter() - start_time}')
             else:
 
                 return
@@ -987,8 +991,25 @@ class WebHookProcessor:
                 conversation_id=conversation_id
             )
         )
+        if clean_message == "!force stop" or clean_message == "!force start":
+            status: str = ""
+            if clean_message == "!force stop":
+                status = "stoped"
+            else:
+                status = "started"
+
+            await self.set_conversation_status(
+                conversation_id=conversation_id, status=status
+            )
+            return
+        conv_status: str | None = (
+            self.messages_cache_service.get_conversation_status(
+                conversation_id=conversation_id
+            )
+        )
+
         is_note_for_reply: bool = clean_message.startswith("!")
-        if is_note_for_reply == True:
+        if is_note_for_reply == True and conv_status != 'stoped':
             if conversation_language == "Hinglish":
                 admin_reply_message: str = (
                     await self.translations_service.translate_message_from_english_to_hinglish_async_v2(
