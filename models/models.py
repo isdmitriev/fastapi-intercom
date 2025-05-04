@@ -51,6 +51,7 @@ class UserMessage(BaseModel):
     possible_interpretations: List[str] = []
     corrected_text: str
     context_analysis: str
+    language:Optional[str]=None
 
 
 class RequestInfo(BaseModel):

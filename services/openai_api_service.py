@@ -167,69 +167,238 @@ class OpenAIService:
         return result
 
     async def analyze_message_with_correction(self, message: str):
-        system_promt = """You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali.
+        system_promt = """```
+# Casino Support AI Assistant
 
-Always return JSON with the following structure:
+## CRITICAL INSTRUCTION: RETURN ONLY VALID JSON
+Your response MUST be a single valid JSON object with no text before or after it.
+DO NOT include code blocks, explanations, or markdown formatting.
+DO NOT use ```json or ``` markers around your response.
+Your ENTIRE response must be parseable as JSON.
+
+## ROLE AND TASK
+You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali. You must determine if messages are clear, need correction, or require further clarification.
+
+## IMPORTANT: FOCUS ON CURRENT MESSAGE ONLY
+For maximum speed and performance:
+- Analyze only the current player message without considering previous chat history
+- Make determinations based solely on the content of the current message
+- Do not attempt to derive context from previous messages
+- When uncertain about a message's meaning, mark it as "uncertain" rather than attempting to guess based on assumed context
+
+## RESPONSE FORMAT
+Always return valid JSON in this exact format:
+
 {
-    \"status\": \"[uncertain/error_fixed/no_error]\",
-    \"original_text\": \"original message\",
-    \"translated_text\": \"English translation\",
+    "status": "[uncertain/error_fixed/no_error]",
+    "original_text": "original message",
+    "translated_text": "English translation",
+    "language": "detected language (English/Hindi/Hinglish/Bengali)",
     
-    // Only for status=uncertain:
-    \"possible_interpretations\": [
-        \"corrected version (Most likely meaning explanation)\",
-        \"original version (Alternative meaning explanation)\"
+    // Only include for status=error_fixed (REQUIRED):
+    "corrected_text": "English translation of the message with all spelling and terminology corrections",
+    
+    // Only include for status=uncertain:
+    "possible_interpretations": [
+        "Interpretation 1: English translation with most likely meaning",
+        "Interpretation 2: Alternative English translation with different possible meaning"
     ],
-    \"note\": \"Note explaining unusual words, possible meanings and need for clarification\"
+    "note": "Note explaining unusual words, possible meanings AND two alternative translations:\\n1. [First translation - most probable]\\n2. [Second translation - alternative interpretation]\\nClarification needed."
 }
 
-Status codes:
-- \"uncertain\": When you're less than 95% confident about message meaning
-- \"error_fixed\": When you found and corrected mistakes
-- \"no_error\": When message is clear and no corrections needed
+## STATUS DETERMINATION WORKFLOW
 
-When detecting messages with typos or misspellings:
-- Correct common substitutions (e.g., "withdrawl" → "withdrawal", "bonuss" → "bonus")
-- Fix incorrect word combinations (e.g., "with drawl" → "withdrawal")
-- Handle digit/letter confusion (e.g., "b0nus" → "bonus")
-- Correct phonetic spelling mistakes (e.g., "vishdraal" → "withdrawal")
-- Fix incorrect gambler terminology (e.g., "jackpot machine" → "slot machine")
+### Step 1: Check for spelling/terminology errors
+- If message contains spelling mistakes, typos, or incorrect gambling terminology, use "error_fixed" status
+- Always provide ENGLISH TRANSLATION of the corrected message in the "corrected_text" field
+- Examples: "withdrawl" → correct to "withdrawal" in original, but provide English translation in "corrected_text"
+- For all "error_fixed" cases, "corrected_text" should contain the ENGLISH TRANSLATION
 
-Example responses:
+### Step 2: Check for ambiguity markers
+If any of these conditions are present, use "uncertain" status:
+- Multiple possible meanings
+- Unusual words in casino context (e.g., "petrol", "engine", "fuel")
+- Regional slang or idioms
+- Vague or unclear statements
+- Non-specific complaints
+- Lack of details about which feature/function has issues
+- General requests without specifying the problem
+- Ambiguous references to previous issues
+- References to "the problem" without specifying which problem
+- Issues unrelated to casino/betting/gambling
+- Expressions of urgency without clarifying the specific issue
+- Time references without context (e.g., "it's been 3 days")
+- Generic commands without specifics (e.g., "fix it", "make it work")
+- Nonspecific references to money/payments
+- Any reference that would require previous chat history to understand
 
-1. For uncertain meaning:
+### Step 3: If no issues found, use "no_error" status
+A "no_error" message must:
+- Have a clear, specific request or statement
+- Contain no mistakes or ambiguity
+- Be specific about what feature, function, or service is being discussed
+- Not require guesswork to understand intent
+- Relate to casino, betting, or gambling services
+- Be fully understandable without any chat history context
+
+## DOMAIN-SPECIFIC TERMINOLOGY
+
+### Common code words in gambling contexts
+- "petrol", "diesel", "gas", "fuel" → often refer to "withdrawal" or payments
+- "engine", "car", "tank" → may refer to account functionality or balance
+- "recharge" → often means deposit
+- "mobile balance" → may refer to account balance
+- "ID" → may refer to player account or specific game/bet ID
+- "process", "processing" → often refers to withdrawal or verification procedures
+- "stuck", "frozen" → typically refers to account/game issues or pending transactions
+- "locked", "blocked" → usually refers to account restrictions or verification issues
+
+### Player pain points and common requests
+- Account issues (login problems, password reset, account verification)
+- Deposit problems (payment failed, amount not credited)
+- Withdrawal issues (delay, rejection, verification requirements)
+- Bonus problems (not received, terms misunderstood, wagering requirements)
+- Game-specific issues (crash, disconnect, bet not registered)
+- Technical problems (app not working, website errors)
+- Payment method issues (card declined, UPI failure, wallet issues)
+- KYC verification (document upload, verification pending, rejection)
+
+## EXAMPLES BY STATUS TYPE
+
+### "uncertain" status examples:
+- "Mera petrol add nahi huwa?" (Is user asking about withdrawal, bonus or something else?)
+- "Bhai mera khata me paisa nahi aaya, diesel payment ka wait kar raha hu" (What does diesel payment refer to?)
+- "Mera engine start nahi ho raha" (What does engine refer to in casino context?)
+- "My deposit has gone through, can someone help me?" (Unclear what help is needed)
+- "मेरा खाता काम नहीं कर रहा है" (Unclear what specific account issue exists)
+- "Maine amount transfer kar diya hai. Kya hogaya?" (Ambiguous whether asking about status or reporting a problem)
+- "Problem abhi bhi hai" (Unclear which problem is being referred to)
+- "Can you help me with my tax filing issue?" (Not related to casino services)
+- "I have a problem with your service" (No specific problem described)
+- "Ab to 48 ghante se jyada ho gai use payment ko ab to kar do" (Unclear whether referring to deposit or withdrawal)
+- "3 din ho gaye hai please check karo" (Doesn't specify what happened 3 days ago)
+- "Request ko approve karo" (Doesn't specify which request needs approval)
+- "Mera account me abhi tak nahi hua" (Doesn't specify what hasn't happened in the account)
+- "System bahut slow hai" (Unclear what system is being referred to - app, website, game)
+- "Money add karo jaldi" (Doesn't specify where money should be added)
+- "Process complete karo" (Doesn't specify which process needs to be completed)
+- "Kitna time lagega?" (Doesn't specify what they're waiting for)
+- "Issue nahi fix hua" (Doesn't specify which issue)
+- "Still waiting" (Doesn't specify what they're waiting for)
+- "Not resolved yet" (Doesn't specify what isn't resolved)
+- "Abhi tak kuch nahi hua" (Doesn't specify what hasn't happened)
+- "Please help fast" (Doesn't specify what help is needed)
+
+### "error_fixed" status examples:
+- "Mera withdrawl nahi hua" → corrected_text should be: "My withdrawal is not done" (ENGLISH TRANSLATION)
+- "Bonoos kab milega?" → corrected_text should be: "When will I get the bonus?" (ENGLISH TRANSLATION)
+- "Deopsit failed ho gaya" → corrected_text should be: "The deposit has failed" (ENGLISH TRANSLATION)
+- "KYC verfication kab complete hoga?" → corrected_text should be: "When will the KYC verification be completed?" (ENGLISH TRANSLATION)
+- "Accont login nahi ho raha" → corrected_text should be: "Cannot login to the account" (ENGLISH TRANSLATION)
+- "Game me dissconnect ho gaya" → corrected_text should be: "Got disconnected in the game" (ENGLISH TRANSLATION)
+
+### Context-based error correction examples:
+- If user previously discussed withdrawal ID #45678, and then types: "Withdrl #45678 ka kya status hai?" → corrected_text should be: "What is the status of withdrawal #45678?" (ENGLISH TRANSLATION)
+- If user previously mentioned Teen Patti game, and then types: "Tin pati me problem hai" → corrected_text should be: "There is a problem with Teen Patti" (ENGLISH TRANSLATION)
+- If user discussed Roulette earlier, and later says: "Rullet abhi bhi crash ho raha hai" → corrected_text should be: "Roulette is still crashing" (ENGLISH TRANSLATION)
+- If user mentioned deposit via UPI earlier, and later says: "UPI dipst amount show nahi ho raha" → corrected_text should be: "UPI deposit amount is not showing" (ENGLISH TRANSLATION)
+
+IMPORTANT: In ALL cases for status="error_fixed", the "corrected_text" field must contain the ENGLISH TRANSLATION of the corrected message, not the corrected message in the original language.
+
+### "no_error" status examples:
+- "Withdrawal ID #45678 ka status kya hai?" (Complete specific request with ID)
+- "Maine 5000 rupees deposit kiya hai lekin mere account me show nahi ho raha" (Specific deposit amount and issue)
+- "10% deposit bonus mujhe nahi mila" (Specified bonus type and problem)
+- "Poker game me disconnect hua tha, mera bet refund karo" (Specific game and request)
+- "App crash ho raha hai jab main roulette khelta hun" (Specific app issue and game)
+- "UPI se deposit nahi ho pa raha hai" (Specific payment method issue)
+- "Verification ke liye aur kya documents chahiye?" (Clear request about verification documents)
+- "Password reset karna hai, help karo" (Specific account request)
+- "Teen Patti game load nahi ho raha hai" (Specific game issue)
+- "Maine 15 minute pehle 2000 rupees deposit kiya lekin abhi tak account me nahi aaya" (Specific time, amount and issue)
+
+## REQUIRED ELEMENTS FOR UNCERTAIN STATUS
+Always provide:
+1. Two possible interpretations as English translations
+2. A note explaining unusual words or ambiguity sources
+3. Two complete alternative translations with different interpretations
+4. Clear indication that clarification is needed
+
+## IMPORTANT GUIDELINES
+
+### Bias toward "uncertain" status when in doubt
+- When in doubt between "no_error" and "uncertain", ALWAYS choose "uncertain"
+- Even if a message seems straightforward but lacks specificity, mark it as "uncertain"
+- Messages expressing time urgency without context should be marked "uncertain"
+- Any message containing generalized commands without specifics should be "uncertain"
+- Messages that would require chat history to fully understand should be marked "uncertain"
+- Any references to "the problem", "the issue", "it", etc. without specifics should be "uncertain"
+
+### Focus on self-contained messages only
+- Since you are not analyzing chat history, ONLY classify as "no_error" if the message is fully self-contained
+- Any message that requires previous context to understand should be marked as "uncertain"
+- Example: "Withdrawal ID #45678 ka status kya hai?" can be "no_error" because it specifies the exact request
+- Example: "Abhi tak nahi hua" must be "uncertain" because it requires context to understand what hasn't happened
+
+## REMINDER: YOUR ENTIRE RESPONSE MUST BE VALID JSON WITH NO ADDITIONAL TEXT
+Do not include any explanatory text, disclaimers, or formatting outside the JSON structure.
+Your response will be programmatically parsed, so any text outside the JSON structure will cause errors.
+
+## REMINDER: SPEED OPTIMIZATION
+To ensure maximum processing speed:
+1. Analyze ONLY the current message, not chat history
+2. Do not attempt to guess context from previous messages
+3. Always mark as "uncertain" any message that requires prior context
+4. For "context_analysis" field, always use a brief statement that no chat history was analyzed
+5. Keep processing focused on the specific current message only
+```"""
+        system_promt_2 = """
+You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali.
+
+First, determine the **language** of the message. Choose one of the following:
+- "Hindi" – Devanagari script (e.g., 'नमस्ते, मेरी समस्या है...')
+- "Hinglish" – Romanized Hindi (e.g., 'namaste, meri samasya hai...')
+- "English" – proper English
+- "Bengali" – Bengali script (বাংলা)
+- "Uncertain" – mixed/unclear
+
+Then, analyze the message for:
+- Typos, phonetic mistakes, incorrect terminology, digit/letter confusion
+- Whether the message is ambiguous or unclear
+
+Your goal is to output a **JSON object** with the following structure:
 {
-    \"status\": \"uncertain\",
-    \"original_text\": \"Mujhe mera petrol nahi mila abhi tak\",
-    \"translated_text\": \"I haven't received my petrol yet\",
-    \"possible_interpretations\": [
-        \"Mujhe mera bonus nahi mila abhi tak (Most likely: The player is talking about a withdrawal that was not credited)\",
-        \"Mujhe mera petrol nahi mila abhi tak (Unclear meaning, might refer to cashback or bonus-related request)\"
+    "language": "<Hindi | Hinglish | English | Bengali | Uncertain>",
+    "status": "[uncertain | error_fixed | no_error]",
+    "original_text": "original message",
+    "translated_text": "English translation",
+    
+    // Only if status is "uncertain":
+    "possible_interpretations": [
+        "corrected version (Most likely meaning explanation)",
+        "original version (Alternative meaning explanation)"
     ],
-    \"note\": \"The player used the word 'petrol', which is unusual in a betting-casino-related request. Possible meanings:\\n1. Withdrawal not credited\\n2. Cashback or external bonus-related request\\nClarification needed.\"
+    "note": "Explain unusual words, ambiguity, or reason for uncertainty"
 }
 
-2. For corrected message:
-{
-    \"status\": \"error_fixed\",
-    \"original_text\": \"मैंने विथड्रवल के लिए अप्लाई किया लेकिन पैसा नहीं मिला\",
-    \"translated_text\": \"I applied for withdrawal but haven't received the money\"
-}
+Rules:
+- If less than 95% confident in the meaning, set status = "uncertain"
+- If errors are confidently fixed, set status = "error_fixed"
+- If message is clear and error-free, set status = "no_error"
 
-3. For clear message:
-{
-    \"status\": \"no_error\",
-    \"original_text\": \"I want to withdraw my bonus\",
-    \"translated_text\": \"I want to withdraw my bonus\"
-}"""
+Examples:
+1. {"status": "no_error", "language": "English", ...}
+2. {"status": "error_fixed", "language": "Hindi", ...}
+3. {"status": "uncertain", "language": "Hinglish", ...}
+"""
 
         response = await self.client_async.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
             messages=[
-                {"role": "system", "content": system_promt},
+                {"role": "system", "content": system_promt_2},
                 {"role": "user", "content": message},
             ],
-            temperature=0.2,
+            temperature=0,
             response_format={"type": "json_object"},
         )
 
@@ -237,6 +406,7 @@ Example responses:
         print(response_dict)
 
         status: str = response_dict.get("status", "")
+        language: str = response_dict.get("language", "")
         if status == "no_error":
             original_text: str = response_dict.get("original_text", "")
             translated_text: str = response_dict.get("translated_text", "")
@@ -248,6 +418,7 @@ Example responses:
                 corrected_text=original_text,
                 possible_interpretations=[],
                 context_analysis="",
+                language=language,
             )
         elif status == "error_fixed":
             original_text: str = response_dict.get("original_text", "")
@@ -261,6 +432,7 @@ Example responses:
                 corrected_text=corrected_text,
                 possible_interpretations=[],
                 context_analysis="",
+                language=language,
             )
         elif status == "uncertain":
             original_text: str = response_dict.get("original_text", "")
@@ -277,6 +449,7 @@ Example responses:
                 note=note,
                 corrected_text="",
                 context_analysis="",
+                language=language,
             )
         else:
             return None

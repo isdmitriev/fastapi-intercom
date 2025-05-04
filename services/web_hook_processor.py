@@ -28,14 +28,14 @@ import time
 class WebHookProcessor:
 
     def __init__(
-            self,
-            mongo_db_service: MongodbService,
-            openai_service: OpenAIService,
-            intercom_service: IntercomAPIService,
-            conversation_parts_service: ConversationPartsService,
-            messages_cache_service: MessagesCache,
-            translations_service: OpenAITranslatorService,
-            es_service: ESService,
+        self,
+        mongo_db_service: MongodbService,
+        openai_service: OpenAIService,
+        intercom_service: IntercomAPIService,
+        conversation_parts_service: ConversationPartsService,
+        messages_cache_service: MessagesCache,
+        translations_service: OpenAITranslatorService,
+        es_service: ESService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -60,10 +60,10 @@ class WebHookProcessor:
             return
 
         elif topic == "conversation.user.replied":
-            if conv_status == "stoped":
-                return
+            # if conv_status == "stoped":
+            #     return
 
-            await self.handle_conversation_user_replied_v3(data=message)
+            await self.handle_conversation_user_replied_v2(data=message)
             return
 
         elif topic == "conversation.admin.replied":
@@ -282,7 +282,7 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_note_async(
-            self, conversation_id: str, message: str, message_language, original: str
+        self, conversation_id: str, message: str, message_language, original: str
     ):
         admin_id: str = "8024055"
         # admin_id: str = "4687718"
@@ -339,19 +339,35 @@ class WebHookProcessor:
         one: str = possible_interpritations[0]
         two: str = possible_interpritations[1]
         note: str = (
-                "translated: "
-                + message.translated_text
-                + "\n"
-                + message.context_analysis
-                + "\n"
-                + one
-                + "\n"
-                + two
+            "translated: "
+            + message.translated_text
+            + "\n"
+            + message.context_analysis
+            + "\n"
+            + one
+            + "\n"
+            + two
+        )
+        return note
+
+    async def create_admin_note_v2(self, message: UserMessage):
+        possible_interpritations = message.possible_interpretations
+        one: str = possible_interpritations[0]
+        two: str = possible_interpritations[1]
+        note: str = (
+            "translated: "
+            + message.translated_text
+            + "\n"
+            + message.note
+            + "\n"
+            + one
+            + "\n"
+            + two
         )
         return note
 
     async def save_request_info(
-            self, status: str, execution_time: float, event_type: str
+        self, status: str, execution_time: float, event_type: str
     ):
         request_info: RequestInfo = RequestInfo(
             status=status,
@@ -367,7 +383,7 @@ class WebHookProcessor:
         # es_client.add_document(index_name="requests", document=request_info.dict())
 
     async def save_first_message_to_cache(
-            self, conversation_id: str, message: ConversationMessage
+        self, conversation_id: str, message: ConversationMessage
     ):
         messages: ConversationMessages = ConversationMessages(messages=[message])
         self.messages_cache_service.set_conversation_messages(
@@ -375,10 +391,10 @@ class WebHookProcessor:
         )
 
     async def save_first_message_to_cache_2(
-            self,
-            conversation_id: str,
-            message: ConversationMessage,
-            analyzed_message: UserMessage,
+        self,
+        conversation_id: str,
+        message: ConversationMessage,
+        analyzed_message: UserMessage,
     ):
         translated_message: str = analyzed_message.translated_text
         if analyzed_message.status == "no_error":
@@ -389,7 +405,7 @@ class WebHookProcessor:
             )
 
     async def save_message_to_cache(
-            self, conversation_id: str, message: ConversationMessage
+        self, conversation_id: str, message: ConversationMessage
     ):
         all_conversation_messages = (
             self.messages_cache_service.get_conversation_messages(
@@ -415,9 +431,9 @@ class WebHookProcessor:
 
     async def handle_conversation_user_created_v2(self, data: Dict):
         conversation_id: str = data.get("data", {}).get("item", {}).get("id", "")
-        self.intercom_service.attach_admin_to_conversation(
-            conversation_id=conversation_id, admin_id=8028082
-        )
+        # self.intercom_service.attach_admin_to_conversation(
+        #     conversation_id=conversation_id, admin_id=8028082
+        # )
         user_data: Dict = data.get("data", {}).get("item", {}).get("source", {})
         message: str = user_data.get("body", "")
         clean_message: str = BeautifulSoup(message, "html.parser").getText()
@@ -426,38 +442,50 @@ class WebHookProcessor:
 
         user: User = User(id=user_id, email=user_email, type="user")
 
-        message_language_code: str = (
-            await self.translations_service.detect_language_async_v2(
+        analyzed_message: UserMessage = (
+            await self.openai_service.analyze_message_with_correction(
                 message=clean_message
             )
         )
-        message: ConversationMessage = ConversationMessage(
-            conversation_id=conversation_id,
-            time=datetime.datetime.now(),
-            message=clean_message,
-            user=user,
-            language=message_language_code,
-            message_type="conversation.user.created",
+        message_language_code: str = analyzed_message.language
+        self.messages_cache_service.set_conversation_language(
+            conversation_id=conversation_id, language=message_language_code
         )
-        messages: ConversationMessages = ConversationMessages(messages=[message])
-        self.messages_cache_service.set_conversation_messages(
-            conversation_id=conversation_id, messages=messages
-        )
+
+        # message_language_code: str = (
+        #     await self.translations_service.detect_language_async_v2(
+        #         message=clean_message
+        #     )
+        # )
+
+        # message: ConversationMessage = ConversationMessage(
+        #     conversation_id=conversation_id,
+        #     time=datetime.datetime.now(),
+        #     message=clean_message,
+        #     user=user,
+        #     language=message_language_code,
+        #     message_type="conversation.user.created",
+        # )
+        # messages: ConversationMessages = ConversationMessages(messages=[message])
+        # self.messages_cache_service.set_conversation_messages(
+        #     conversation_id=conversation_id, messages=messages
+        # )
 
         if message_language_code == "English":
             return
         if message_language_code in ["Hindi", "Hinglish", "Bengali"]:
-            analyzed_message: UserMessage = (
-                await self.openai_service.analyze_message_with_correction(
-                    message=clean_message
-                )
-            )
+            # analyzed_message: UserMessage = (
+            #     await self.openai_service.analyze_message_with_correction(
+            #         message=clean_message
+            #     )
+            # )
             if analyzed_message.status == "no_error":
                 note_for_admin: str = (
-                        "original:"
-                        + analyzed_message.original_text
-                        + "\n"
-                        + analyzed_message.translated_text
+                    "original:"
+                    + analyzed_message.original_text
+                    + "\n"
+                    + "\n"
+                    + analyzed_message.translated_text
                 )
                 await self.intercom_service.add_admin_note_to_conversation_async(
                     conversation_id=conversation_id,
@@ -466,10 +494,11 @@ class WebHookProcessor:
                 )
             elif analyzed_message.status == "error_fixed":
                 note_for_admin: str = (
-                        "original:"
-                        + analyzed_message.original_text
-                        + "\n"
-                        + analyzed_message.corrected_text
+                    "original:"
+                    + analyzed_message.original_text
+                    + "\n"
+                    + "\n"
+                    + analyzed_message.corrected_text
                 )
                 await self.intercom_service.add_admin_note_to_conversation_async(
                     conversation_id=conversation_id,
@@ -477,11 +506,15 @@ class WebHookProcessor:
                     note=note_for_admin,
                 )
             elif analyzed_message.status == "uncertain":
-                note_for_admin: str = await self.create_admin_note(
+                note_for_admin: str = await self.create_admin_note_v2(
                     message=analyzed_message
                 )
                 note_for_admin = (
-                        "original:" + analyzed_message.original_text + "\n" + note_for_admin
+                    "original:"
+                    + analyzed_message.original_text
+                    + "\n"
+                    + "\n"
+                    + note_for_admin
                 )
                 await self.intercom_service.add_admin_note_to_conversation_async(
                     conversation_id=conversation_id,
@@ -636,72 +669,84 @@ class WebHookProcessor:
         user_email: str = user_reply.get("author", {}).get("email", "")
         user_id: str = user_reply.get("author", {}).get("id", "")
         conversation_id: str = data["data"]["item"]["id"]
-        message_language_code: str = await self.openai_service.detect_language_async(
-            clean_message
-        )
+        # message_language_code: str = await self.openai_service.detect_language_async(
+        #     clean_message
+        # )
+
         user: User = User(id=user_id, email=user_email, type="user")
-        message: ConversationMessage = ConversationMessage(
-            conversation_id=conversation_id,
-            time=datetime.datetime.now(),
-            message=clean_message,
-            user=user,
-            language=message_language_code,
-            message_type="conversation.user.replied",
-        )
-        all_messages: ConversationMessages = (
-            self.messages_cache_service.get_conversation_messages(
-                conversation_id=conversation_id
+        analyzed_message: UserMessage = (
+            await self.openai_service.analyze_message_with_correction(
+                message=clean_message
             )
         )
-        all_messages.messages.append(message)
-        self.messages_cache_service.set_conversation_messages(
-            conversation_id=conversation_id, messages=all_messages
+        message_language_code: str = analyzed_message.language
+        self.messages_cache_service.set_conversation_language(
+            conversation_id=conversation_id, language=message_language_code
         )
-        if message_language_code == "en":
+        # message: ConversationMessage = ConversationMessage(
+        #     conversation_id=conversation_id,
+        #     time=datetime.datetime.now(),
+        #     message=clean_message,
+        #     user=user,
+        #     language=message_language_code,
+        #     message_type="conversation.user.replied",
+        # )
+        # all_messages: ConversationMessages = (
+        #     self.messages_cache_service.get_conversation_messages(
+        #         conversation_id=conversation_id
+        #     )
+        # )
+        # all_messages.messages.append(message)
+        # self.messages_cache_service.set_conversation_messages(
+        #     conversation_id=conversation_id, messages=all_messages
+        # )
+        if message_language_code == "English":
             return
-        elif message_language_code == "bn" or message_language_code == "ben":
-            note_for_admin: str = (
-                await self.openai_service.translate_message_from_bengali_to_english_async(
-                    message=clean_message
+        if message_language_code in ["Hindi", "Hinglish", "Bengali"]:
+            # analyzed_message: UserMessage = (
+            #     await self.openai_service.analyze_message_with_correction(
+            #         message=clean_message
+            #     )
+            # )
+            if analyzed_message.status == "no_error":
+                note_for_admin: str = (
+                    "original:"
+                    + analyzed_message.original_text
+                    + "\n"
+                    + analyzed_message.translated_text
                 )
-            )
-            await self.intercom_service.add_admin_note_to_conversation_async(
-                note=note_for_admin, conversation_id=conversation_id, admin_id="8024055"
-            )
-            translation: MessageTranslated = MessageTranslated(
-                user=user,
-                language=message_language_code,
-                message=clean_message,
-                translated_message=note_for_admin,
-                translated_to="en",
-                time=datetime.datetime.now(),
-                conversation_id=conversation_id,
-            )
-            mongodb_task_async.apply_async(args=[translation.dict()], queue="mongo_db")
-
-        elif message_language_code == "hi":
-            note_for_admin: str = (
-                await self.openai_service.translate_message_from_hindi_to_english_async(
-                    message=clean_message
+                await self.intercom_service.add_admin_note_to_conversation_async(
+                    conversation_id=conversation_id,
+                    admin_id="8024055",
+                    note=note_for_admin,
                 )
-            )
-            await self.intercom_service.add_admin_note_to_conversation_async(
-                note=note_for_admin, conversation_id=conversation_id, admin_id="8024055"
-            )
+            elif analyzed_message.status == "error_fixed":
+                note_for_admin: str = (
+                    "original:"
+                    + analyzed_message.original_text
+                    + "\n"
+                    + analyzed_message.corrected_text
+                )
+                await self.intercom_service.add_admin_note_to_conversation_async(
+                    conversation_id=conversation_id,
+                    admin_id="8024055",
+                    note=note_for_admin,
+                )
+            elif analyzed_message.status == "uncertain":
+                note_for_admin: str = await self.create_admin_note_v2(
+                    message=analyzed_message
+                )
+                note_for_admin = (
+                    "original:" + analyzed_message.original_text + "\n" + note_for_admin
+                )
+                await self.intercom_service.add_admin_note_to_conversation_async(
+                    conversation_id=conversation_id,
+                    admin_id="8024055",
+                    note=note_for_admin,
+                )
+            else:
 
-            translation: MessageTranslated = MessageTranslated(
-                user=user,
-                language=message_language_code,
-                message=clean_message,
-                translated_message=note_for_admin,
-                translated_to="en",
-                time=datetime.datetime.now(),
-                conversation_id=conversation_id,
-            )
-            # mongodb_task_async.apply_async(args=[translation.dict()], queue="mongo_db")
-
-        else:
-            return
+                return
 
     async def handle_conversation_admin_replied(self, data: Dict):
 
@@ -811,12 +856,12 @@ class WebHookProcessor:
             raise e
 
     async def send_admin_reply_message(
-            self,
-            user: User,
-            conversation_id: str,
-            admin_id: str,
-            message: str,
-            target_language: str,
+        self,
+        user: User,
+        conversation_id: str,
+        admin_id: str,
+        message: str,
+        target_language: str,
     ):
         if target_language == None:
             return

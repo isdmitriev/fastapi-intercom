@@ -105,13 +105,16 @@ def test_get_admins():
 #     result = await OpenAIService().detect_language_async(message)
 #     assert result == 'bn'
 
-# def test_openai_detect_language():
-#     hindi_message: str = 'मैं हिंदी बोलता हूँ'
-#     result: str = OpenAIService().detect_language(hindi_message)
-#
-#     assert result == 'hi'
-#
-#
+@pytest.mark.asyncio
+async def test_openai_detect_language():
+    start_time=time.perf_counter()
+    hindi_message: str = 'मैं हिंदी बोलता हूँ'
+    result: str =await OpenAITranslatorService().detect_language_async_v2(message=hindi_message)
+    print(time.perf_counter()-start_time)
+
+    assert result == 'Hindi'
+
+
 # def test_openai_service_translate_to_hindi():
 #     hindi_message: str = 'मैं हिंदी बोलता हूँ'
 #     result: str = OpenAIService().translate_message_from_hindi_to_english(hindi_message)
@@ -204,14 +207,18 @@ async def test_translator_service():
         "! hey there how are you doing today?"
     )
     print(result)
-    print(time.perf_counter()-start_time)
+    print(time.perf_counter() - start_time)
+
+
 @pytest.mark.asyncio
 async def test_openai():
-    start_time=time.perf_counter()
-    client:OpenAIService=Container.open_ai_service()
-    message:UserMessage=await client.analyze_message_with_correction('Mujhe problem ho rahi hai, withdraw option kaam nahi kar raha hai.')
-    assert isinstance(message,UserMessage)
-    print(time.perf_counter()-start_time)
+    start_time = time.perf_counter()
+    client: OpenAIService = Container.open_ai_service()
+    message: UserMessage = await client.analyze_message_with_correction(
+        'Meri button abhi bhi active nahi hai.')
+
+    assert isinstance(message, UserMessage)
+    print(time.perf_counter() - start_time)
 
 # def test_intercom_api():
 #     client: IntercomAPIService = IntercomAPIService()
