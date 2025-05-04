@@ -395,7 +395,7 @@ Examples:
         response = await self.client_async.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
             messages=[
-                {"role": "system", "content": system_promt_2},
+                {"role": "system", "content": system_promt},
                 {"role": "user", "content": message},
             ],
             temperature=0,
