@@ -81,7 +81,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_hindi_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response: ChatCompletion = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -116,7 +116,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_bengali_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -133,7 +133,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_bengali_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -150,7 +150,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_hindi_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -453,7 +453,7 @@ For "uncertain", also include:
             return None
 
     async def analyze_message_with_correction_v3(
-        self, message: str, conversation_id: str
+            self, message: str, conversation_id: str
     ):
         system_promt = """# Casino Support AI Assistant
 
@@ -824,7 +824,7 @@ Your response will be programmatically parsed, so any text outside the JSON stru
 
 """
 
-        messages: List[Dict] = [{"role": "system", "content": system_promt3}]
+        messages: List[Dict] = [{"role": "system", "content": system_promt2}]
         chat_history: List[Dict] = self.get_chat_history(
             conversation_id=conversation_id
         )
@@ -836,13 +836,17 @@ Your response will be programmatically parsed, so any text outside the JSON stru
                 }
             )
 
-        messages.append({"role": "user", "content": f"CURRENT MESSAGE: {message}"})
+        # messages.append({"role": "user", "content": f"CURRENT MESSAGE: {message}"})
+        messages.append({"role": "user", "content": message})
 
         try:
             response = await self.client_async.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-3.5-turbo-0125",
                 messages=messages,
-                temperature=0.2,
+                timeout=3.5,
+
+                temperature=0,
+
                 response_format={"type": "json_object"},
             )
             response_dict: Dict = json.loads(response.choices[0].message.content)
