@@ -212,13 +212,16 @@ async def test_translator_service():
 
 @pytest.mark.asyncio
 async def test_openai():
+    conv_id='conv:215468885032326'
+
+    client: ClaudeService = Container.claude_ai_service()
     start_time = time.perf_counter()
-    client: OpenAIService = Container.open_ai_service()
     message: UserMessage = await client.analyze_message_with_correction(
-        'Bhai mera khata me paisa nahi aaya, diesel payment ka wait kar raha hu')
+        'Bhai mera khata me paisa nahi aaya, diesel payment ka wait kar raha hu',conversation_id=conv_id)
 
     assert isinstance(message, UserMessage)
     print(time.perf_counter() - start_time)
+    print(message)
 
 # def test_intercom_api():
 #     client: IntercomAPIService = IntercomAPIService()

@@ -259,7 +259,8 @@ Return ONLY the language name without explanation."""
             Language:
             """
         response = await self.client_async.chat.completions.create(
-            model="gpt-4",
+            # model="gpt-4",
+            model='gpt-3.5-turbo-0125',
             messages=[{"role": "system", "content": prompt}],
             max_tokens=10,
             temperature=0,

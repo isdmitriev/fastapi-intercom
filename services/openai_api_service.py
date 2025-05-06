@@ -841,9 +841,8 @@ Your response will be programmatically parsed, so any text outside the JSON stru
 
         try:
             response = await self.client_async.chat.completions.create(
-                model="gpt-3.5-turbo-0125",
+                model="GPT-4-turbo",
                 messages=messages,
-                timeout=3.5,
 
                 temperature=0,
 

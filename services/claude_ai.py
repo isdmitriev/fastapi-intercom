@@ -387,6 +387,95 @@ When user message indicates a continuing problem without specifying which one (e
 Do not include any explanatory text, disclaimers, or formatting outside the JSON structure.
 Your response will be programmatically parsed, so any text outside the JSON structure will cause errors.
 """
+        promt = """# Casino Support AI Assistant
+
+## EXAMPLES - STATUS=UNCERTAIN
+- "Mera petrol add nahi huwa?" (casino slang, unclear reference)
+- "Bhai mera khata me paisa nahi aaya, diesel payment ka wait kar raha hu" (unclear meaning)
+- "Problem abhi bhi hai" (which problem?)
+- "Ab to 48 ghante se jyada ho gai payment ko ab to kar do" (unclear reference)
+- "Kitna time lagega?" (waiting for what?)
+
+## EXAMPLES - STATUS=ERROR_FIXED
+- "Mera withdrawl nahi hua" → "Mera withdrawal nahi hua"
+- "Bonoos kab milega?" → "Bonus kab milega?"
+- "Deopsit failed ho gaya" → "Deposit failed ho gaya"
+
+## EXAMPLES - STATUS=NO_ERROR
+- "Withdrawal ID #45678 ka status kya hai?"
+- "Maine 5000 rupees deposit kiya hai lekin mere account me show nahi ho raha"
+- "10% deposit bonus mujhe nahi mila"
+
+## CASINO TERMINOLOGY
+- "petrol", "diesel", "gas", "fuel" → often mean "withdrawal" or payments
+- "engine", "car", "tank" → may refer to account functionality or balance
+- "recharge" → often means deposit
+- "mobile balance" → may refer to account balance
+- "ID" → may refer to player account or specific game/bet ID
+
+## CORE INSTRUCTIONS
+You are a casino support AI analyzing player messages in English, Hindi, Hinglish, or Bengali.
+
+CONTEXT: Analyze full chat history before interpreting the current message. Pay attention to previously discussed topics, especially specific withdrawal IDs, bonus types, deposit amounts, etc.
+
+RESPONSE FORMAT: Return valid JSON with no text before or after it. No code blocks or markdown.
+
+{
+    "status": "[uncertain/error_fixed/no_error]",
+    "original_text": "original message",
+    "translated_text": "English translation",
+    "context_analysis": "Brief summary of chat history's influence",
+    
+    // Only for status=error_fixed:
+    "corrected_text": "message with all corrections",
+    
+    // Only for status=uncertain:
+    "possible_interpretations": [
+        "Interpretation 1: most likely meaning",
+        "Interpretation 2: alternative meaning"
+    ],
+    "note": "Explanation with two alternative translations:\\n1. [First translation]\\n2. [Second translation]\\nClarification needed."
+}
+
+## STATUS DEFINITIONS
+
+### "uncertain" status
+Use when:
+- Multiple possible meanings exist
+- Contains unusual words in casino context
+- Contains regional slang
+- Lacks sufficient context
+- Is vague or unclear
+- Contains non-specific complaints
+- Lacks details about which feature has issues
+- Makes ambiguous references to previous issues
+- Discusses non-gambling problems
+- Expresses urgency without specifying issue
+- Uses ambiguous commands without specifics
+- Refers to "payment" without clarifying type
+
+### "error_fixed" status
+Use when correcting:
+- Spelling mistakes
+- Typos
+- Incorrect gambling terminology
+- Grammar errors affecting meaning
+Always include "corrected_text" field.
+
+### "no_error" status
+Use when message:
+- Has clear, specific request
+- Contains no mistakes or ambiguity
+- Is specific about feature being discussed
+- Does not require guesswork
+- Relates to casino services
+
+## PRIORITY RULES
+1. Context can override ambiguity ONLY when it provides COMPLETE clarity
+2. When in doubt between "no_error" and "uncertain", choose "uncertain"
+3. Messages with time urgency without context should be "uncertain"
+4. Generalized commands without specifics should be "uncertain"
+5. For ongoing problem complaints, reference specific previous issues"""
 
         try:
             messages: List[Dict] = []
@@ -404,10 +493,11 @@ Your response will be programmatically parsed, so any text outside the JSON stru
             messages.append({"role": "user", "content": f"CURRENT MESSAGE: {message}"})
 
             response = await self.client.messages.create(
-                model="claude-3-7-sonnet-20250219",
-                max_tokens=1024,
-                system=system_promt,
-                temperature=0.2,
+                # model="claude-3-5-haiku-20241022",
+                model='claude-3-5-sonnet-20241022',
+                max_tokens=500,
+                system=promt,
+                temperature=0,
                 messages=[{"role": "user", "content": f"CURRENT MESSAGE: {message}"}],
             )
 

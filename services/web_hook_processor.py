@@ -2,6 +2,7 @@ from typing import Dict
 from services.mongodb_service import MongodbService
 from services.openai_api_service import OpenAIService
 from bs4 import BeautifulSoup
+from services.claude_ai import ClaudeService
 from services.intercom_api_service import IntercomAPIService
 from models.models import (
     User,
@@ -36,6 +37,7 @@ class WebHookProcessor:
             messages_cache_service: MessagesCache,
             translations_service: OpenAITranslatorService,
             es_service: ESService,
+            claude_ai_service: ClaudeService
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -43,7 +45,8 @@ class WebHookProcessor:
         self.conversation_parts_service = conversation_parts_service
         self.messages_cache_service = messages_cache_service
         self.translations_service = translations_service
-        self.es_service = es_service
+        self.es_service = es_service,
+        self.claude_ai_service = claude_ai_service
 
     async def process_message(self, topic: str, message: Dict):
         conversation_id: str = message.get("data", {}).get("item", {}).get("id", "")
@@ -536,13 +539,15 @@ class WebHookProcessor:
             clean_message: str = BeautifulSoup(message, "html.parser").getText()
             user_email: str = user_reply.get("author", {}).get("email", "")
             user_id: str = user_reply.get("author", {}).get("id", "")
-            admin_id: str = "4687718"
+            admin_id: str = "8024055"
             conversation_id: str = data["data"]["item"]["id"]
+            start_detect = time.perf_counter()
             message_language: str = (
                 await self.translations_service.detect_language_async_v2(
                     message=clean_message
                 )
             )
+            print(time.perf_counter() - start_detect)
             user: User = User(id=user_id, email=user_email, type="user")
             conv_message: ConversationMessage = ConversationMessage(
                 conversation_id=conversation_id,
@@ -575,7 +580,7 @@ class WebHookProcessor:
                     conversation_id=conversation_id, language=message_language
                 )
                 analyzed_message: UserMessage = (
-                    await self.openai_service.analyze_message_with_correction_v3(
+                    await self.claude_ai_service.analyze_message_with_correction(
                         message=clean_message, conversation_id="conv:" + conversation_id
                     )
                 )
@@ -640,11 +645,13 @@ class WebHookProcessor:
                     note_for_admin: str = (
                             "original:" + analyzed_message.original_text + "\n\n" + note
                     )
+                    note_time = time.perf_counter()
                     await self.intercom_service.add_admin_note_to_conversation_async(
                         conversation_id=conversation_id,
                         admin_id=admin_id,
                         note=note_for_admin,
                     )
+                    print(time.perf_counter() - note_time)
                     print(f'user.replied:{time.perf_counter() - start_time}')
                     # await self.send_admin_note_async(
                     #     conversation_id=conversation_id,
