@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from models.models import ConversationMessages
 from models.custom_exceptions import APPException
+from models.models import ConversationContext
 
 load_dotenv()
 
@@ -81,6 +82,24 @@ class MessagesCache:
         else:
             return None
 
+    def set_conversation_context(
+        self, conversation_id: str, conversation_context: ConversationContext
+    ):
+        key_value = conversation_context.model_dump_json()
+        self.set_key("conversation_context:" + conversation_id, key_value)
+
+    def get_conversation_context(
+        self, conversation_id: str
+    ) -> ConversationContext | None:
+        value: str | None = self.redis_client.get(
+            "conversation_context:" + conversation_id
+        )
+        if value != None:
+            result: ConversationContext = ConversationContext.model_validate_json(value)
+            return result
+        else:
+            return None
+
     def delete_conversation(self, conversation_id: str):
         self.redis_client.delete(conversation_id)
 
@@ -90,6 +109,13 @@ class MessagesCache:
     def get_conversation_language(self, conversation_id: str):
         language: str = self.redis_client.get(conversation_id)
         return language
+
+    def set_conversation_analis(self, conversation_id: str, analys: str):
+        self.set_key(conversation_id, analys)
+
+    def get_conversation_analis(self, conversation_id: str):
+        analis: str = self.redis_client.get(conversation_id)
+        return analis
 
     def set_conversation_status(self, conversation_d: str, status: str):
         conv_status: str = "conv_status:" + conversation_d

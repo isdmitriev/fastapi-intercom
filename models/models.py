@@ -29,6 +29,11 @@ class MessageTranslated(BaseModel):
     user: User
 
 
+class ConversationContext(BaseModel):
+    last_user_message: str
+    current_context_analys: str
+
+
 class ConversationMessage(BaseModel):
     conversation_id: str
     time: datetime
@@ -51,7 +56,7 @@ class UserMessage(BaseModel):
     possible_interpretations: List[str] = []
     corrected_text: str
     context_analysis: str
-    language:Optional[str]=None
+    language: Optional[str] = None
 
 
 class RequestInfo(BaseModel):

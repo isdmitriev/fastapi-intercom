@@ -476,7 +476,7 @@ Use when message:
 3. Messages with time urgency without context should be "uncertain"
 4. Generalized commands without specifics should be "uncertain"
 5. For ongoing problem complaints, reference specific previous issues"""
-        system_promt_language="""# Casino Support AI Assistant
+        system_promt_language = """# Casino Support AI Assistant
 
 ## EXAMPLES - STATUS=UNCERTAIN
 - "Mera petrol add nahi huwa?" (casino slang, unclear reference)
@@ -591,7 +591,7 @@ Use when message:
 
             response = await self.client.messages.create(
                 # model="claude-3-5-haiku-20241022",
-                model='claude-3-5-sonnet-20241022',
+                model="claude-3-5-sonnet-20241022",
                 max_tokens=500,
                 system=system_promt_language,
                 temperature=0,
@@ -605,7 +605,7 @@ Use when message:
                 original_text: str = response_dict.get("original_text", "")
                 translated_text: str = response_dict.get("translated_text", "")
                 context_analysis = response_dict.get("context_analysis", "")
-                language:str=response_dict.get('language','')
+                language: str = response_dict.get("language", "")
                 return UserMessage(
                     status=status,
                     original_text=original_text,
@@ -614,14 +614,14 @@ Use when message:
                     corrected_text=original_text,
                     possible_interpretations=[],
                     context_analysis=context_analysis,
-                    language=language
+                    language=language,
                 )
             elif status == "error_fixed":
                 original_text: str = response_dict.get("original_text", "")
                 translated_text: str = response_dict.get("translated_text", "")
                 corrected_text: str = response_dict.get("corrected_text", "")
                 context_analysis: str = response_dict.get("context_analysis", "")
-                language: str = response_dict.get('language', '')
+                language: str = response_dict.get("language", "")
                 return UserMessage(
                     status=status,
                     original_text=original_text,
@@ -630,12 +630,12 @@ Use when message:
                     corrected_text=corrected_text,
                     possible_interpretations=[],
                     context_analysis=context_analysis,
-                    language=language
+                    language=language,
                 )
             elif status == "uncertain":
                 original_text: str = response_dict.get("original_text", "")
                 translated_text: str = response_dict.get("translated_text", "")
-                language: str = response_dict.get('language', '')
+                language: str = response_dict.get("language", "")
                 note: str = response_dict.get("note", "")
                 interpretations: List[str] = response_dict.get(
                     "possible_interpretations", []
@@ -649,8 +649,7 @@ Use when message:
                     note=note,
                     corrected_text="",
                     context_analysis=context_analysis,
-                    language=language
-
+                    language=language,
                 )
             else:
                 return None

@@ -11,6 +11,7 @@ from models.models import (
     ConversationMessage,
     ConversationMessages,
     RequestInfo,
+    ConversationContext,
 )
 from models.custom_exceptions import APPException
 from tasks import mongodb_task_async, translate_message_for_admin_bengali
@@ -37,7 +38,7 @@ class WebHookProcessor:
             messages_cache_service: MessagesCache,
             translations_service: OpenAITranslatorService,
             es_service: ESService,
-            claude_ai_service: ClaudeService
+            claude_ai_service: ClaudeService,
     ):
         self.mongo_db_service = mongo_db_service
         self.openai_service = openai_service
@@ -45,8 +46,8 @@ class WebHookProcessor:
         self.conversation_parts_service = conversation_parts_service
         self.messages_cache_service = messages_cache_service
         self.translations_service = translations_service
-        self.es_service = es_service,
-        self.claude_ai_service = claude_ai_service
+        self.es_service = (es_service,)
+        self.claude_ai_service = (claude_ai_service,)
 
     async def process_message(self, topic: str, message: Dict):
         conversation_id: str = message.get("data", {}).get("item", {}).get("id", "")
@@ -59,6 +60,12 @@ class WebHookProcessor:
 
             await self.set_conversation_status(
                 conversation_id=conversation_id, status="stoped"
+            )
+            # conv_context: ConversationContext = ConversationContext(last_user_message='', current_context_analys='')
+            # self.messages_cache_service.set_conversation_context(conversation_id=conversation_id,
+            #                                                      conversation_context=conv_context)
+            self.messages_cache_service.set_conversation_analis(
+                "conv_analys:" + conversation_id, analys=''
             )
             return
 
@@ -355,6 +362,23 @@ class WebHookProcessor:
 
     async def create_admin_note_v2(self, message: UserMessage):
         possible_interpritations = message.possible_interpretations
+        interpretations: str = ''
+        for interpretation in possible_interpritations:
+            interpretations = interpretations + interpretation + '\n'
+
+        note: str = (
+                "translated: "
+                + message.translated_text
+                + "\n"
+                + message.context_analysis
+                + "\n"
+                + 'interpretations:' + '\n' + interpretations
+
+        )
+        return note
+
+    async def create_admin_note_v2(self, message: UserMessage):
+        possible_interpritations = message.possible_interpretations
         one: str = possible_interpritations[0]
         two: str = possible_interpritations[1]
         note: str = (
@@ -539,7 +563,7 @@ class WebHookProcessor:
             clean_message: str = BeautifulSoup(message, "html.parser").getText()
             user_email: str = user_reply.get("author", {}).get("email", "")
             user_id: str = user_reply.get("author", {}).get("id", "")
-            admin_id: str = "8024055"
+            admin_id: str = "4687718"
             conversation_id: str = data["data"]["item"]["id"]
             start_detect = time.perf_counter()
             message_language: str = (
@@ -579,11 +603,25 @@ class WebHookProcessor:
                 self.messages_cache_service.set_conversation_language(
                     conversation_id=conversation_id, language=message_language
                 )
+
+                current_analys: str = self.messages_cache_service.get_conversation_analis(
+                    "conv_analys:" + conversation_id
+                )
+                # conv_context: ConversationContext = self.messages_cache_service.get_conversation_context(
+                #     conversation_id=conversation_id)
                 analyzed_message: UserMessage = (
-                    await self.claude_ai_service.analyze_message_with_correction(
-                        message=clean_message, conversation_id="conv:" + conversation_id
+                    await self.openai_service.analyze_message_with_correction_v4(
+                        message=clean_message, analys=current_analys
                     )
                 )
+
+                # self.messages_cache_service.set_conversation_context(conversation_id=conversation_id,
+                #                                                      conversation_context=conv_context)
+                self.messages_cache_service.set_conversation_analis(
+                    conversation_id="conv_analys:" + conversation_id,
+                    analys=analyzed_message.context_analysis,
+                )
+
                 conv_message.translated_en = analyzed_message.translated_text
                 await self.save_message_to_cache(
                     conversation_id=conversation_id, message=conv_message
@@ -601,7 +639,7 @@ class WebHookProcessor:
                             admin_id=admin_id,
                             note=note_for_admin,
                         )
-                        print(f'user.replied:{time.perf_counter() - start_time}')
+                        print(f"user.replied:{time.perf_counter() - start_time}")
 
                         # await self.send_admin_note_async(
                         #     conversation_id=conversation_id,
@@ -627,7 +665,7 @@ class WebHookProcessor:
                         admin_id=admin_id,
                         note=note_for_admin,
                     )
-                    print(f'user.replied:{time.perf_counter() - start_time}')
+                    print(f"user.replied:{time.perf_counter() - start_time}")
                     # await self.send_admin_note_async(
                     #     conversation_id=conversation_id,
                     #     message=corrected_message,
@@ -652,7 +690,7 @@ class WebHookProcessor:
                         note=note_for_admin,
                     )
                     print(time.perf_counter() - note_time)
-                    print(f'user.replied:{time.perf_counter() - start_time}')
+                    print(f"user.replied:{time.perf_counter() - start_time}")
                     # await self.send_admin_note_async(
                     #     conversation_id=conversation_id,
                     #     message=note,
@@ -921,6 +959,17 @@ class WebHookProcessor:
             language="English",
             message_type="conversation.admin.noted",
         )
+        current_analys: str = self.messages_cache_service.get_conversation_analis(
+            conversation_id='conv_analys:' + conversation_id)
+
+        new_context_analys: str = await self.openai_service.analyze_agent_message(
+            agent_message=message,
+            context_analys=current_analys,
+
+        )
+        self.messages_cache_service.set_conversation_analis(conversation_id='conv_analys:' + conversation_id,
+                                                            analys=new_context_analys)
+
         if target_language == "Hinglish":
             admin_reply_message: str = (
                 await self.translations_service.translate_message_from_english_to_hinglish_async_v2(

@@ -107,10 +107,10 @@ def test_get_admins():
 
 @pytest.mark.asyncio
 async def test_openai_detect_language():
-    start_time=time.perf_counter()
+    start_time = time.perf_counter()
     hindi_message: str = 'मैं हिंदी बोलता हूँ'
-    result: str =await OpenAITranslatorService().detect_language_async_v2(message=hindi_message)
-    print(time.perf_counter()-start_time)
+    result: str = await OpenAITranslatorService().detect_language_async_v2(message=hindi_message)
+    print(time.perf_counter() - start_time)
 
     assert result == 'Hindi'
 
@@ -212,12 +212,12 @@ async def test_translator_service():
 
 @pytest.mark.asyncio
 async def test_openai():
-    conv_id='conv:215468885032326'
+    conv_id = 'conv:215468885032326'
 
-    client: ClaudeService = Container.claude_ai_service()
+    client: OpenAIService = Container.open_ai_service()
     start_time = time.perf_counter()
-    message: UserMessage = await client.analyze_message_with_correction(
-        'Bhai mera khata me paisa nahi aaya, diesel payment ka wait kar raha hu',conversation_id=conv_id)
+    message: UserMessage = await client.analyze_message_with_correction_v4(analys='',
+                                                                           message='Bhai mera khata me paisa nahi aaya, diesel payment ka wait kar raha hu')
 
     assert isinstance(message, UserMessage)
     print(time.perf_counter() - start_time)
