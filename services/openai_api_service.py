@@ -817,55 +817,6 @@ Do not include any explanatory text, disclaimers, or formatting outside the JSON
 Your response will be programmatically parsed, so any text outside the JSON structure will cause errors.
 """
 
-        system_promt3 = """You are an AI assistant for online casino support. Your task is to analyze the player's message, detect the language (Hindi, Hinglish, Bengali, English, or Uncertain), check for errors, and return a structured JSON with the result.
-
-Your response must be **strictly valid JSON**, with no explanations or extra text:
-{
-  "language": "Hindi" | "Hinglish" | "Bengali" | "English" | "Uncertain",
-  "status": "no_error" | "error_fixed" | "uncertain",
-  "corrections": ["..."] // list of corrected or clarified versions; empty if none
-}
-
-📌 **Rules:**
-- Focus on text quality, not meaning.
-- Messages may include slang, typos, code-mixing.
-- If there's a clear error, correct it.
-- If you're unsure, suggest two possible corrections.
-- Do not add explanations — even if the message includes offensive language.
-- Do not rephrase or improve if the message is already correct — mark it as `"no_error"`.
-
----
-
-📕 **Status Definitions:**
-
-### 1. `no_error`
-The message is grammatically and linguistically correct.
-Examples:
-- "When will I get my bonus?" → status: "no_error"
-- "মোৰ একাউন্টত ধন কেতিয়া আহিব?" → status: "no_error"
-
-### 2. `error_fixed`
-Clear errors are found and confidently corrected.
-Examples:
-- "wher iz my money bro" → corrections: ["Where is my money, bro?"]
-- "mere bounus nahi aya" → corrections: ["Mera bonus nahi aaya."]
-
-### 3. `uncertain`
-The message contains errors, but multiple interpretations are possible. Suggest two versions.
-Examples:
-- "bounas nehi aya bhai" → corrections: ["Bonus nahi aaya bhai", "Bohot din se bonus nahi aaya bhai"]
-- "dimaag kharab kar diya bonus ne" → corrections: ["Dimaag kharab kar diya bonus ne", "Bonus ne pareshan kar diya"]
-
----
-
-📌 **Language:**
-Choose from:
-- `"Hindi"` – mostly Hindi
-- `"Hinglish"` – mixed Hindi and English
-- `"Bengali"` – mostly Bengali
-- `"English"` – mostly English
-- `"Uncertain"` – unclear or mixed/other
-"""
         messages: List[Dict] = [{"role": "system", "content": system_promt2}]
         chat_history: List[Dict] = self.get_chat_history(
             conversation_id=conversation_id
@@ -884,7 +835,10 @@ Choose from:
         try:
             response = await self.client_async.chat.completions.create(
                 # model="gpt-4-0125-preview",
-                model="gpt-3.5-turbo-0125",
+                # model="gpt-3.5-turbo-0125",
+                # model='gpt-4o',
+                model='gpt-4-turbo',
+
                 messages=messages,
                 temperature=0,
                 response_format={"type": "json_object"},
@@ -1485,7 +1439,7 @@ Your response will be programmatically parsed, so any text outside the JSON stru
                 # model="gpt-3.5-turbo-0125",
                 model='gpt-4o',
                 messages=[
-                    {"role": "system", "content":system_promt_v3},
+                    {"role": "system", "content": system_promt_v3},
                     {"role": "user", "content": user_input},
                 ],
                 temperature=0,
@@ -1817,7 +1771,7 @@ Your response will be programmatically parsed, so any text outside the JSON stru
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo-0125",
             messages=[
-                {"role": "system", "content":system_promt_full},
+                {"role": "system", "content": system_promt_full},
                 {"role": "user", "content": agent_input},
             ],
             response_format={"type": "json_object"},
@@ -1829,67 +1783,65 @@ Your response will be programmatically parsed, so any text outside the JSON stru
         context_analys_result: str = response_dict.get("context_analysis", "")
         return context_analys_result
 
-
-def get_chat_history(self, conversation_id: str) -> List[Dict]:
-    chat_mesages: ConversationMessages | None = (
-        self.messages_cache_service.get_conversation_messages(
-            conversation_id=conversation_id
+    def get_chat_history(self, conversation_id: str) -> List[Dict]:
+        chat_mesages: ConversationMessages | None = (
+            self.messages_cache_service.get_conversation_messages(
+                conversation_id='conv:' + conversation_id
+            )
         )
-    )
-    if chat_mesages == None:
-        return []
+        if chat_mesages == None:
+            return []
 
-    messages: List[ConversationMessage] = chat_mesages.messages
-    result_messages: List[Dict] = []
-    for chat_message in messages:
-        if chat_message.user.type == "admin":
-            result_messages.append(
-                {"role": "assistant", "content": chat_message.message}
+        messages: List[ConversationMessage] = chat_mesages.messages
+        result_messages: List[Dict] = []
+        for chat_message in messages:
+            if chat_message.user.type == "admin":
+                result_messages.append(
+                    {"role": "assistant", "content": chat_message.message}
+                )
+
+            if chat_message.user.type == "user":
+                result_messages.append(
+                    {"role": "user", "content": chat_message.message}
+                )
+
+        return result_messages
+
+    def get_chat_history_v2(self, conversation_id: str) -> List[Dict]:
+        chat_mesages: ConversationMessages | None = (
+            self.messages_cache_service.get_conversation_messages(
+                conversation_id=conversation_id
             )
-
-        if chat_message.user.type == "user":
-            result_messages.append(
-                {"role": "user", "content": chat_message.message}
-            )
-
-    return result_messages
-
-
-def get_chat_history_v2(self, conversation_id: str) -> List[Dict]:
-    chat_mesages: ConversationMessages | None = (
-        self.messages_cache_service.get_conversation_messages(
-            conversation_id=conversation_id
         )
-    )
-    if chat_mesages == None:
-        return []
+        if chat_mesages == None:
+            return []
 
-    messages: List[ConversationMessage] = chat_mesages.messages
-    result_messages: List[Dict] = []
-    for chat_message in messages:
-        if chat_message.user.type == "admin":
-            result_messages.append(
-                {"role": "assistant", "content": chat_message.message}
-            )
-            result_messages.append(
-                {
-                    "role": "assistant",
-                    "content": f"[TRANSLATED]: {chat_message.translated_en}",
-                }
-            )
+        messages: List[ConversationMessage] = chat_mesages.messages
+        result_messages: List[Dict] = []
+        for chat_message in messages:
+            if chat_message.user.type == "admin":
+                result_messages.append(
+                    {"role": "assistant", "content": chat_message.message}
+                )
+                result_messages.append(
+                    {
+                        "role": "assistant",
+                        "content": f"[TRANSLATED]: {chat_message.translated_en}",
+                    }
+                )
 
-        if chat_message.user.type == "user":
-            result_messages.append(
-                {"role": "user", "content": chat_message.message}
-            )
-            result_messages.append(
-                {
-                    "role": "user",
-                    "content": f"[ENGLISH]: {chat_message.translated_en}",
-                }
-            )
+            if chat_message.user.type == "user":
+                result_messages.append(
+                    {"role": "user", "content": chat_message.message}
+                )
+                result_messages.append(
+                    {
+                        "role": "user",
+                        "content": f"[ENGLISH]: {chat_message.translated_en}",
+                    }
+                )
 
-    return result_messages
+        return result_messages
 
 
 async def analyze_message_with_correction_async_v2(self, message: str):

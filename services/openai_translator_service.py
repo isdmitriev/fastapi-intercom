@@ -36,9 +36,12 @@ class OpenAITranslatorService:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following English message into Hindi (हिन्दी) while preserving the exact meaning and making it easy to understand for a native Hindi speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Hindi-speaking players commonly understand."
         promt2 = """You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following English message into Hindi (हिन्दी) while preserving the exact meaning and making it easy to understand for a native Hindi speaker.
 
-Important: The message is written by a female customer support agent, so please use appropriate feminine grammatical forms and gender markers in Hindi where applicable (such as feminine verb endings like '-ी' instead of masculine '-ा' when referring to the writer).
+Important: The message is written by a **female customer support agent**, so please use appropriate **feminine grammatical forms and gender markers** in Hindi where applicable (such as feminine verb endings like '-ी' instead of masculine '-ा' when referring to the writer).
 
-Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Hindi-speaking players commonly understand."""
+The message is being sent **to a male player**, so please use **respectful and appropriate masculine forms** when addressing the recipient (such as using "किया है", "बताया गया है", etc. when referring to the player).
+
+Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Hindi-speaking players commonly understand.
+"""
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -66,7 +69,10 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
 
 Important: The message is written by a female customer support agent, so please use appropriate feminine grammatical forms and gender-specific markers in Bengali where applicable.
 
-Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Bengali-speaking players commonly understand."""
+The message is being sent to a male player. While Bengali verbs generally do not change based on gender, please use respectful and context-appropriate masculine addressing forms when relevant (e.g., choice of pronouns, honorifics, and polite expressions).
+
+Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Bengali-speaking players commonly understand.
+"""
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -130,7 +136,7 @@ Now, translate the following message into **Hinglish (Romanized Hindi) only**:
 """
         promt2 = f"""You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India and Bangladesh. Your task is to translate the following English message into **Hinglish (Romanized Hindi)**, ensuring that the translation is written **entirely in the Latin alphabet** (English letters). The translation must **not use Devanagari script** (हिंदी). Instead, it should be written in **a natural, easy-to-read Romanized Hindi style** that native Hindi speakers commonly use in chat or casual writing.
 
-Important: The note is written by a female support agent, so please use appropriate feminine grammatical forms and speaking style in Hindi where applicable.
+Important: The note is written by a **female support agent**, so the tone and style should reflect that. The message is being sent **to a male player**, so please use **masculine grammatical forms and respectful male-addressing style in Hindi** where applicable.
 
 Make sure that no extra symbols (such as exclamation marks, commas, or other punctuation marks) are added unless they are part of the original message. Maintain a **friendly and professional tone**, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Indian players commonly understand.
 
@@ -139,7 +145,8 @@ Example:
 - - **Correct Hinglish:** "Aapka bet successfully lag gaya hai."
 - - **Incorrect (Devanagari):** "आपका बेट सफलतापूर्वक लग गया है।"
 
-Now, translate the following message into **Hinglish (Romanized Hindi) only**, using feminine forms where appropriate: "{message}" """
+Now, translate the following message into **Hinglish (Romanized Hindi) only**, using **masculine forms** where appropriate: "{message} """
+
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo-0125",
             messages=[{"role": "system", "content": promt2}],

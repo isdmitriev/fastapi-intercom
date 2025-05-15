@@ -64,9 +64,9 @@ class WebHookProcessor:
             # conv_context: ConversationContext = ConversationContext(last_user_message='', current_context_analys='')
             # self.messages_cache_service.set_conversation_context(conversation_id=conversation_id,
             #                                                      conversation_context=conv_context)
-            self.messages_cache_service.set_conversation_analis(
-                "conv_analys:" + conversation_id, analys=''
-            )
+            # self.messages_cache_service.set_conversation_analis(
+            #     "conv_analys:" + conversation_id, analys=''
+            # )
             return
 
         elif topic == "conversation.user.replied":
@@ -604,23 +604,23 @@ class WebHookProcessor:
                     conversation_id=conversation_id, language=message_language
                 )
 
-                current_analys: str = self.messages_cache_service.get_conversation_analis(
-                    "conv_analys:" + conversation_id
-                )
+                # current_analys: str = self.messages_cache_service.get_conversation_analis(
+                #     "conv_analys:" + conversation_id
+                # )
                 # conv_context: ConversationContext = self.messages_cache_service.get_conversation_context(
                 #     conversation_id=conversation_id)
                 analyzed_message: UserMessage = (
-                    await self.openai_service.analyze_message_with_correction_v4(
-                        message=clean_message, analys=current_analys
+                    await self.openai_service.analyze_message_with_correction_v3(
+                        message=clean_message, conversation_id=conversation_id
                     )
                 )
 
                 # self.messages_cache_service.set_conversation_context(conversation_id=conversation_id,
                 #                                                      conversation_context=conv_context)
-                self.messages_cache_service.set_conversation_analis(
-                    conversation_id="conv_analys:" + conversation_id,
-                    analys=analyzed_message.context_analysis,
-                )
+                # self.messages_cache_service.set_conversation_analis(
+                #     conversation_id="conv_analys:" + conversation_id,
+                #     analys=analyzed_message.context_analysis,
+                # )
 
                 conv_message.translated_en = analyzed_message.translated_text
                 await self.save_message_to_cache(
@@ -886,9 +886,9 @@ class WebHookProcessor:
                     language="English",
                     message_type="conversation.admin.noted",
                 )
-                # await self.save_message_to_cache(
-                #     conversation_id=conversation_id, message=conv_message
-                # )
+                await self.save_message_to_cache(
+                    conversation_id=conversation_id, message=conv_message
+                )
 
                 await self.send_admin_reply_message(
                     conversation_id=conversation_id,
@@ -959,16 +959,16 @@ class WebHookProcessor:
             language="English",
             message_type="conversation.admin.noted",
         )
-        current_analys: str = self.messages_cache_service.get_conversation_analis(
-            conversation_id='conv_analys:' + conversation_id)
-
-        new_context_analys: str = await self.openai_service.analyze_agent_message(
-            agent_message=message,
-            context_analys=current_analys,
-
-        )
-        self.messages_cache_service.set_conversation_analis(conversation_id='conv_analys:' + conversation_id,
-                                                            analys=new_context_analys)
+        # current_analys: str = self.messages_cache_service.get_conversation_analis(
+        #     conversation_id='conv_analys:' + conversation_id)
+        #
+        # new_context_analys: str = await self.openai_service.analyze_agent_message(
+        #     agent_message=message,
+        #     context_analys=current_analys,
+        #
+        # )
+        # self.messages_cache_service.set_conversation_analis(conversation_id='conv_analys:' + conversation_id,
+        #                                                     analys=new_context_analys)
 
         if target_language == "Hinglish":
             admin_reply_message: str = (
