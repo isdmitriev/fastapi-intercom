@@ -1446,7 +1446,7 @@ Your response will be programmatically parsed, so any text outside the JSON stru
                 response_format={"type": "json_object"},
             )
             response_dict: Dict = json.loads(response.choices[0].message.content)
-           
+
             status: str = response_dict.get("status", "")
             if status == "no_error":
                 original_text: str = response_dict.get("original_text", "")
