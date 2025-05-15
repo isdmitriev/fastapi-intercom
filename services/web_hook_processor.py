@@ -46,8 +46,8 @@ class WebHookProcessor:
         self.conversation_parts_service = conversation_parts_service
         self.messages_cache_service = messages_cache_service
         self.translations_service = translations_service
-        self.es_service = (es_service,)
-        self.claude_ai_service = (claude_ai_service,)
+        self.es_service = es_service
+        self.claude_ai_service = claude_ai_service
 
     async def process_message(self, topic: str, message: Dict):
         conversation_id: str = message.get("data", {}).get("item", {}).get("id", "")
@@ -402,6 +402,7 @@ class WebHookProcessor:
             event_type=event_type,
             exception=None,
         )
+
         self.es_service.add_document(
             index_name="requests", document=request_info.dict()
         )

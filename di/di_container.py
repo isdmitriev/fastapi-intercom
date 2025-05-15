@@ -24,7 +24,7 @@ class Container(containers.DeclarativeContainer):
 
     mongo_db_service = providers.Singleton(MongodbService)
     redis_service = providers.Singleton(RedisService)
-    es_service = providers.Singleton(ESService)
+    es_service:ESService = providers.Singleton(ESService)
     intercom_api_service = providers.Singleton(IntercomAPIService)
     messages_cache_service: MessagesCache = providers.Singleton(MessagesCache)
     open_ai_service = providers.Singleton(OpenAIService, messages_cache_service=messages_cache_service)
