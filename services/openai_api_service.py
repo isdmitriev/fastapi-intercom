@@ -1436,8 +1436,8 @@ Your response will be programmatically parsed, so any text outside the JSON stru
         try:
             response = await self.client_async.chat.completions.create(
                 # model="gpt-4-0125-preview",
-                # model="gpt-3.5-turbo-0125",
-                model='gpt-4o',
+                model="gpt-3.5-turbo-0125",
+                # model='gpt-4o',
                 messages=[
                     {"role": "system", "content": system_promt_v3},
                     {"role": "user", "content": user_input},
