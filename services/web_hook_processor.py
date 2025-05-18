@@ -25,6 +25,7 @@ from openai._exceptions import OpenAIError
 from redis.exceptions import RedisError
 from services.es_service import ESService
 import time
+import os
 from prometheus_metricks.metricks import USER_REPLIED_DURATION, ADMIN_NOTED_DURATION, USER_CREATED_DURATION
 
 
@@ -70,7 +71,8 @@ class WebHookProcessor:
             self.messages_cache_service.set_conversation_analis(
                 "conv_analys:" + conversation_id, analys=''
             )
-            USER_CREATED_DURATION.observe(time.time() - start_time)
+            USER_CREATED_DURATION.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).observe(
+                time.time() - start_time)
 
             return
 
@@ -79,7 +81,8 @@ class WebHookProcessor:
                 return
             start_time = time.time()
             await self.handle_conversation_user_replied_v3(data=message)
-            USER_REPLIED_DURATION.observe(time.time() - start_time)
+            USER_REPLIED_DURATION.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).observe(
+                time.time() - start_time)
             return
 
         elif topic == "conversation.admin.replied":
@@ -89,7 +92,8 @@ class WebHookProcessor:
         elif topic == "conversation.admin.noted":
             start_time = time.time()
             await self.handle_conversation_admin_noted_v3(data=message)
-            ADMIN_NOTED_DURATION.observe(time.time() - start_time)
+            ADMIN_NOTED_DURATION.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).observe(
+                time.time() - start_time)
             return
 
         elif topic == "conversation.admin.assigned":
