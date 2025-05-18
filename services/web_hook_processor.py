@@ -25,6 +25,7 @@ from openai._exceptions import OpenAIError
 from redis.exceptions import RedisError
 from services.es_service import ESService
 import time
+from prometheus_metricks.metricks import USER_REPLIED_DURATION, ADMIN_NOTED_DURATION, USER_CREATED_DURATION
 
 
 class WebHookProcessor:
@@ -56,6 +57,8 @@ class WebHookProcessor:
         )
 
         if topic == "conversation.user.created":
+            start_time = time.time()
+
             # await self.handle_conversation_user_created_v2(data=message)
 
             await self.set_conversation_status(
@@ -67,13 +70,16 @@ class WebHookProcessor:
             self.messages_cache_service.set_conversation_analis(
                 "conv_analys:" + conversation_id, analys=''
             )
+            USER_CREATED_DURATION.observe(time.time() - start_time)
+
             return
 
         elif topic == "conversation.user.replied":
             if conv_status == "stoped":
                 return
-
+            start_time = time.time()
             await self.handle_conversation_user_replied_v3(data=message)
+            USER_REPLIED_DURATION.observe(time.time() - start_time)
             return
 
         elif topic == "conversation.admin.replied":
@@ -81,7 +87,9 @@ class WebHookProcessor:
             return
 
         elif topic == "conversation.admin.noted":
+            start_time = time.time()
             await self.handle_conversation_admin_noted_v3(data=message)
+            ADMIN_NOTED_DURATION.observe(time.time() - start_time)
             return
 
         elif topic == "conversation.admin.assigned":
@@ -555,6 +563,7 @@ class WebHookProcessor:
 
     async def handle_conversation_user_replied_v3(self, data: Dict):
         try:
+
             start_time = time.perf_counter()
 
             user_reply: Dict = data["data"]["item"]["conversation_parts"][
@@ -667,6 +676,7 @@ class WebHookProcessor:
                         note=note_for_admin,
                     )
                     print(f"user.replied:{time.perf_counter() - start_time}")
+
                     # await self.send_admin_note_async(
                     #     conversation_id=conversation_id,
                     #     message=corrected_message,
@@ -692,6 +702,7 @@ class WebHookProcessor:
                     )
                     print(time.perf_counter() - note_time)
                     print(f"user.replied:{time.perf_counter() - start_time}")
+
                     # await self.send_admin_note_async(
                     #     conversation_id=conversation_id,
                     #     message=note,

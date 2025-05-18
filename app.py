@@ -17,6 +17,7 @@ from aiohttp.client_exceptions import ClientResponseError
 import time
 import psutil
 from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_metricks.metricks import APP_MEMORY_USAGE, SUCCESS_REQUEST_COUNT, FAILED_REQUEST_COUNT
 
 container = Container()
 container.init_resources()
@@ -32,8 +33,7 @@ container.wire(
 app = FastAPI()
 logger = logging.getLogger(__name__)
 
-
-# Instrumentator().instrument(app).expose(app)
+Instrumentator().instrument(app).expose(app)
 
 
 @app.on_event("startup")
@@ -57,6 +57,7 @@ async def handle_app_exception(
     )
     es_service.add_document(index_name="requests", document=request_info.dict())
     logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
+    FAILED_REQUEST_COUNT.inc()
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -146,17 +147,18 @@ async def shutdown():
     await container.shutdown_resources()
 
 
-# @app.middleware('http')
-# async def process_metrics(request: Request, call_next):
-#     process = psutil.Process()
-#
-#     memory_before = process.memory_info().rss / (1024 * 1024)
-#     print(memory_before)
-#     response = await call_next(request)
-#     memory_after = process.memory_info().rss / (1024 * 1024)
-#     print(memory_after)
-#
-#     return response
+@app.middleware('http')
+async def process_metrics(request: Request, call_next):
+    process = psutil.Process()
+
+    memory_before = process.memory_info().rss / (1024 * 1024)
+
+    response = await call_next(request)
+    memory_after = process.memory_info().rss / (1024 * 1024)
+
+    APP_MEMORY_USAGE.set(memory_after)
+
+    return response
 
 
 @app.post("/webhook/test")
@@ -214,19 +216,23 @@ async def get_message(
 
             topic: str = payload.get("topic", "")
             await web_hook_processor.process_message(topic, payload)
+            SUCCESS_REQUEST_COUNT.inc()
 
             return Response(status_code=status.HTTP_200_OK)
         else:
+            SUCCESS_REQUEST_COUNT.inc()
             return Response(
                 status_code=status.HTTP_200_OK, content="event already processed"
             )
     except ValueError as e:
+        FAILED_REQUEST_COUNT.inc()
 
         return Response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content="Invalid JSON"
         )
 
     except Exception as ex:
+        FAILED_REQUEST_COUNT.inc()
 
         return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
