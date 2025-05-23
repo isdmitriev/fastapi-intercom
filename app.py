@@ -36,6 +36,8 @@ logger = logging.getLogger(__name__)
 
 Instrumentator().instrument(app).expose(app)
 
+process = psutil.Process()
+
 
 @app.on_event("startup")
 async def startup():
@@ -150,7 +152,7 @@ async def shutdown():
 
 @app.middleware('http')
 async def process_metrics(request: Request, call_next):
-    process = psutil.Process()
+    # process = psutil.Process()
 
     memory_before = process.memory_info().rss / (1024 * 1024)
 

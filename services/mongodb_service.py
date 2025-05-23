@@ -9,7 +9,7 @@ load_dotenv()
 
 class MongodbService:
     def __init__(self):
-        self.client = AsyncIOMotorClient(os.getenv("MONGO_DB_URI"))
+        self.client = AsyncIOMotorClient(os.getenv("MONGO_DB_URI_KS"))
 
     async def add_document_to_collection(
         self, db_name: str, collection_name: str, document: Dict

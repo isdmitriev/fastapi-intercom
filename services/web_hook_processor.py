@@ -77,7 +77,7 @@ class WebHookProcessor:
             return
 
         elif topic == "conversation.user.replied":
-            if conv_status == "stoped":
+            if conv_status == "stoped" or conv_status is None:
                 return
             start_time = time.time()
             await self.handle_conversation_user_replied_v3(data=message)

@@ -122,7 +122,7 @@ class MessagesCache:
         self.set_key(conv_status, status)
 
     def get_conversation_status(self, conversation_id: str) -> str | None:
-        status: str = self.redis_client.get("conv_status:" + conversation_id)
+        status: str|None = self.redis_client.get("conv_status:" + conversation_id)
         return status
 
     def close(self):
