@@ -12,7 +12,7 @@ class RedisService:
     def __init__(self):
         try:
             self.redis_client = Redis(
-                host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=1
+                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=1
             )
         except RedisError as redis_error:
             full_exception_name = (
@@ -44,7 +44,7 @@ class MessagesCache:
     def __init__(self):
         try:
             self.redis_client = Redis(
-                host=os.getenv("REDIS_URI_KS"), decode_responses=True, port=6379, db=2
+                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=2
             )
         except RedisError as redis_error:
             full_exception_name = (
@@ -128,7 +128,7 @@ class MessagesCache:
 
     def set_conversation_last_message(self, conversation_id: str, message: str):
         conv_last_message: str = "conv_last_message:" + conversation_id
-        self.redis_client.set(conv_last_message, message)
+        self.set_key(conv_last_message, message)
 
     def get_conversation_last_message(self, conversation_id: str) -> str | None:
         message: str | None = self.redis_client.get(

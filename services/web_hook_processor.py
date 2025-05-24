@@ -63,6 +63,9 @@ class WebHookProcessor:
 
         if topic == "conversation.user.created":
             start_time = time.time()
+            user_data: Dict = message.get("data", {}).get("item", {}).get("source", {})
+            user_message: str = user_data.get("body", "")
+            clean_message: str = BeautifulSoup(user_message, "html.parser").getText()
 
             # await self.handle_conversation_user_created_v2(data=message)
 
@@ -75,6 +78,9 @@ class WebHookProcessor:
             self.messages_cache_service.set_conversation_analis(
                 "conv_analys:" + conversation_id, analys=""
             )
+            self.messages_cache_service.set_conversation_last_message(
+                conversation_id=conversation_id, message=clean_message
+            )
             USER_CREATED_DURATION.labels(
                 pod_name=os.environ.get("HOSTNAME", "unknown")
             ).observe(time.time() - start_time)
@@ -83,6 +89,15 @@ class WebHookProcessor:
 
         elif topic == "conversation.user.replied":
             if conv_status == "stoped" or conv_status is None:
+                user_reply: Dict = message["data"]["item"]["conversation_parts"][
+                    "conversation_parts"
+                ][0]
+                user_message: str = user_reply.get("body", "")
+                clean_message: str = BeautifulSoup(user_message, "html.parser").getText()
+
+                self.messages_cache_service.set_conversation_last_message(
+                    conversation_id=conversation_id, message=clean_message
+                )
                 return
             start_time = time.time()
             await self.handle_conversation_user_replied_v3(data=message)
@@ -890,14 +905,15 @@ class WebHookProcessor:
             )
             if clean_message.startswith("!force") == True:
                 conv_lang: str = clean_message.split("!force", 1)[1].strip()
-                await self.messages_cache_service.set_conversation_language(
-                    conversation_id=conversation_id, language=conv_lang
+                print(conv_lang)
+                self.messages_cache_service.set_conversation_language(
+                    conversation_id=conversation_id, language='Hinglish'
                 )
                 await self.set_conversation_status(
                     conversation_id=conversation_id, status="started"
                 )
                 last_message: str | None = (
-                    await self.messages_cache_service.get_conversation_last_message(
+                     self.messages_cache_service.get_conversation_last_message(
                         conversation_id=conversation_id
                     )
                 )
@@ -907,23 +923,39 @@ class WebHookProcessor:
                     await self.start_translation_service(
                         conversation_id=conversation_id, message=last_message
                     )
-
-            if clean_message == "!force stop" or clean_message == "!force start":
-                status: str = ""
-                if clean_message == "!force stop":
-                    status = "stoped"
-                else:
-                    status = "started"
-
-                await self.set_conversation_status(
-                    conversation_id=conversation_id, status=status
-                )
-                return
+                    return
+            if clean_message in ["!detect lang", "!start", "!stop"] == True:
+                if clean_message == "!stop" == True:
+                    await self.set_conversation_status(
+                        conversation_id=conversation_id, status="stoped"
+                    )
+                    return
+                if clean_message == "!start" == True:
+                    await self.set_conversation_status(
+                        conversation_id=conversation_id, status="started"
+                    )
+                    return
+                if clean_message == "!detect lang" == True:
+                    last_chat_message: str | None = (
+                        self.messages_cache_service.get_conversation_last_message(
+                            conversation_id=conversation_id
+                        )
+                    )
+                    if last_chat_message != None:
+                        chat_lang: str = (
+                            await self.translations_service.detect_language_async_v2(
+                                message=last_chat_message
+                            )
+                        )
+                        self.messages_cache_service.set_conversation_language(
+                            conversation_id=conversation_id, language=chat_lang
+                        )
+                        return
 
             if is_note_for_reply == True and conv_status != "stoped":
                 clean_message = clean_message.lstrip("!")
                 user: User = User(id=admin_id, email="em@gmail.com", type="admin")
-                print(user)
+
                 conv_message: ConversationMessage = ConversationMessage(
                     conversation_id=conversation_id,
                     time=datetime.datetime.now(),
@@ -988,7 +1020,7 @@ class WebHookProcessor:
             raise e
 
     async def start_translation_service(self, conversation_id: str, message: str):
-        admin_id: str = '4687718'
+        admin_id: str = "4687718"
         current_analys: str = self.messages_cache_service.get_conversation_analis(
             "conv_analys:" + conversation_id
         )
@@ -997,22 +1029,20 @@ class WebHookProcessor:
                 message=message, analys=current_analys
             )
         )
-        self.messages_cache_service.set_conversation_analis("conv_analys:" + conversation_id,
-                                                            analys=analyzed_message.context_analysis)
-        if (analyzed_message.status == 'no_error'):
+        self.messages_cache_service.set_conversation_analis(
+            "conv_analys:" + conversation_id, analys=analyzed_message.context_analysis
+        )
+        if analyzed_message.status == "no_error":
             note_for_admin: str = (
-                    "original:"
-                    + message
-                    + "\n\n"
-                    + analyzed_message.translated_text
+                    "original:" + message + "\n\n" + analyzed_message.translated_text
             )
             await self.intercom_service.add_admin_note_to_conversation_async(
                 conversation_id=conversation_id,
                 admin_id=admin_id,
                 note=note_for_admin,
             )
-        elif (analyzed_message.status == 'error_fixed'):
-            
+        elif analyzed_message.status == "error_fixed":
+
             note_for_admin: str = (
                     "original:"
                     + analyzed_message.original_text
@@ -1024,7 +1054,7 @@ class WebHookProcessor:
                 admin_id=admin_id,
                 note=note_for_admin,
             )
-        elif (analyzed_message.status == 'uncertain'):
+        elif analyzed_message.status == "uncertain":
             note: str = await self.create_admin_note(analyzed_message)
             note_for_admin: str = (
                     "original:" + analyzed_message.original_text + "\n\n" + note
