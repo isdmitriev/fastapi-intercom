@@ -81,7 +81,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_hindi_to_english_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response: ChatCompletion = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -116,7 +116,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_bengali_to_english_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -133,7 +133,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_bengali_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -150,7 +150,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_hindi_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -452,7 +452,7 @@ For "uncertain", also include:
             return None
 
     async def analyze_message_with_correction_v3(
-            self, message: str, conversation_id: str
+        self, message: str, conversation_id: str
     ):
         system_promt = """# Casino Support AI Assistant
 
@@ -837,8 +837,7 @@ Your response will be programmatically parsed, so any text outside the JSON stru
                 # model="gpt-4-0125-preview",
                 # model="gpt-3.5-turbo-0125",
                 # model='gpt-4o',
-                model='gpt-4-turbo',
-
+                model="gpt-4-turbo",
                 messages=messages,
                 temperature=0,
                 response_format={"type": "json_object"},
@@ -1417,8 +1416,8 @@ For uncertain user messages, you MUST:
 Do not include any explanatory text, disclaimers, or formatting outside the JSON structure.
 Your response will be programmatically parsed, so any text outside the JSON structure will cause errors."""
 
-        if (analys == ''):
-            analys = 'No previous context available.'
+        if analys == "":
+            analys = "No previous context available."
         #         user_message: str = f"""## CURRENT MESSAGE
         # {message}
         #
@@ -1498,9 +1497,7 @@ Your response will be programmatically parsed, so any text outside the JSON stru
         except Exception as e:
             raise e
 
-    async def analyze_agent_message(
-            self, agent_message: str, context_analys: str
-    ):
+    async def analyze_agent_message(self, agent_message: str, context_analys: str):
         system_promt = """# Casino Support AI Assistant - Agent Message Analyzer
 
 ## CRITICAL INSTRUCTION: RETURN ONLY VALID JSON
@@ -1756,7 +1753,7 @@ ALWAYS return JSON in this format for agent messages:
 ## REMINDER: YOUR ENTIRE RESPONSE MUST BE VALID JSON WITH NO ADDITIONAL TEXT
 Do not include any explanatory text, disclaimers, or formatting outside the JSON structure.
 Your response will be programmatically parsed, so any text outside the JSON structure will cause errors."""
-        if context_analys == '':
+        if context_analys == "":
             context_analys = "No previous context available."
         agent_input = f"""## MESSAGE TYPE
         agent_message
@@ -1945,7 +1942,7 @@ ALWAYS return JSON in this format for user messages:
 ## REMINDER: YOUR ENTIRE RESPONSE MUST BE VALID JSON WITH NO ADDITIONAL TEXT
 Do not include any explanatory text, disclaimers, or formatting outside the JSON structure.
 Your response will be programmatically parsed, so any text outside the JSON structure will cause errors."""
-        if context_analys == '':
+        if context_analys == "":
             context_analys = "No previous context available."
         user_input = f"""## MESSAGE TYPE
         user_message
@@ -1973,7 +1970,7 @@ Your response will be programmatically parsed, so any text outside the JSON stru
     def get_chat_history(self, conversation_id: str) -> List[Dict]:
         chat_mesages: ConversationMessages | None = (
             self.messages_cache_service.get_conversation_messages(
-                conversation_id='conv:' + conversation_id
+                conversation_id="conv:" + conversation_id
             )
         )
         if chat_mesages == None:

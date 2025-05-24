@@ -26,7 +26,11 @@ from redis.exceptions import RedisError
 from services.es_service import ESService
 import time
 import os
-from prometheus_metricks.metricks import USER_REPLIED_DURATION, ADMIN_NOTED_DURATION, USER_CREATED_DURATION
+from prometheus_metricks.metricks import (
+    USER_REPLIED_DURATION,
+    ADMIN_NOTED_DURATION,
+    USER_CREATED_DURATION,
+)
 
 
 class WebHookProcessor:
@@ -69,10 +73,11 @@ class WebHookProcessor:
             # self.messages_cache_service.set_conversation_context(conversation_id=conversation_id,
             #                                                      conversation_context=conv_context)
             self.messages_cache_service.set_conversation_analis(
-                "conv_analys:" + conversation_id, analys=''
+                "conv_analys:" + conversation_id, analys=""
             )
-            USER_CREATED_DURATION.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).observe(
-                time.time() - start_time)
+            USER_CREATED_DURATION.labels(
+                pod_name=os.environ.get("HOSTNAME", "unknown")
+            ).observe(time.time() - start_time)
 
             return
 
@@ -81,8 +86,9 @@ class WebHookProcessor:
                 return
             start_time = time.time()
             await self.handle_conversation_user_replied_v3(data=message)
-            USER_REPLIED_DURATION.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).observe(
-                time.time() - start_time)
+            USER_REPLIED_DURATION.labels(
+                pod_name=os.environ.get("HOSTNAME", "unknown")
+            ).observe(time.time() - start_time)
             return
 
         elif topic == "conversation.admin.replied":
@@ -92,8 +98,9 @@ class WebHookProcessor:
         elif topic == "conversation.admin.noted":
             start_time = time.time()
             await self.handle_conversation_admin_noted_v3(data=message)
-            ADMIN_NOTED_DURATION.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).observe(
-                time.time() - start_time)
+            ADMIN_NOTED_DURATION.labels(
+                pod_name=os.environ.get("HOSTNAME", "unknown")
+            ).observe(time.time() - start_time)
             return
 
         elif topic == "conversation.admin.assigned":
@@ -374,9 +381,9 @@ class WebHookProcessor:
 
     async def create_admin_note_v2(self, message: UserMessage):
         possible_interpritations = message.possible_interpretations
-        interpretations: str = ''
+        interpretations: str = ""
         for interpretation in possible_interpritations:
-            interpretations = interpretations + interpretation + '\n'
+            interpretations = interpretations + interpretation + "\n"
 
         note: str = (
                 "translated: "
@@ -384,8 +391,9 @@ class WebHookProcessor:
                 + "\n"
                 + message.context_analysis
                 + "\n"
-                + 'interpretations:' + '\n' + interpretations
-
+                + "interpretations:"
+                + "\n"
+                + interpretations
         )
         return note
 
@@ -618,8 +626,10 @@ class WebHookProcessor:
                     conversation_id=conversation_id, language=message_language
                 )
 
-                current_analys: str = self.messages_cache_service.get_conversation_analis(
-                    "conv_analys:" + conversation_id
+                current_analys: str = (
+                    self.messages_cache_service.get_conversation_analis(
+                        "conv_analys:" + conversation_id
+                    )
                 )
                 # conv_context: ConversationContext = self.messages_cache_service.get_conversation_context(
                 #     conversation_id=conversation_id)
@@ -878,6 +888,26 @@ class WebHookProcessor:
                     conversation_id=conversation_id
                 )
             )
+            if clean_message.startswith("!force") == True:
+                conv_lang: str = clean_message.split("!force", 1)[1].strip()
+                await self.messages_cache_service.set_conversation_language(
+                    conversation_id=conversation_id, language=conv_lang
+                )
+                await self.set_conversation_status(
+                    conversation_id=conversation_id, status="started"
+                )
+                last_message: str | None = (
+                    await self.messages_cache_service.get_conversation_last_message(
+                        conversation_id=conversation_id
+                    )
+                )
+                if last_message == None:
+                    return
+                else:
+                    await self.start_translation_service(
+                        conversation_id=conversation_id, message=last_message
+                    )
+
             if clean_message == "!force stop" or clean_message == "!force start":
                 status: str = ""
                 if clean_message == "!force stop":
@@ -957,6 +987,57 @@ class WebHookProcessor:
         except Exception as e:
             raise e
 
+    async def start_translation_service(self, conversation_id: str, message: str):
+        admin_id: str = '4687718'
+        current_analys: str = self.messages_cache_service.get_conversation_analis(
+            "conv_analys:" + conversation_id
+        )
+        analyzed_message: UserMessage = (
+            await self.openai_service.analyze_message_with_correction_v4(
+                message=message, analys=current_analys
+            )
+        )
+        self.messages_cache_service.set_conversation_analis("conv_analys:" + conversation_id,
+                                                            analys=analyzed_message.context_analysis)
+        if (analyzed_message.status == 'no_error'):
+            note_for_admin: str = (
+                    "original:"
+                    + message
+                    + "\n\n"
+                    + analyzed_message.translated_text
+            )
+            await self.intercom_service.add_admin_note_to_conversation_async(
+                conversation_id=conversation_id,
+                admin_id=admin_id,
+                note=note_for_admin,
+            )
+        elif (analyzed_message.status == 'error_fixed'):
+            
+            note_for_admin: str = (
+                    "original:"
+                    + analyzed_message.original_text
+                    + "\n\n"
+                    + analyzed_message.translated_text
+            )
+            await self.intercom_service.add_admin_note_to_conversation_async(
+                conversation_id=conversation_id,
+                admin_id=admin_id,
+                note=note_for_admin,
+            )
+        elif (analyzed_message.status == 'uncertain'):
+            note: str = await self.create_admin_note(analyzed_message)
+            note_for_admin: str = (
+                    "original:" + analyzed_message.original_text + "\n\n" + note
+            )
+
+            await self.intercom_service.add_admin_note_to_conversation_async(
+                conversation_id=conversation_id,
+                admin_id=admin_id,
+                note=note_for_admin,
+            )
+        else:
+            return
+
     async def send_admin_reply_message(
             self,
             user: User,
@@ -976,15 +1057,16 @@ class WebHookProcessor:
             message_type="conversation.admin.noted",
         )
         current_analys: str = self.messages_cache_service.get_conversation_analis(
-            conversation_id='conv_analys:' + conversation_id)
+            conversation_id="conv_analys:" + conversation_id
+        )
 
         new_context_analys: str = await self.openai_service.analyze_agent_message(
             agent_message=message,
             context_analys=current_analys,
-
         )
-        self.messages_cache_service.set_conversation_analis(conversation_id='conv_analys:' + conversation_id,
-                                                            analys=new_context_analys)
+        self.messages_cache_service.set_conversation_analis(
+            conversation_id="conv_analys:" + conversation_id, analys=new_context_analys
+        )
 
         if target_language == "Hinglish":
             admin_reply_message: str = (
