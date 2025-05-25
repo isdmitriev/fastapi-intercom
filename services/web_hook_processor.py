@@ -63,6 +63,7 @@ class WebHookProcessor:
 
         if topic == "conversation.user.created":
             start_time = time.time()
+            start_time2=time.perf_counter()
             user_data: Dict = message.get("data", {}).get("item", {}).get("source", {})
             user_message: str = user_data.get("body", "")
             clean_message: str = BeautifulSoup(user_message, "html.parser").getText()
@@ -81,6 +82,7 @@ class WebHookProcessor:
             self.messages_cache_service.set_conversation_last_message(
                 conversation_id=conversation_id, message=clean_message
             )
+            print(f'user.created:{time.perf_counter()-start_time2}')
             USER_CREATED_DURATION.labels(
                 pod_name=os.environ.get("HOSTNAME", "unknown")
             ).observe(time.time() - start_time)
@@ -93,7 +95,9 @@ class WebHookProcessor:
                     "conversation_parts"
                 ][0]
                 user_message: str = user_reply.get("body", "")
-                clean_message: str = BeautifulSoup(user_message, "html.parser").getText()
+                clean_message: str = BeautifulSoup(
+                    user_message, "html.parser"
+                ).getText()
 
                 self.messages_cache_service.set_conversation_last_message(
                     conversation_id=conversation_id, message=clean_message
@@ -905,43 +909,62 @@ class WebHookProcessor:
             )
             if clean_message.startswith("!force") == True:
                 conv_lang: str = clean_message.split("!force", 1)[1].strip()
+                conv_language: str = ""
+                if conv_lang == "hi":
+                    conv_language = "Hinglish"
+                elif conv_lang == "bn":
+                    conv_language = "Bengali"
+                elif conv_lang == "hindi":
+                    conv_language = "Hindi"
+                else:
+                    return
                 print(conv_lang)
                 self.messages_cache_service.set_conversation_language(
-                    conversation_id=conversation_id, language='Hinglish'
+                    conversation_id=conversation_id, language=conv_language
                 )
                 await self.set_conversation_status(
                     conversation_id=conversation_id, status="started"
                 )
                 last_message: str | None = (
-                     self.messages_cache_service.get_conversation_last_message(
+                    self.messages_cache_service.get_conversation_last_message(
                         conversation_id=conversation_id
                     )
                 )
-                if last_message == None:
+                if last_message is None:
                     return
                 else:
                     await self.start_translation_service(
                         conversation_id=conversation_id, message=last_message
                     )
                     return
-            if clean_message in ["!detect lang", "!start", "!stop"] == True:
-                if clean_message == "!stop" == True:
+            if clean_message in ["!detect lang", "!start", "!stop"]:
+                if clean_message == "!stop":
                     await self.set_conversation_status(
                         conversation_id=conversation_id, status="stoped"
                     )
                     return
-                if clean_message == "!start" == True:
+                if clean_message == "!start":
                     await self.set_conversation_status(
                         conversation_id=conversation_id, status="started"
                     )
+                    current_conv_language: str = (
+                        self.messages_cache_service.get_conversation_language(
+                            conversation_id=conversation_id
+                        )
+                    )
+                    if current_conv_language is None:
+                        self.messages_cache_service.set_conversation_language(
+                            conversation_id=conversation_id, language="Hinglish"
+                        )
+
                     return
-                if clean_message == "!detect lang" == True:
+                if clean_message == "!detect lang":
                     last_chat_message: str | None = (
                         self.messages_cache_service.get_conversation_last_message(
                             conversation_id=conversation_id
                         )
                     )
-                    if last_chat_message != None:
+                    if last_chat_message is not None:
                         chat_lang: str = (
                             await self.translations_service.detect_language_async_v2(
                                 message=last_chat_message
