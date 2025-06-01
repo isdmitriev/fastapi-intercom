@@ -31,9 +31,33 @@ class OpenAITranslatorService:
             raise e
 
     async def translate_message_from_english_to_hindi_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
-        promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following English message into Hindi (हिन्दी) while preserving the exact meaning and making it easy to understand for a native Hindi speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Hindi-speaking players commonly understand."
+        promt = """You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following English message into Hindi (हिन्दी) while preserving the exact meaning and making it easy to understand for a native Hindi speaker.
+
+CRITICAL TRANSLATION REQUIREMENTS:
+1. **TRANSLATE EVERYTHING**: You MUST translate ALL words into Hindi, including technical terms like "Transactions History", "Payment Provider", "Finance Team", etc. Do NOT leave ANY English words untranslated.
+
+2. **Technical Terms Translation Guide**:
+   - Transactions History → लेन-देन का इतिहास
+   - Finance Team → वित्त टीम 
+   - Payment Provider → भुगतान प्रदाता
+   - Processing → प्रसंस्करण
+   - Verifying → सत्यापन
+   - Completed → पूर्ण
+
+3. **Gender Specifications**:
+   - The message is written by a **female customer support agent** - use appropriate **feminine grammatical forms** (feminine verb endings like '-ी' instead of masculine '-ा' when the agent refers to herself)
+   - The message is addressed **to a male player** - use **respectful masculine forms** when addressing him (जी, आप, किया है, बताया गया है, etc.)
+
+4. **Tone Requirements**:
+   - Maintain friendly and professional customer service tone
+   - Use respectful language appropriate for Indian customers
+   - Ensure clarity for Hindi-speaking gambling/betting platform users
+
+5. **ZERO TOLERANCE**: Any English word remaining in the translation is considered an ERROR. Every single term must be in Hindi.
+
+REMEMBER: Complete Hindi translation with NO English words remaining is mandatory."""
         promt2 = """You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following English message into Hindi (हिन्दी) while preserving the exact meaning and making it easy to understand for a native Hindi speaker.
 
 Important: The message is written by a **female customer support agent**, so please use appropriate **feminine grammatical forms and gender markers** in Hindi where applicable (such as feminine verb endings like '-ी' instead of masculine '-ा' when referring to the writer).
@@ -47,7 +71,7 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
             messages=[
                 {
                     "role": "system",
-                    "content": promt2,
+                    "content": promt,
                 },
                 {
                     "role": "user",
@@ -62,9 +86,35 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
         return result
 
     async def translate_message_from_english_to_bengali_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
-        promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from Bangladesh and India. Your task is to translate the following English message into Bengali (বাংলা) while preserving the exact meaning and making it easy to understand for a native Bengali speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Bengali-speaking players commonly understand"
+        current_promt = """You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following English message into Bengali (বাংলা) while preserving the exact meaning and making it easy to understand for a native Bengali speaker.
+
+CRITICAL TRANSLATION REQUIREMENTS:
+1. **TRANSLATE EVERYTHING**: You MUST translate ALL words into Bengali, including technical terms like "Transactions History", "Payment Provider", "Finance Team", etc. Do NOT leave ANY English words untranslated.
+
+2. **Technical Terms Bengali Translation Guide**:
+   - Transactions History → লেনদেনের ইতিহাস (lendenor itihaas)
+   - Finance Team → অর্থ বিভাগ (ortho bibhag) / ফিন্যান্স টিম (finance team)
+   - Payment Provider → পেমেন্ট প্রদানকারী (payment prodankaari)
+   - Processing → প্রক্রিয়াকরণ (prokriyakoron)
+   - Verifying → যাচাইকরণ (yachaaikoron)
+   - Completed → সম্পূর্ণ (shompurno)
+
+3. **Gender and Respect Specifications**:
+   - The message is written by a **female customer support agent** - use appropriate **feminine grammatical forms** in Bengali
+   - The message is addressed **to a male player** - use **respectful forms** like আপনি (apni), আপনার (apnar), etc.
+
+4. **Tone Requirements**:
+   - Maintain friendly and professional customer service tone
+   - Use respectful Bengali language appropriate for customer service
+   - Ensure clarity for Bengali-speaking gambling/betting platform users
+   - Use formal/respectful Bengali (শুদ্ধ বাংলা) mixed with commonly understood terms
+
+5. **ZERO TOLERANCE**: Any English word remaining in the translation is considered an ERROR. Every single term must be in Bengali script (বাংলা).
+
+REMEMBER: Complete Bengali translation with NO English words remaining is mandatory. Use Bengali script only."""
+
         promt2 = """You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from Bangladesh and India. Your task is to translate the following English message into Bengali (বাংলা) while preserving the exact meaning and making it easy to understand for a native Bengali speaker.
 
 Important: The message is written by a female customer support agent, so please use appropriate feminine grammatical forms and gender-specific markers in Bengali where applicable.
@@ -78,14 +128,14 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
             messages=[
                 {
                     "role": "system",
-                    "content": promt2,
+                    "content": current_promt,
                 },
                 {
                     "role": "user",
                     "content": message,
                 },
             ],
-            temperature=0.2,
+            temperature=0,
         )
         translated_text = response.choices[0].message.content
         result = translated_text.strip('"')
@@ -93,7 +143,7 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
         return result
 
     async def translate_message_from_english_to_hinglish_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India and Bangladesh. Your task is to translate the following English message into Romanized Hindi (Hinglish) while preserving the exact meaning and making it easy to understand for a native Hindi speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Indian players commonly understand."
         response = await self.client_async.chat.completions.create(
@@ -115,7 +165,7 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
         return result
 
     async def translate_message_from_english_to_hinglish_async_v2(
-        self, message: str
+            self, message: str
     ) -> str | None:
         prompt = f"""You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India and Bangladesh. Your task is to translate the following English message into **Hinglish (Romanized Hindi)**, ensuring that the translation is written **entirely in the Latin alphabet** (English letters).
 
@@ -134,18 +184,60 @@ Now, translate the following message into **Hinglish (Romanized Hindi) only**:
 
 "{message}"
 """
+
         promt2 = f"""You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India and Bangladesh. Your task is to translate the following English message into **Hinglish (Romanized Hindi)**, ensuring that the translation is written **entirely in the Latin alphabet** (English letters). The translation must **not use Devanagari script** (हिंदी). Instead, it should be written in **a natural, easy-to-read Romanized Hindi style** that native Hindi speakers commonly use in chat or casual writing.
 
-Important: The note is written by a **female support agent**, so the tone and style should reflect that. The message is being sent **to a male player**, so please use **masculine grammatical forms and respectful male-addressing style in Hindi** where applicable.
+CRITICAL TRANSLATION REQUIREMENTS:
+1. **TRANSLATE EVERYTHING INTO HINGLISH**: You MUST convert ALL words into Hinglish format, including technical terms. Do NOT leave pure English technical terms untranslated - convert them to Hindi concepts written in Roman script.
 
-Make sure that no extra symbols (such as exclamation marks, commas, or other punctuation marks) are added unless they are part of the original message. Maintain a **friendly and professional tone**, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Indian players commonly understand.
+2. **Technical Terms Hinglish Guide**:
+   - Transactions History → len-den ka history / transaction ka itihaas
+   - Finance Team → finance ki team / paisa wali team  
+   - Payment Provider → payment karne wala / payment company
+   - Processing → process ho raha hai
+   - Verifying → verify kar rahe hain / check kar rahe hain
+   - Completed → complete ho gaya / poora ho gaya
 
-Example:
+3. **ZERO TOLERANCE RULE**: Any pure English technical term remaining untranslated is considered an ERROR. Everything must be in natural Hinglish format using Roman script only.
+
+Important: The note is written by a **female support agent**, so the tone and style should reflect that. The message is being sent **to a male player**, so please use **masculine grammatical forms and respectful male-addressing style in Hindi** where applicable (aap, aapko, aapne, etc.).
+
+Make sure that no extra symbols (such as exclamation marks, commas, or other punctuation marks) are added unless they are part of the original message. Maintain a **friendly and professional tone**, ensuring clarity for the player.
+
+Example: 
 - **English:** "Your bet has been placed successfully."
-- - **Correct Hinglish:** "Aapka bet successfully lag gaya hai."
-- - **Incorrect (Devanagari):** "आपका बेट सफलतापूर्वक लग गया है।"
+- **Correct Hinglish:** "Aapka bet successfully lag gaya hai."
+- **Incorrect (Devanagari):** "आपका बेट सफलतापूर्वक लग गया है।"
 
-Now, translate the following message into **Hinglish (Romanized Hindi) only**, using **masculine forms** where appropriate: "{message} """
+REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing in Roman script is mandatory.
+
+Now, translate the following message into **Hinglish (Romanized Hindi) only**, using **masculine forms** where appropriate: "{message}"""
+        current_promt = """You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following English message into Hinglish (Hindi written in Roman script) while preserving the exact meaning and making it natural for Indian English speakers.
+
+CRITICAL TRANSLATION REQUIREMENTS:
+1. **TRANSLATE EVERYTHING INTO HINGLISH**: You MUST convert ALL words into Hinglish format. Do NOT leave pure English technical terms untranslated - convert them to Hindi concepts written in Roman script.
+
+2. **Technical Terms Hinglish Guide**:
+   - Transactions History → len-den ka history / transaction ka history
+   - Finance Team → finance ki team / paisa wali team  
+   - Payment Provider → payment karne wala / payment company
+   - Processing → process ho raha hai
+   - Verifying → verify kar rahe hain
+   - Completed → complete ho gaya / poora ho gaya
+
+3. **Gender Specifications**:
+   - The message is written by a **female customer support agent** - use appropriate **feminine markers** in Hinglish (main, mujhe, maine, etc. with feminine context)
+   - The message is addressed **to a male player** - use **respectful masculine forms** (aap, aapko, aapne, etc.)
+
+4. **Hinglish Style Requirements**:
+   - Mix Hindi grammar with Roman script naturally
+   - Use common Hinglish expressions (kar sakte hain, ho jayega, etc.)
+   - Keep it conversational and familiar to Indian users
+   - Use respectful terms like "aap", "ji" where appropriate
+
+5. **ZERO TOLERANCE**: Any pure English technical term remaining untranslated is considered an ERROR. Everything must be in natural Hinglish format.
+
+REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mandatory."""
 
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo-0125",
@@ -157,7 +249,7 @@ Now, translate the following message into **Hinglish (Romanized Hindi) only**, u
         return result
 
     async def translate_message_from_bengali_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from Bangladesh and India. Your task is to translate the following Bengali (বাংলা) message into English while preserving the exact meaning and making it easy to understand for a native English speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that English-speaking players commonly understand."
         response = await self.client_async.chat.completions.create(
@@ -180,7 +272,7 @@ Now, translate the following message into **Hinglish (Romanized Hindi) only**, u
         return result
 
     async def translate_message_from_hindi_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following Hindi (हिंदी) message into English while preserving the exact meaning and making it easy to understand for a native English speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that English-speaking players commonly understand."
         response = await self.client_async.chat.completions.create(
@@ -203,7 +295,7 @@ Now, translate the following message into **Hinglish (Romanized Hindi) only**, u
         return result
 
     async def translate_message_from_hinglish_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following Hinglish (a mix of Hindi and English) message into proper English while preserving the exact meaning and making it easy to understand for a native English speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that English-speaking players commonly understand. Also, ensure that informal or slang expressions are appropriately adapted for clarity and professionalism."
         response = await self.client_async.chat.completions.create(

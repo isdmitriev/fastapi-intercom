@@ -85,6 +85,7 @@ async def handle_open_ai_exception(
     )
     es_service.add_document(index_name="requests", document=request_info.dict())
     logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
+    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).inc()
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -110,6 +111,7 @@ async def handle_redis_error(
     )
     es_service.add_document(index_name="requests", document=request_info.dict())
     logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
+    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).inc()
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -133,11 +135,19 @@ async def handle_http_error(
     )
     es_service.add_document(index_name="requests", document=request_info.dict())
     logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
+    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).inc()
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"error": exception.message},
     )
+
+
+# @app.exception_handler(Exception)
+# async def handle_error(request: Request, exception: Exception):
+#     FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).inc()
+#
+#     return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # @app.on_event("startup")

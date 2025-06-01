@@ -203,9 +203,9 @@ def test_conversation_language():
 async def test_translator_service():
     start_time = time.perf_counter()
     client: OpenAITranslatorService = OpenAITranslatorService()
-    result = await client.translate_message_from_english_to_hinglish_async_v2(
-        "! hey there how are you doing today?"
-    )
+    result = await client.translate_message_from_english_to_hindi_async()
+
+
     print(result)
     print(time.perf_counter() - start_time)
 
