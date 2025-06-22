@@ -130,7 +130,7 @@ async def handle_http_error(
     exception: APPException = APPException(
         message=str(error), ex_class=ex_class, event_type="", params={}
     )
-    request_info: str = RequestInfo(
+    request_info: RequestInfo = RequestInfo(
         exception=exception.__dict__, status="error", execution_time=None, event_type=""
     )
     es_service.add_document(index_name="requests", document=request_info.dict())

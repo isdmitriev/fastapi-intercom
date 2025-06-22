@@ -116,6 +116,14 @@ class WebHookProcessor:
             return
 
         elif topic == "conversation.admin.noted":
+            admin_note: Dict = message["data"]["item"]["conversation_parts"][
+                "conversation_parts"
+            ][0]
+            admin_message: str = admin_note.get("body", "")
+            clean_message: str = BeautifulSoup(admin_message, "html.parser").getText()
+            if (clean_message.startswith("!") == False):
+                return
+
             start_time = time.time()
             await self.handle_conversation_admin_noted_v3(data=message)
             ADMIN_NOTED_DURATION.labels(
@@ -912,7 +920,7 @@ class WebHookProcessor:
             )
             if clean_message.startswith("!force") == True:
                 conv_lang: str = clean_message.split("!force", 1)[1].strip()
-                print(conv_lang)
+
                 conv_language: str = ""
                 if conv_lang == "hi":
                     conv_language = "Hinglish"

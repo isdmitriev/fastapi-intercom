@@ -1437,7 +1437,7 @@ Your response will be programmatically parsed, so any text outside the JSON stru
                 # model="gpt-4-0125-preview",
                 model="gpt-3.5-turbo-0125",
                 # model='gpt-4.1-nano-2025-04-14',
-                # model='gpt-4o',
+                # model='gpt-4o-realtime-preview-2025-06-03',
                 messages=[
                     {"role": "system", "content": system_promt_v3},
                     {"role": "user", "content": user_input},
