@@ -32,6 +32,7 @@ from models.models import ConversationMessages, ConversationMessage, UserMessage
 def test_get_admins():
     result = CLIENT.get_all_admins()
     status_code, data = result
+    print(data)
 
     assert status_code == 200
 

@@ -19,6 +19,7 @@ import psutil
 from prometheus_fastapi_instrumentator import Instrumentator
 from prometheus_metricks.metricks import APP_MEMORY_USAGE, SUCCESS_REQUEST_COUNT, FAILED_REQUEST_COUNT
 import os
+import canvas_handlers
 
 container = Container()
 container.init_resources()
@@ -32,6 +33,7 @@ container.wire(
     ]
 )
 app = FastAPI()
+app.include_router(canvas_handlers.router)
 logger = logging.getLogger(__name__)
 
 Instrumentator().instrument(app).expose(app)
@@ -172,6 +174,9 @@ async def process_metrics(request: Request, call_next):
     APP_MEMORY_USAGE.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).set(memory_after)
 
     return response
+
+
+
 
 
 @app.post("/webhook/test")
