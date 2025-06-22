@@ -24,8 +24,8 @@ async def canvas_handler(request: Request):
                         "action": {"type": "submit"},
                         "metadata": {"conversation_id": conversation_id},
                     },
-                    {"type": "text", "text": "Conversation Language:"},
-                    {"type": "text", "text": "Conversation status: stoped"},
+                    {"type": "text", "text": "Conversation Language:🌐 *undefined*"},
+                    {"type": "text", "text": "Conversation status:⏸️ *stoped*"},
                     {
                         "type": "button",
                         "id": "Hinglish",
@@ -94,8 +94,8 @@ async def handle_canvas_action(request: Request):
             or clicked_component_id == "Hindi"
             or clicked_component_id == "Bengali"
     ):
-        conv_language = clicked_component_id
-        conv_status = "started"
+        conv_language = f'🌐 *{clicked_component_id}*'
+        conv_status = "✅ started"
         last_message: str = (
             hook_processor.messages_cache_service.get_conversation_last_message(
                 conversation_id=conversation_id
@@ -112,10 +112,11 @@ async def handle_canvas_action(request: Request):
             conversation_id=conversation_id, message=last_message
         )
     elif clicked_component_id == "!stop":
-        conv_status = "stoped"
+        conv_status = "⏸️ *stoped*"
         conv_language = hook_processor.messages_cache_service.get_conversation_language(
             conversation_id=conversation_id
         )
+        conv_language = f'🌐 *{conv_language}*'
         hook_processor.messages_cache_service.set_conversation_status(
             conversation_d=conversation_id, status="stoped"
         )
@@ -173,6 +174,10 @@ async def handle_canvas_action(request: Request):
         conv_status = hook_processor.messages_cache_service.get_conversation_status(
             conversation_id=conversation_id
         )
+        if (conv_status == 'started'):
+            conv_status = '✅ ' + conv_status
+        else:
+            conv_status = '⏸️ ' + conv_status
         conv_language = hook_processor.messages_cache_service.get_conversation_language(
             conversation_id=conversation_id
         )
@@ -190,9 +195,9 @@ async def handle_canvas_action(request: Request):
                         },
                         {
                             "type": "text",
-                            "text": f"Conversation Language:{conv_language}",
+                            "text": f"Conversation Language:🌐 *{conv_language}*",
                         },
-                        {"type": "text", "text": f"Conversation status:{conv_status}"},
+                        {"type": "text", "text": f"Conversation status:*{conv_status}*"},
                         {
                             "type": "button",
                             "id": "Hinglish",
@@ -325,8 +330,8 @@ async def handle_admin_message(payload):
                         "action": {"type": "submit"},
                         "metadata": {"conversation_id": conversation_id},
                     },
-                    {"type": "text", "text": f"Conversation Language: {selected_language}"},
-                    {"type": "text", "text": "Conversation status: started"},
+                    {"type": "text", "text": f"Conversation Language:🌐 *{selected_language}*"},
+                    {"type": "text", "text": "Conversation status:✅ *started*"},
                     {
                         "type": "button",
                         "id": "Hinglish",
