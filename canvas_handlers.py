@@ -90,9 +90,9 @@ async def handle_canvas_action(request: Request):
     )
 
     if (
-        clicked_component_id == "Hinglish"
-        or clicked_component_id == "Hindi"
-        or clicked_component_id == "Bengali"
+            clicked_component_id == "Hinglish"
+            or clicked_component_id == "Hindi"
+            or clicked_component_id == "Bengali"
     ):
         conv_language = clicked_component_id
         conv_status = "started"
@@ -287,10 +287,26 @@ async def handle_canvas_action(request: Request):
 
 
 async def handle_admin_message(payload):
+    hook_procesor: WebHookProcessor = Container.web_hook_processor()
+    admin_id: str = '8459322'
     conversation_id = payload.get("conversation", {}).get("id")
     input_values = payload.get("input_values", {})
     message_text = input_values.get("admin_message")
     selected_language = input_values.get("language_choice")
+
+    conv_status: str = hook_procesor.messages_cache_service.get_conversation_status(conversation_id=conversation_id)
+    if (conv_status == 'started'):
+        await hook_procesor.send_admin_reply_message(conversation_id=conversation_id, target_language=selected_language,
+                                                     admin_id=admin_id, message=message_text, user=None)
+        hook_procesor.messages_cache_service.set_conversation_language(conversation_id=conversation_id,
+                                                                       language=selected_language)
+    if (conv_status == 'stoped'):
+        hook_procesor.messages_cache_service.set_conversation_status(conversation_d=conversation_id, status='started')
+        hook_procesor.messages_cache_service.set_conversation_language(conversation_id=conversation_id,
+                                                                       language=selected_language)
+        await hook_procesor.send_admin_reply_message(conversation_id=conversation_id, message=message_text,
+                                                     target_language=selected_language,
+                                                     admin_id=admin_id, user=None)
 
     # Пример логирования
     print(f"Conversation ID: {conversation_id}")
@@ -307,17 +323,17 @@ async def handle_admin_message(payload):
                         "label": "send message for user",
                         "style": "primary",
                         "action": {"type": "submit"},
-                        "metadata": {"conversation_id": ""},
+                        "metadata": {"conversation_id": conversation_id},
                     },
-                    {"type": "text", "text": "Conversation Language:"},
-                    {"type": "text", "text": "Conversation status: stoped"},
+                    {"type": "text", "text": f"Conversation Language: {selected_language}"},
+                    {"type": "text", "text": "Conversation status: started"},
                     {
                         "type": "button",
                         "id": "Hinglish",
                         "label": "Force Hinglish",
                         "style": "primary",
                         "action": {"type": "submit"},
-                        "metadata": {"conversation_id": ""},
+                        "metadata": {"conversation_id": conversation_id},
                     },
                     {
                         "type": "button",
@@ -325,7 +341,7 @@ async def handle_admin_message(payload):
                         "label": "Force Hindi",
                         "style": "primary",
                         "action": {"type": "submit"},
-                        "metadata": {"conversation_id": ""},
+                        "metadata": {"conversation_id": conversation_id},
                     },
                     {
                         "type": "button",
@@ -333,7 +349,7 @@ async def handle_admin_message(payload):
                         "label": "Force Bengali",
                         "style": "primary",
                         "action": {"type": "submit"},
-                        "metadata": {"conversation_id": ""},
+                        "metadata": {"conversation_id": conversation_id},
                     },
                     {
                         "type": "button",
@@ -341,7 +357,7 @@ async def handle_admin_message(payload):
                         "label": "stop translator service",
                         "style": "primary",
                         "action": {"type": "submit"},
-                        "metadata": {"conversation_id": ""},
+                        "metadata": {"conversation_id": conversation_id},
                     },
                 ]
             }

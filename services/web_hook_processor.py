@@ -1134,7 +1134,7 @@ class WebHookProcessor:
 
     async def send_admin_reply_message(
             self,
-            user: User,
+            user: User|None,
             conversation_id: str,
             admin_id: str,
             message: str,
