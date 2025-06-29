@@ -44,6 +44,15 @@ class ConversationMessage(BaseModel):
     translated_en: Optional[str] = None
 
 
+class ConversationState(BaseModel):
+    conversation_id: str
+    conversation_status: str
+    conversation_language: str|None
+    conversation_last_message: str
+    conversation_context_analys: str
+    messages: List[ConversationMessage] = []
+
+
 class ConversationMessages(BaseModel):
     messages: List[ConversationMessage] = []
 

@@ -17,12 +17,24 @@ from aiohttp.client_exceptions import ClientResponseError
 import time
 import psutil
 from prometheus_fastapi_instrumentator import Instrumentator
-from prometheus_metricks.metricks import APP_MEMORY_USAGE, SUCCESS_REQUEST_COUNT, FAILED_REQUEST_COUNT
+from prometheus_metricks.metricks import (
+    APP_MEMORY_USAGE,
+    SUCCESS_REQUEST_COUNT,
+    FAILED_REQUEST_COUNT,
+    USER_CREATED_DURATION,
+    ADMIN_NOTED_DURATION,
+    USER_REPLIED_DURATION
+
+)
 import os
 import canvas_handlers
+from services.handlers.user_created_handler import UserCreatedHandler
+from services.handlers.user_replied_handler import UserRepliedHandler
+from services.handlers.admin_noted_handler import AdminNotedHandler
+from services.handlers.messages_processor import MessagesProcessor
 
 container = Container()
-container.init_resources()
+
 container.wire(
     modules=[
         "app",
@@ -30,6 +42,9 @@ container.wire(
         "services.redis_cache_service",
         "services.mongodb_service",
         "services.es_service",
+        "services.handlers.user_created_handler",
+        "services.handlers.user_replied_handler",
+        "services.handlers.admin_noted_handler",
     ]
 )
 app = FastAPI()
@@ -51,69 +66,13 @@ async def startup():
 async def handle_app_exception(
         request: Request,
         exception: APPException,
-        # es_service: ESService = Depends(lambda: container.es_service()),
-):
-    es_service: ESService = container.es_service()
-    request_info: RequestInfo = RequestInfo(
-        exception=exception.__dict__,
-        status="error",
-        execution_time=None,
-        event_type=exception.event_type,
-    )
-    es_service.add_document(index_name="requests", document=request_info.dict())
-    logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
-    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown'))
-
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"error": exception.message},
-    )
-
-
-@app.exception_handler(OpenAIError)
-@inject
-async def handle_open_ai_exception(
-        request: Request,
-        openai_error: OpenAIError,
-        es_service: ESService = Depends(lambda: container.es_service()),
-):
-    es_service: ESService = container.es_service()
-    ex_class: str = type(openai_error).__module__ + "." + type(openai_error).__name__
-    exception: APPException = APPException(
-        message=str(openai_error), event_type="", ex_class=ex_class, params={}
-    )
-    request_info: RequestInfo = RequestInfo(
-        exception=exception.__dict__, status="error", execution_time=None, event_type=""
-    )
-    es_service.add_document(index_name="requests", document=request_info.dict())
-    logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
-    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).inc()
-
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"error": exception.message},
-    )
-
-
-@app.exception_handler(RedisError)
-@inject
-async def handle_redis_error(
-        request: Request,
-        error: RedisError,
-        # es_service: ESService = Depends(lambda: container.es_service()),
 ):
     es_service: ESService = container.es_service()
 
-    ex_class: str = type(error).__module__ + type(error).__name__
-    exception: APPException = APPException(
-        message=str(error), event_type="", ex_class=ex_class, params={}
-    )
-    request_info: RequestInfo = RequestInfo(
-        exception=exception.__dict__, status="error", execution_time=None, event_type=""
-    )
-    es_service.add_document(index_name="requests", document=request_info.dict())
+    es_service.add_document(index_name="errors", document=exception.__dict__)
+
     logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
-    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).inc()
+    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown"))
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -121,40 +80,14 @@ async def handle_redis_error(
     )
 
 
-@app.exception_handler(ClientResponseError)
+@app.exception_handler(Exception)
 @inject
-async def handle_http_error(
-        request: Request,
-        error: ClientResponseError,
-        es_service: ESService = Depends(lambda: container.es_service()),
-):
-    ex_class: str = type(error).__module__ + type(error).__name__
-    exception: APPException = APPException(
-        message=str(error), ex_class=ex_class, event_type="", params={}
-    )
-    request_info: RequestInfo = RequestInfo(
-        exception=exception.__dict__, status="error", execution_time=None, event_type=""
-    )
-    es_service.add_document(index_name="requests", document=request_info.dict())
-    logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
-    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).inc()
+async def handle_common_exception(request: Request, exception: Exception):
+    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown"))
 
     return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"error": exception.message},
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(exception)
     )
-
-
-# @app.exception_handler(Exception)
-# async def handle_error(request: Request, exception: Exception):
-#     FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).inc()
-#
-#     return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-# @app.on_event("startup")
-# async def startup():
-#     container.init_resources()
 
 
 @app.on_event("shutdown")
@@ -162,7 +95,7 @@ async def shutdown():
     await container.shutdown_resources()
 
 
-@app.middleware('http')
+@app.middleware("http")
 async def process_metrics(request: Request, call_next):
     # process = psutil.Process()
 
@@ -171,44 +104,93 @@ async def process_metrics(request: Request, call_next):
     response = await call_next(request)
     memory_after = process.memory_info().rss / (1024 * 1024)
 
-    APP_MEMORY_USAGE.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).set(memory_after)
+    APP_MEMORY_USAGE.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).set(
+        memory_after
+    )
 
     return response
 
 
-
-
-
-@app.post("/webhook/test")
+@app.post("/webhook/process")
 @inject
 async def get_message(
         request: Request,
-        web_hook_processor: WebHookProcessor = Depends(
-            lambda: container.web_hook_processor()
-        ),
-        mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
         redis_service: RedisService = Depends(lambda: container.redis_service()),
+        user_created_service: UserCreatedHandler = Depends(
+            lambda: container.user_created_service()
+        ),
+        user_replied_servie: UserRepliedHandler = Depends(
+            lambda: container.user_replied_service()
+        ),
+        admin_noted_service: AdminNotedHandler = Depends(
+            lambda: container.admin_noted_service()
+        ),
 ):
-    payload: Dict = await request.json()
+    try:
+        payload: Dict = await request.json()
+        notification_event_id: str | None = payload.get("id", None)
+        if notification_event_id == None:
+            return Response(status_code=status.HTTP_200_OK)
+        is_event_handled = redis_service.set_key(notification_event_id, "1")
+        if is_event_handled == True:
 
-    notification_event_id: str | None = payload.get("id", None)
-    if notification_event_id == None:
-        return Response(status_code=status.HTTP_200_OK)
-    is_event_handled = redis_service.set_key(notification_event_id, "1")
-    if is_event_handled == True:
+            topic: str = payload.get("topic", "")
 
-        # await mongo_db_service.add_document_to_collection(
-        #     "intercom_app", "event_logs", payload
-        # )
+            if topic == "conversation.user.created":
+                start_time = time.time()
+                await user_created_service.user_created_handler(payload=payload)
+                USER_CREATED_DURATION.labels(
+                    pod_name=os.environ.get("HOSTNAME", "unknown")
+                ).observe(time.time() - start_time)
+                SUCCESS_REQUEST_COUNT.labels(
+                    pod_name=os.environ.get("HOSTNAME", "unknown")
+                ).inc()
+                return Response(status_code=status.HTTP_200_OK)
+            if topic == "conversation.user.replied":
+                start_time = time.time()
+                await user_replied_servie.user_replied_handler(payload=payload)
+                USER_REPLIED_DURATION.labels(
+                    pod_name=os.environ.get("HOSTNAME", "unknown")
+                ).observe(time.time() - start_time)
 
-        topic: str = payload.get("topic", "")
-        await web_hook_processor.process_message(topic, payload)
+                SUCCESS_REQUEST_COUNT.labels(
+                    pod_name=os.environ.get("HOSTNAME", "unknown")
+                ).inc()
+                return Response(status_code=status.HTTP_200_OK)
+            if topic == "conversation.admin.noted":
+                start_time = time.time()
+                await admin_noted_service.admin_noted_handler(payload=payload)
+                ADMIN_NOTED_DURATION.labels(
+                    pod_name=os.environ.get("HOSTNAME", "unknown")
+                ).observe(time.time() - start_time)
 
-        return Response(status_code=status.HTTP_200_OK)
-    else:
+                SUCCESS_REQUEST_COUNT.labels(
+                    pod_name=os.environ.get("HOSTNAME", "unknown")
+                ).inc()
+                return Response(status_code=status.HTTP_200_OK)
+        else:
+            SUCCESS_REQUEST_COUNT.labels(
+                pod_name=os.environ.get("HOSTNAME", "unknown")
+            ).inc()
+            return Response(
+                status_code=status.HTTP_200_OK, content="event already processed"
+            )
+
+    except ValueError as valError:
+
+        FAILED_REQUEST_COUNT.labels(
+            pod_name=os.environ.get("HOSTNAME", "unknown")
+        ).inc()
         return Response(
-            status_code=status.HTTP_200_OK, content="event already processed"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content="invalid json"
         )
+
+    except Exception as e:
+        FAILED_REQUEST_COUNT.labels(
+            pod_name=os.environ.get("HOSTNAME", "unknown")
+        ).inc()
+
+        return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @app.post("/webhook/message")
@@ -234,23 +216,31 @@ async def get_message(
 
             topic: str = payload.get("topic", "")
             await web_hook_processor.process_message(topic, payload)
-            SUCCESS_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).inc()
+            SUCCESS_REQUEST_COUNT.labels(
+                pod_name=os.environ.get("HOSTNAME", "unknown")
+            ).inc()
 
             return Response(status_code=status.HTTP_200_OK)
         else:
-            SUCCESS_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).inc()
+            SUCCESS_REQUEST_COUNT.labels(
+                pod_name=os.environ.get("HOSTNAME", "unknown")
+            ).inc()
             return Response(
                 status_code=status.HTTP_200_OK, content="event already processed"
             )
     except ValueError as e:
-        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).inc()
+        FAILED_REQUEST_COUNT.labels(
+            pod_name=os.environ.get("HOSTNAME", "unknown")
+        ).inc()
 
         return Response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content="Invalid JSON"
         )
 
     except Exception as ex:
-        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get('HOSTNAME', 'unknown')).inc()
+        FAILED_REQUEST_COUNT.labels(
+            pod_name=os.environ.get("HOSTNAME", "unknown")
+        ).inc()
 
         return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

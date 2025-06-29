@@ -1,9 +1,10 @@
 from redis import Redis, RedisError
 import os
 from dotenv import load_dotenv
-from models.models import ConversationMessages
+from models.models import ConversationMessages, ConversationState
 from models.custom_exceptions import APPException
 from models.models import ConversationContext
+from redis.asyncio import Redis as RedisAsync
 
 load_dotenv()
 
@@ -46,6 +47,9 @@ class MessagesCache:
             self.redis_client = Redis(
                 host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=2
             )
+            self.redis_client_async = RedisAsync(
+                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=2
+            )
         except RedisError as redis_error:
             full_exception_name = (
                 f"{type(redis_error).__module__}.{type(redis_error).__name__}"
@@ -60,6 +64,25 @@ class MessagesCache:
             raise app_exception
         except Exception as e:
             raise e
+
+    async def set_conversation_state(
+        self, conversation_id: str, conversation_state: ConversationState
+    ):
+        key: str = f"conversation_state:{conversation_id}"
+        value: str = conversation_state.model_dump_json()
+        await self.redis_client_async.set(key, value, ex=1600)
+
+    async def get_conversation_state(
+        self, conversation_id: str
+    ) -> ConversationState | None:
+        value: str | None = await self.redis_client_async.get(
+            f"conversation_state:{conversation_id}"
+        )
+        if value is not None:
+            state: ConversationState = ConversationState.model_validate_json(value)
+            return state
+        else:
+            return None
 
     def set_key(self, key_name: str, key_value: str):
         self.redis_client.set(key_name, key_value, ex=21600)
