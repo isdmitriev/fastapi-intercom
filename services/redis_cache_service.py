@@ -66,14 +66,18 @@ class MessagesCache:
             raise e
 
     async def set_conversation_state(
-        self, conversation_id: str, conversation_state: ConversationState
+            self, conversation_id: str, conversation_state: ConversationState
     ):
         key: str = f"conversation_state:{conversation_id}"
         value: str = conversation_state.model_dump_json()
         await self.redis_client_async.set(key, value, ex=1600)
 
+    async def close_conversation(self, conversation_id: str):
+        key: str = f"conversation_state:{conversation_id}"
+        await self.redis_client_async.delete(key)
+
     async def get_conversation_state(
-        self, conversation_id: str
+            self, conversation_id: str
     ) -> ConversationState | None:
         value: str | None = await self.redis_client_async.get(
             f"conversation_state:{conversation_id}"
@@ -88,13 +92,13 @@ class MessagesCache:
         self.redis_client.set(key_name, key_value, ex=21600)
 
     def set_conversation_messages(
-        self, conversation_id: str, messages: ConversationMessages
+            self, conversation_id: str, messages: ConversationMessages
     ):
         key_value: str = messages.model_dump_json()
         self.set_key(conversation_id, key_value)
 
     def get_conversation_messages(
-        self, conversation_id: str
+            self, conversation_id: str
     ) -> ConversationMessages | None:
         value: str | None = self.redis_client.get(conversation_id)
         if value != None:
@@ -106,13 +110,13 @@ class MessagesCache:
             return None
 
     def set_conversation_context(
-        self, conversation_id: str, conversation_context: ConversationContext
+            self, conversation_id: str, conversation_context: ConversationContext
     ):
         key_value = conversation_context.model_dump_json()
         self.set_key("conversation_context:" + conversation_id, key_value)
 
     def get_conversation_context(
-        self, conversation_id: str
+            self, conversation_id: str
     ) -> ConversationContext | None:
         value: str | None = self.redis_client.get(
             "conversation_context:" + conversation_id

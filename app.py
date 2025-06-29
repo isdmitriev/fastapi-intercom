@@ -31,6 +31,7 @@ import canvas_handlers
 from services.handlers.user_created_handler import UserCreatedHandler
 from services.handlers.user_replied_handler import UserRepliedHandler
 from services.handlers.admin_noted_handler import AdminNotedHandler
+from services.handlers.admin_close_handler import AdminCloseHandler
 from services.handlers.messages_processor import MessagesProcessor
 
 container = Container()
@@ -186,58 +187,6 @@ async def get_message(
         )
 
     except Exception as e:
-        FAILED_REQUEST_COUNT.labels(
-            pod_name=os.environ.get("HOSTNAME", "unknown")
-        ).inc()
-
-        return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@app.post("/webhook/message")
-@inject
-async def get_message(
-        request: Request,
-        web_hook_processor: WebHookProcessor = Depends(
-            lambda: container.web_hook_processor()
-        ),
-        mongo_db_service: MongodbService = Depends(lambda: container.mongo_db_service()),
-        redis_service: RedisService = Depends(lambda: container.redis_service()),
-        es_service: ESService = Depends(lambda: container.es_service()),
-):
-    try:
-
-        payload: Dict = await request.json()
-
-        notification_event_id: str | None = payload.get("id", None)
-        if notification_event_id == None:
-            return Response(status_code=status.HTTP_200_OK)
-        is_event_handled = redis_service.set_key(notification_event_id, "1")
-        if is_event_handled == True:
-
-            topic: str = payload.get("topic", "")
-            await web_hook_processor.process_message(topic, payload)
-            SUCCESS_REQUEST_COUNT.labels(
-                pod_name=os.environ.get("HOSTNAME", "unknown")
-            ).inc()
-
-            return Response(status_code=status.HTTP_200_OK)
-        else:
-            SUCCESS_REQUEST_COUNT.labels(
-                pod_name=os.environ.get("HOSTNAME", "unknown")
-            ).inc()
-            return Response(
-                status_code=status.HTTP_200_OK, content="event already processed"
-            )
-    except ValueError as e:
-        FAILED_REQUEST_COUNT.labels(
-            pod_name=os.environ.get("HOSTNAME", "unknown")
-        ).inc()
-
-        return Response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content="Invalid JSON"
-        )
-
-    except Exception as ex:
         FAILED_REQUEST_COUNT.labels(
             pod_name=os.environ.get("HOSTNAME", "unknown")
         ).inc()
