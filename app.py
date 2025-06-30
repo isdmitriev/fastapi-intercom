@@ -8,7 +8,7 @@ from services.redis_cache_service import RedisService
 from services.mongodb_service import MongodbService
 from services.es_service import ESService
 from di.di_container import Container
-from dependency_injector.wiring import inject
+from dependency_injector.wiring import inject, Provide
 from models.custom_exceptions import APPException
 from models.models import RequestInfo
 from openai._exceptions import OpenAIError
@@ -46,11 +46,14 @@ container.wire(
         "services.handlers.user_created_handler",
         "services.handlers.user_replied_handler",
         "services.handlers.admin_noted_handler",
+        "services.handlers.messages_processor"
     ]
 )
 app = FastAPI()
 app.include_router(canvas_handlers.router)
+logging.basicConfig(level=logging.DEBUG, )
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 Instrumentator().instrument(app).expose(app)
 
@@ -70,9 +73,9 @@ async def handle_app_exception(
 ):
     es_service: ESService = container.es_service()
 
-    es_service.add_document(index_name="errors", document=exception.__dict__)
+    await es_service.save_excepton_async(app_exception=exception)
 
-    logger.error(f" error:{exception.message} event_type:{exception.event_type} ")
+    logger.error(f"❌ error:{exception.message} event_type:{exception.event_type} ")
     FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown"))
 
     return JSONResponse(
@@ -84,6 +87,7 @@ async def handle_app_exception(
 @app.exception_handler(Exception)
 @inject
 async def handle_common_exception(request: Request, exception: Exception):
+    logger.error(f'❌ {str(exception)} type:{type(exception)}')
     FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown"))
 
     return JSONResponse(
@@ -112,7 +116,33 @@ async def process_metrics(request: Request, call_next):
     return response
 
 
-@app.post("/webhook/process")
+@app.post("/webhook/process/v2")
+@inject
+async def process_message(request: Request,
+                          messages_processor: MessagesProcessor =Depends(lambda:container.messages_processor())):
+    try:
+
+        payload = await request.json()
+        await messages_processor.process_message(payload=payload)
+        SUCCESS_REQUEST_COUNT.labels(
+            pod_name=os.environ.get("HOSTNAME", "unknown")
+        ).inc()
+
+        return Response(status_code=status.HTTP_200_OK, content='message was processed')
+    except ValueError as valueError:
+        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
+
+        return Response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content="invalid json"
+        )
+
+    except Exception as e:
+        logger.error(str(e))
+        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
+        return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@app.post("/webhook/process/v1")
 @inject
 async def get_message(
         request: Request,

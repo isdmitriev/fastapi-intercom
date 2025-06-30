@@ -71,20 +71,25 @@ class AdminNotedHandler:
                 )
             )
             if payload_params.clean_message == AdminCommand.START.value:
-                conversation_state.conversation_status = ConversationStatus.STARTED.value
+                conversation_state.conversation_status = (
+                    ConversationStatus.STARTED.value
+                )
                 await self._update_conversation_status(
                     conversation_state=conversation_state
                 )
                 return
             if payload_params.clean_message == AdminCommand.STOP.value:
-                conversation_state.conversation_status = ConversationStatus.STOPPED.value
+                conversation_state.conversation_status = (
+                    ConversationStatus.STOPPED.value
+                )
                 await self._update_conversation_status(
                     conversation_state=conversation_state
                 )
                 return
             if payload_params.clean_message == AdminCommand.DETECTSTART.value:
                 await self.start_translation_service(
-                    admin_id=payload_params.admin_id, conversation_state=conversation_state
+                    admin_id=payload_params.admin_id,
+                    conversation_state=conversation_state,
                 )
                 return
             if payload_params.clean_message in [
@@ -92,20 +97,25 @@ class AdminNotedHandler:
                 AdminCommand.FORCEHINDI.value,
                 AdminCommand.FORCEBN.value,
             ]:
-                conversation_state.conversation_status = ConversationStatus.STARTED.value
+                conversation_state.conversation_status = (
+                    ConversationStatus.STARTED.value
+                )
                 command_language: str = payload_params.clean_message.split("!force", 1)[
                     1
                 ].strip()
                 target_language: str = self._get_target_language(
                     command_language=command_language
                 )
-                conversation_state.conversation_status = ConversationStatus.STARTED.value
+                conversation_state.conversation_status = (
+                    ConversationStatus.STARTED.value
+                )
                 conversation_state.conversation_language = target_language
                 await self._update_conversation_status(
                     conversation_state=conversation_state
                 )
                 await self._start_force_lang(
-                    admin_id=payload_params.admin_id, conversation_state=conversation_state
+                    admin_id=payload_params.admin_id,
+                    conversation_state=conversation_state,
                 )
                 return
 
@@ -123,7 +133,7 @@ class AdminNotedHandler:
                         admin_id=payload_params.admin_id,
                         conversation_id=payload_params.conversation_id,
                         target_lang=target_lang,
-                        conv_state=conversation_state
+                        conv_state=conversation_state,
                     )
                     return
         except (ClientResponseError, RedisError, OpenAIError) as e:
@@ -132,8 +142,9 @@ class AdminNotedHandler:
             app_exception: APPException = APPException(
                 message=exception_message,
                 ex_class=full_exception_name,
-                event_type="conversation.user.created",
-                params={"conversation_id": payload_params.conversation_id},
+                event_type="conversation.admin.noted",
+                params={"conversation_id": payload_params.conversation_id,
+                        'admin_message': payload_params.clean_message},
             )
             raise app_exception
         except Exception as ex:

@@ -12,6 +12,8 @@ from services.claude_ai import ClaudeService
 from services.handlers.user_created_handler import UserCreatedHandler
 from services.handlers.user_replied_handler import UserRepliedHandler
 from services.handlers.admin_noted_handler import AdminNotedHandler
+from services.handlers.messages_processor import MessagesProcessor
+from services.handlers.admin_close_handler import AdminCloseHandler
 
 
 class Container(containers.DeclarativeContainer):
@@ -56,17 +58,34 @@ class Container(containers.DeclarativeContainer):
         claude_ai_service=claude_ai_service,
     )
     user_created_service: UserCreatedHandler = providers.Singleton(
-        UserCreatedHandler, intercom_api_service=intercom_api_service,
-        open_ai_service=open_ai_service, messages_cache_service=messages_cache_service,
-        translations_service=translations_service
+        UserCreatedHandler,
+        intercom_api_service=intercom_api_service,
+        open_ai_service=open_ai_service,
+        messages_cache_service=messages_cache_service,
+        translations_service=translations_service,
     )
     user_replied_service: UserRepliedHandler = providers.Singleton(
-        UserRepliedHandler, intercom_api_service=intercom_api_service,
-        open_ai_service=open_ai_service, messages_cache_service=messages_cache_service,
-        translations_service=translations_service
+        UserRepliedHandler,
+        intercom_api_service=intercom_api_service,
+        open_ai_service=open_ai_service,
+        messages_cache_service=messages_cache_service,
+        translations_service=translations_service,
     )
     admin_noted_service: AdminNotedHandler = providers.Singleton(
-        AdminNotedHandler, intercom_api_service=intercom_api_service,
-        open_ai_service=open_ai_service, messages_cache_service=messages_cache_service,
-        translations_service=translations_service
+        AdminNotedHandler,
+        intercom_api_service=intercom_api_service,
+        open_ai_service=open_ai_service,
+        messages_cache_service=messages_cache_service,
+        translations_service=translations_service,
+    )
+    admin_closed_service: AdminCloseHandler = providers.Singleton(
+        AdminCloseHandler, messages_cache_service=messages_cache_service
+    )
+    messages_processor: MessagesProcessor = providers.Singleton(
+        MessagesProcessor,
+        user_replied_service=user_replied_service,
+        user_created_service=user_created_service,
+        admin_noted_service=admin_noted_service,
+        admin_closed_service=admin_closed_service,
+        es_service=es_service,
     )

@@ -27,11 +27,11 @@ class PayloadData(BaseModel):
 class UserCreatedHandler:
     @inject
     def __init__(
-        self,
-        intercom_api_service: IntercomAPIService,
-        open_ai_service: OpenAIService,
-        messages_cache_service: MessagesCache,
-        translations_service: OpenAITranslatorService,
+            self,
+            intercom_api_service: IntercomAPIService,
+            open_ai_service: OpenAIService,
+            messages_cache_service: MessagesCache,
+            translations_service: OpenAITranslatorService,
     ):
         self.intercom_api_service = intercom_api_service
         self.open_ai_service = open_ai_service
@@ -61,7 +61,8 @@ class UserCreatedHandler:
                 message=exception_message,
                 ex_class=full_exception_name,
                 event_type="conversation.user.created",
-                params={"conversation_id": payload_params.conversation_id},
+                params={"conversation_id": payload_params.conversation_id,
+                        'user_created_message': payload_params.clean_message},
             )
             raise app_exception
         except Exception as ex:

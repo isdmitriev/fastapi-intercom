@@ -14,7 +14,9 @@ class AdminCloseHandler:
     async def admin_close_handler(self, payload: Dict):
         conversation_id: str = payload.get("data", {}).get("item", {}).get("id", "")
         try:
-            await self.messages_cache_service.close_conversation(conversation_id=conversation_id)
+            await self.messages_cache_service.close_conversation(
+                conversation_id=conversation_id
+            )
         except RedisError as error:
             full_exception_name = f"{type(error).__module__}.{type(error).__name__}"
             exception_message: str = str(error)
