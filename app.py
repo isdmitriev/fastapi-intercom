@@ -88,6 +88,9 @@ async def handle_app_exception(
 @inject
 async def handle_common_exception(request: Request, exception: Exception):
     logger.error(f'❌ {str(exception)} type:{type(exception)}')
+    exception: APPException = APPException(message=str(exception), event_type='undefined',
+                                           ex_class=type(exception).__name__, params={})
+    await container.es_service().save_excepton_async(app_exception=exception)
     FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown"))
 
     return JSONResponse(
@@ -119,7 +122,7 @@ async def process_metrics(request: Request, call_next):
 @app.post("/webhook/process/v2")
 @inject
 async def process_message(request: Request,
-                          messages_processor: MessagesProcessor =Depends(lambda:container.messages_processor())):
+                          messages_processor: MessagesProcessor = Depends(lambda: container.messages_processor())):
     try:
 
         payload = await request.json()
@@ -130,6 +133,7 @@ async def process_message(request: Request,
 
         return Response(status_code=status.HTTP_200_OK, content='message was processed')
     except ValueError as valueError:
+        logger.error('invalid json')
         FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
 
         return Response(

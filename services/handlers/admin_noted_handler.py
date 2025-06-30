@@ -51,11 +51,11 @@ class PayloadData(BaseModel):
 class AdminNotedHandler:
     @inject
     def __init__(
-            self,
-            intercom_api_service: IntercomAPIService,
-            open_ai_service: OpenAIService,
-            messages_cache_service: MessagesCache,
-            translations_service: OpenAITranslatorService,
+        self,
+        intercom_api_service: IntercomAPIService,
+        open_ai_service: OpenAIService,
+        messages_cache_service: MessagesCache,
+        translations_service: OpenAITranslatorService,
     ):
         self.intercom_api_service = intercom_api_service
         self.open_ai_service = open_ai_service
@@ -120,9 +120,9 @@ class AdminNotedHandler:
                 return
 
             if (
-                    payload_params.clean_message.startswith("!")
-                    and conversation_state.conversation_status
-                    == ConversationStatus.STARTED.value
+                payload_params.clean_message.startswith("!")
+                and conversation_state.conversation_status
+                == ConversationStatus.STARTED.value
             ):
 
                 message_for_user: str = payload_params.clean_message.lstrip("!")
@@ -143,15 +143,17 @@ class AdminNotedHandler:
                 message=exception_message,
                 ex_class=full_exception_name,
                 event_type="conversation.admin.noted",
-                params={"conversation_id": payload_params.conversation_id,
-                        'admin_message': payload_params.clean_message},
+                params={
+                    "conversation_id": payload_params.conversation_id,
+                    "admin_message": payload_params.clean_message,
+                },
             )
             raise app_exception
         except Exception as ex:
             raise ex
 
     async def _start_force_lang(
-            self, admin_id: str, conversation_state: ConversationState
+        self, admin_id: str, conversation_state: ConversationState
     ):
         last_message: str | None = conversation_state.conversation_last_message
         note_for_admin, context_analys = await self._get_note_for_admin(
@@ -164,7 +166,7 @@ class AdminNotedHandler:
         )
 
     async def start_translation_service(
-            self, admin_id: str, conversation_state: ConversationState
+        self, admin_id: str, conversation_state: ConversationState
     ):
         last_message: str = conversation_state.conversation_last_message
         last_message_lang: str = (
@@ -189,7 +191,7 @@ class AdminNotedHandler:
         await self._update_conversation_status(conversation_state=conversation_state)
 
     async def _get_note_for_admin(
-            self, user_replied_message: str, current_context_analys: str
+        self, user_replied_message: str, current_context_analys: str
     ) -> Tuple[str, str]:
 
         analyzed_user_message: UserMessage = (
@@ -199,18 +201,18 @@ class AdminNotedHandler:
         )
         if analyzed_user_message.status == MessageStatus.NO_ERROR.value:
             note_for_admin: str = (
-                    "original:"
-                    + user_replied_message
-                    + "\n\n"
-                    + analyzed_user_message.translated_text
+                "original:"
+                + user_replied_message
+                + "\n\n"
+                + analyzed_user_message.translated_text
             )
             return (note_for_admin, analyzed_user_message.context_analysis)
         if analyzed_user_message.status == MessageStatus.ERROR_FIXED.value:
             note_for_admin: str = (
-                    "original:"
-                    + user_replied_message
-                    + "\n\n"
-                    + analyzed_user_message.corrected_text
+                "original:"
+                + user_replied_message
+                + "\n\n"
+                + analyzed_user_message.corrected_text
             )
             return (note_for_admin, analyzed_user_message.context_analysis)
         if analyzed_user_message.status == MessageStatus.UNCERTAIN.value:
@@ -218,35 +220,35 @@ class AdminNotedHandler:
                 analyzed_message=analyzed_user_message
             )
             note_for_admin: str = (
-                    "original:" + analyzed_user_message.original_text + "\n\n" + note
+                "original:" + analyzed_user_message.original_text + "\n\n" + note
             )
             return (note_for_admin, analyzed_user_message.context_analysis)
 
     def _create_admin_note_for_uncertain_status(
-            self, analyzed_message: UserMessage
+        self, analyzed_message: UserMessage
     ) -> str:
         possible_interpritations = analyzed_message.possible_interpretations
         one: str = possible_interpritations[0]
         two: str = possible_interpritations[1]
         note: str = (
-                "translated: "
-                + analyzed_message.translated_text
-                + "\n"
-                + analyzed_message.context_analysis
-                + "\n"
-                + one
-                + "\n"
-                + two
+            "translated: "
+            + analyzed_message.translated_text
+            + "\n"
+            + analyzed_message.context_analysis
+            + "\n"
+            + one
+            + "\n"
+            + two
         )
         return note
 
     async def send_admin_reply_message(
-            self,
-            conv_state: ConversationState,
-            message: str,
-            admin_id: str,
-            conversation_id: str,
-            target_lang: str,
+        self,
+        conv_state: ConversationState,
+        message: str,
+        admin_id: str,
+        conversation_id: str,
+        target_lang: str,
     ):
         if target_lang == None:
             return
