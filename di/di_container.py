@@ -14,6 +14,7 @@ from services.handlers.user_replied_handler import UserRepliedHandler
 from services.handlers.admin_noted_handler import AdminNotedHandler
 from services.handlers.messages_processor import MessagesProcessor
 from services.handlers.admin_close_handler import AdminCloseHandler
+from services.handlers.common import CommonOperations
 
 
 class Container(containers.DeclarativeContainer):
@@ -80,6 +81,11 @@ class Container(containers.DeclarativeContainer):
     )
     admin_closed_service: AdminCloseHandler = providers.Singleton(
         AdminCloseHandler, messages_cache_service=messages_cache_service
+    )
+    common_operations_service: CommonOperations = providers.Singleton(
+        CommonOperations, intercom_api_service=intercom_api_service,
+        translations_service=translations_service,
+        open_ai_service=open_ai_service
     )
     messages_processor: MessagesProcessor = providers.Singleton(
         MessagesProcessor,
