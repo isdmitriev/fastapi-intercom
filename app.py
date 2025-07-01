@@ -3,35 +3,24 @@ from fastapi.responses import JSONResponse
 import uvicorn
 from typing import Dict
 import logging
-from services.web_hook_processor import WebHookProcessor
+
 from services.redis_cache_service import RedisService
 from services.mongodb_service import MongodbService
 from services.es_service import ESService
 from di.di_container import Container
 from dependency_injector.wiring import inject, Provide
 from models.custom_exceptions import APPException
-from models.models import RequestInfo
-from openai._exceptions import OpenAIError
-from redis.exceptions import RedisError
-from aiohttp.client_exceptions import ClientResponseError
-import time
+
 import psutil
 from prometheus_fastapi_instrumentator import Instrumentator
 from prometheus_metricks.metricks import (
     APP_MEMORY_USAGE,
     SUCCESS_REQUEST_COUNT,
     FAILED_REQUEST_COUNT,
-    USER_CREATED_DURATION,
-    ADMIN_NOTED_DURATION,
-    USER_REPLIED_DURATION
-
 )
 import os
 import canvas_handlers
-from services.handlers.user_created_handler import UserCreatedHandler
-from services.handlers.user_replied_handler import UserRepliedHandler
-from services.handlers.admin_noted_handler import AdminNotedHandler
-from services.handlers.admin_close_handler import AdminCloseHandler
+
 from services.handlers.messages_processor import MessagesProcessor
 
 container = Container()
@@ -46,21 +35,20 @@ container.wire(
         "services.handlers.user_created_handler",
         "services.handlers.user_replied_handler",
         "services.handlers.admin_noted_handler",
-        "services.handlers.messages_processor"
+        "services.handlers.messages_processor",
+        "services.handlers.common",
     ]
 )
 app = FastAPI()
 app.include_router(canvas_handlers.router)
-logging.basicConfig(level=logging.DEBUG, )
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger("main_app")
+logger.setLevel(logging.INFO)
+logger.propagate = False
 
-logging.getLogger("uvicorn").setLevel(logging.WARNING)
-logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
-logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
-logging.getLogger("fastapi").setLevel(logging.WARNING)
-logging.getLogger("asyncio").setLevel(logging.WARNING)
-logging.getLogger("httpx").setLevel(logging.WARNING)
+handler = logging.StreamHandler()
+formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 Instrumentator().instrument(app).expose(app)
 
@@ -72,18 +60,16 @@ async def startup():
     container.init_resources()
 
 
-@app.exception_handler(APPException)
-@inject
 async def handle_app_exception(
         request: Request,
         exception: APPException,
 ):
     es_service: ESService = container.es_service()
 
-    await es_service.save_excepton_async(app_exception=exception)
+    await es_service.save_exception_async(app_exception=exception)
 
     logger.error(f"❌ error:{exception.message} event_type:{exception.event_type} ")
-    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown"))
+    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -91,18 +77,24 @@ async def handle_app_exception(
     )
 
 
-@app.exception_handler(Exception)
-@inject
 async def handle_common_exception(request: Request, exception: Exception):
-    logger.error(f'❌ {str(exception)} type:{type(exception)}')
-    exception: APPException = APPException(message=str(exception), event_type='undefined',
-                                           ex_class=type(exception).__name__, params={})
-    await container.es_service().save_excepton_async(app_exception=exception)
-    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown"))
+    logger.error(f"❌ {str(exception)} type:{type(exception)}")
+    exception: APPException = APPException(
+        message=str(exception),
+        event_type="undefined",
+        ex_class=type(exception).__name__,
+        params={},
+    )
+    await container.es_service().save_exception_async(app_exception=exception)
+    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
 
     return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(exception)
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=exception.message
     )
+
+
+app.add_exception_handler(APPException, handle_app_exception)
+app.add_exception_handler(Exception, handle_common_exception)
 
 
 @app.on_event("shutdown")
@@ -128,9 +120,12 @@ async def process_metrics(request: Request, call_next):
 
 @app.post("/webhook/process/v2")
 @inject
-async def process_message(request: Request,
-                          redis_service: RedisService = Depends(lambda: container.redis_service()),
-                          messages_processor: MessagesProcessor = Depends(lambda: container.messages_processor())):
+async def process_message(
+        request: Request,
+        redis_service: RedisService = Depends(lambda: container.redis_service()),
+        messages_processor: MessagesProcessor = Depends(lambda: container.messages_processor())
+
+):
     try:
 
         payload = await request.json()
@@ -144,7 +139,9 @@ async def process_message(request: Request,
                 pod_name=os.environ.get("HOSTNAME", "unknown")
             ).inc()
 
-            return Response(status_code=status.HTTP_200_OK, content='message was processed')
+            return Response(
+                status_code=status.HTTP_200_OK, content="message was processed"
+            )
         else:
             SUCCESS_REQUEST_COUNT.labels(
                 pod_name=os.environ.get("HOSTNAME", "unknown")
@@ -153,7 +150,7 @@ async def process_message(request: Request,
                 status_code=status.HTTP_200_OK, content="event already processed"
             )
     except ValueError as valError:
-        logger.error('invalid json')
+        logger.error("invalid json")
 
         FAILED_REQUEST_COUNT.labels(
             pod_name=os.environ.get("HOSTNAME", "unknown")
@@ -164,88 +161,6 @@ async def process_message(request: Request,
 
     except Exception as e:
         logger.error(str(e))
-        FAILED_REQUEST_COUNT.labels(
-            pod_name=os.environ.get("HOSTNAME", "unknown")
-        ).inc()
-
-        return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@app.post("/webhook/process/v1")
-@inject
-async def get_message(
-        request: Request,
-        redis_service: RedisService = Depends(lambda: container.redis_service()),
-        user_created_service: UserCreatedHandler = Depends(
-            lambda: container.user_created_service()
-        ),
-        user_replied_servie: UserRepliedHandler = Depends(
-            lambda: container.user_replied_service()
-        ),
-        admin_noted_service: AdminNotedHandler = Depends(
-            lambda: container.admin_noted_service()
-        ),
-):
-    try:
-        payload: Dict = await request.json()
-        notification_event_id: str | None = payload.get("id", None)
-        if notification_event_id == None:
-            return Response(status_code=status.HTTP_200_OK)
-        is_event_handled = redis_service.set_key(notification_event_id, "1")
-        if is_event_handled == True:
-
-            topic: str = payload.get("topic", "")
-
-            if topic == "conversation.user.created":
-                start_time = time.time()
-                await user_created_service.user_created_handler(payload=payload)
-                USER_CREATED_DURATION.labels(
-                    pod_name=os.environ.get("HOSTNAME", "unknown")
-                ).observe(time.time() - start_time)
-                SUCCESS_REQUEST_COUNT.labels(
-                    pod_name=os.environ.get("HOSTNAME", "unknown")
-                ).inc()
-                return Response(status_code=status.HTTP_200_OK)
-            if topic == "conversation.user.replied":
-                start_time = time.time()
-                await user_replied_servie.user_replied_handler(payload=payload)
-                USER_REPLIED_DURATION.labels(
-                    pod_name=os.environ.get("HOSTNAME", "unknown")
-                ).observe(time.time() - start_time)
-
-                SUCCESS_REQUEST_COUNT.labels(
-                    pod_name=os.environ.get("HOSTNAME", "unknown")
-                ).inc()
-                return Response(status_code=status.HTTP_200_OK)
-            if topic == "conversation.admin.noted":
-                start_time = time.time()
-                await admin_noted_service.admin_noted_handler(payload=payload)
-                ADMIN_NOTED_DURATION.labels(
-                    pod_name=os.environ.get("HOSTNAME", "unknown")
-                ).observe(time.time() - start_time)
-
-                SUCCESS_REQUEST_COUNT.labels(
-                    pod_name=os.environ.get("HOSTNAME", "unknown")
-                ).inc()
-                return Response(status_code=status.HTTP_200_OK)
-        else:
-            SUCCESS_REQUEST_COUNT.labels(
-                pod_name=os.environ.get("HOSTNAME", "unknown")
-            ).inc()
-            return Response(
-                status_code=status.HTTP_200_OK, content="event already processed"
-            )
-
-    except ValueError as valError:
-
-        FAILED_REQUEST_COUNT.labels(
-            pod_name=os.environ.get("HOSTNAME", "unknown")
-        ).inc()
-        return Response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content="invalid json"
-        )
-
-    except Exception as e:
         FAILED_REQUEST_COUNT.labels(
             pod_name=os.environ.get("HOSTNAME", "unknown")
         ).inc()

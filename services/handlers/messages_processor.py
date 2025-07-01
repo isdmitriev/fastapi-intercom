@@ -18,11 +18,14 @@ from prometheus_metricks.metricks import (
 )
 import os
 
-logging.basicConfig(
-    level=logging.DEBUG,
-)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger('message_processor')
+logger.setLevel(logging.INFO)
+logger.propagate = False
+
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 class InterestedEvents(Enum):
@@ -35,12 +38,12 @@ class InterestedEvents(Enum):
 class MessagesProcessor:
     @inject
     def __init__(
-        self,
-        user_created_service: UserCreatedHandler,
-        user_replied_service: UserRepliedHandler,
-        admin_noted_service: AdminNotedHandler,
-        admin_closed_service: AdminCloseHandler,
-        es_service: ESService,
+            self,
+            user_created_service: UserCreatedHandler,
+            user_replied_service: UserRepliedHandler,
+            admin_noted_service: AdminNotedHandler,
+            admin_closed_service: AdminCloseHandler,
+            es_service: ESService,
     ):
         self.user_created_service = user_created_service
         self.user_replied_service = user_replied_service
@@ -76,7 +79,7 @@ class MessagesProcessor:
             raise error
 
         except Exception as e:
-            self._log_error(app_exception=e)
+            self._log_error(app_exception=e, topic=topic)
             raise e
 
     async def _logs_handler(self, topic: str, execution_time: float):
@@ -101,11 +104,12 @@ class MessagesProcessor:
             time.perf_counter() - start_time
         )
 
+
     def _log_error(self, topic: str, app_exception: APPException | Exception):
         if isinstance(app_exception, APPException):
-            logger.exception(
+            logger.error(
                 f"❌ Error while processing {topic}: {app_exception.message} type:{app_exception.ex_class}"
             )
         elif isinstance(app_exception, Exception):
             message: str = str(app_exception)
-            logger.exception(f"❌ Error while processing {topic}: {message}")
+            logger.error(f"❌ Error while processing {topic}: {message}")

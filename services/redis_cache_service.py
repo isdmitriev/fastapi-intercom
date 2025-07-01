@@ -42,7 +42,7 @@ class RedisService:
         return is_key_exist
 
     async def set_key_async(self, key_name: str, key_value: str) -> bool:
-        is_key_exist: bool = self.redis_client_async.setnx(key_name, key_value)
+        is_key_exist: bool = await self.redis_client_async.setnx(key_name, key_value)
         return is_key_exist
 
 

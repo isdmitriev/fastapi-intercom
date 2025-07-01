@@ -75,7 +75,8 @@ class AdminNotedHandler(MessageHandler):
                     ConversationStatus.STOPPED.value
                 )
                 await self.update_conversation_status(
-                    conversation_state=conversation_state
+                    conversation_state=conversation_state,
+                    conversation_id=payload_params.conversation_id
                 )
                 return
             if payload_params.clean_message == AdminCommand.DETECTSTART.value:
@@ -103,7 +104,8 @@ class AdminNotedHandler(MessageHandler):
                 )
                 conversation_state.conversation_language = target_language
                 await self.update_conversation_status(
-                    conversation_state=conversation_state
+                    conversation_state=conversation_state,
+                    conversation_id=payload_params.conversation_id
                 )
                 await self._start_force_lang(
                     admin_id=payload_params.admin_id,
@@ -184,7 +186,8 @@ class AdminNotedHandler(MessageHandler):
             admin_id=admin_id,
             note=note_for_admin,
         )
-        await self.update_conversation_status(conversation_state=conversation_state)
+        await self.update_conversation_status(conversation_state=conversation_state,
+                                              conversation_id=conversation_state.conversation_id)
 
     def _get_target_language(self, command_language: str) -> str | None:
         if command_language == CommandLanguage.hi.name:

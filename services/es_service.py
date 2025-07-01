@@ -19,7 +19,7 @@ class ESService:
             index="processing_results", document=proces_result_dict
         )
 
-    async def save_excepton_async(self, app_exception: APPException):
+    async def save_exception_async(self, app_exception: APPException):
         await self.client_async.index(index="errors", document=app_exception.__dict__)
 
     def create_index(self, index_name: str):

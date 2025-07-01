@@ -54,7 +54,8 @@ class UserRepliedHandler(MessageHandler):
                     payload_params.clean_message
                 )
                 await self.update_conversation_status(
-                    conversation_state=conversation_state
+                    conversation_state=conversation_state,
+                    conversation_id=payload_params.conversation_id
                 )
                 return
 
@@ -75,7 +76,8 @@ class UserRepliedHandler(MessageHandler):
                         payload_params.clean_message
                     )
                     await self.update_conversation_status(
-                        conversation_state=conversation_state
+                        conversation_state=conversation_state,
+                        conversation_id=payload_params.conversation_id
                     )
                     return
                 if user_replied_message_language in [
@@ -95,7 +97,8 @@ class UserRepliedHandler(MessageHandler):
                         user_replied_message_language
                     )
                     await self.update_conversation_status(
-                        conversation_state=conversation_state
+                        conversation_state=conversation_state,
+                        conversation_id=payload_params.conversation_id
                     )
                     await self.intercom_api_service.add_admin_note_to_conversation_async(
                         conversation_id=payload_params.conversation_id,

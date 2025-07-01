@@ -30,9 +30,9 @@ class Container(containers.DeclarativeContainer):
 
     mongo_db_service = providers.Singleton(MongodbService)
     redis_service = providers.Singleton(RedisService)
-    es_service: ESService = providers.Singleton(ESService)
+    es_service= providers.Singleton(ESService)
     intercom_api_service = providers.Singleton(IntercomAPIService)
-    messages_cache_service: MessagesCache = providers.Singleton(MessagesCache)
+    messages_cache_service = providers.Singleton(MessagesCache)
     open_ai_service = providers.Singleton(
         OpenAIService, messages_cache_service=messages_cache_service
     )
@@ -58,32 +58,34 @@ class Container(containers.DeclarativeContainer):
         es_service=es_service,
         claude_ai_service=claude_ai_service,
     )
-    user_created_service: UserCreatedHandler = providers.Singleton(
+    user_created_service= providers.Singleton(
         UserCreatedHandler,
         intercom_api_service=intercom_api_service,
         open_ai_service=open_ai_service,
         messages_cache_service=messages_cache_service,
         translations_service=translations_service,
     )
-    user_replied_service: UserRepliedHandler = providers.Singleton(
+    user_replied_service = providers.Singleton(
         UserRepliedHandler,
         intercom_api_service=intercom_api_service,
         open_ai_service=open_ai_service,
         messages_cache_service=messages_cache_service,
         translations_service=translations_service,
     )
-    admin_noted_service: AdminNotedHandler = providers.Singleton(
+    admin_noted_service = providers.Singleton(
         AdminNotedHandler,
         intercom_api_service=intercom_api_service,
         open_ai_service=open_ai_service,
         messages_cache_service=messages_cache_service,
         translations_service=translations_service,
     )
-    admin_closed_service: AdminCloseHandler = providers.Singleton(
-        AdminCloseHandler, messages_cache_service=messages_cache_service
+    admin_closed_service= providers.Singleton(
+        AdminCloseHandler, messages_cache_service=messages_cache_service,
+        intercom_api_service=intercom_api_service, open_ai_service=open_ai_service,
+        translations_service=translations_service
     )
 
-    messages_processor: MessagesProcessor = providers.Singleton(
+    messages_processor = providers.Singleton(
         MessagesProcessor,
         user_replied_service=user_replied_service,
         user_created_service=user_created_service,
