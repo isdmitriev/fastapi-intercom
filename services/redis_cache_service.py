@@ -15,6 +15,7 @@ class RedisService:
             self.redis_client = Redis(
                 host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=1
             )
+            self.redis_client_async = RedisAsync(host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=2)
         except RedisError as redis_error:
             full_exception_name = (
                 f"{type(redis_error).__module__}.{type(redis_error).__name__}"
@@ -38,6 +39,10 @@ class RedisService:
 
     def set_key(self, key_name: str, key_value: str) -> bool:
         is_key_exist: bool = self.redis_client.setnx(key_name, key_value)
+        return is_key_exist
+
+    async def set_key_async(self, key_name: str, key_value: str) -> bool:
+        is_key_exist: bool = self.redis_client_async.setnx(key_name, key_value)
         return is_key_exist
 
 
@@ -66,7 +71,7 @@ class MessagesCache:
             raise e
 
     async def set_conversation_state(
-        self, conversation_id: str, conversation_state: ConversationState
+            self, conversation_id: str, conversation_state: ConversationState
     ):
         key: str = f"conversation_state:{conversation_id}"
         value: str = conversation_state.model_dump_json()
@@ -77,7 +82,7 @@ class MessagesCache:
         await self.redis_client_async.delete(key)
 
     async def get_conversation_state(
-        self, conversation_id: str
+            self, conversation_id: str
     ) -> ConversationState | None:
         value: str | None = await self.redis_client_async.get(
             f"conversation_state:{conversation_id}"
@@ -92,13 +97,13 @@ class MessagesCache:
         self.redis_client.set(key_name, key_value, ex=21600)
 
     def set_conversation_messages(
-        self, conversation_id: str, messages: ConversationMessages
+            self, conversation_id: str, messages: ConversationMessages
     ):
         key_value: str = messages.model_dump_json()
         self.set_key(conversation_id, key_value)
 
     def get_conversation_messages(
-        self, conversation_id: str
+            self, conversation_id: str
     ) -> ConversationMessages | None:
         value: str | None = self.redis_client.get(conversation_id)
         if value != None:
@@ -110,13 +115,13 @@ class MessagesCache:
             return None
 
     def set_conversation_context(
-        self, conversation_id: str, conversation_context: ConversationContext
+            self, conversation_id: str, conversation_context: ConversationContext
     ):
         key_value = conversation_context.model_dump_json()
         self.set_key("conversation_context:" + conversation_id, key_value)
 
     def get_conversation_context(
-        self, conversation_id: str
+            self, conversation_id: str
     ) -> ConversationContext | None:
         value: str | None = self.redis_client.get(
             "conversation_context:" + conversation_id

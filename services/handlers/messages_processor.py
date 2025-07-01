@@ -54,28 +54,27 @@ class MessagesProcessor:
             topic: str = payload.get("topic", "")
             if topic == InterestedEvents.user_created.value:
 
-                await self.user_created_service.user_created_handler(payload=payload)
+                await self.user_created_service.execute(payload=payload)
                 self._record_metric(USER_CREATED_DURATION, start_time=start_time)
 
             elif topic == InterestedEvents.user_replied.value:
 
-                await self.user_replied_service.user_replied_handler(payload=payload)
+                await self.user_replied_service.execute(payload=payload)
                 self._record_metric(USER_REPLIED_DURATION, start_time=start_time)
 
             elif topic == InterestedEvents.admin_noted.value:
 
-                await self.admin_noted_service.admin_noted_handler(payload=payload)
+                await self.admin_noted_service.execute(payload=payload)
                 self._record_metric(ADMIN_NOTED_DURATION, start_time=start_time)
 
             elif topic == InterestedEvents.admin_closed.value:
-                await self.admin_closed_service.admin_close_handler(payload=payload)
+                await self.admin_closed_service.execute(payload=payload)
             execution_time: float = time.perf_counter() - start_time
             await self._logs_handler(topic=topic, execution_time=execution_time)
         except APPException as error:
             self._log_error(topic=topic, app_exception=error)
+            raise error
 
-            await self.es_service.save_excepton_async(app_exception=error)
-            return
         except Exception as e:
             self._log_error(app_exception=e)
             raise e

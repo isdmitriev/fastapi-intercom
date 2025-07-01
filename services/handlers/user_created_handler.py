@@ -12,6 +12,7 @@ from models.custom_exceptions import APPException
 from aiohttp.client_exceptions import ClientResponseError
 from openai._exceptions import OpenAIError
 from redis.exceptions import RedisError
+from services.handlers.common import MessageHandler
 
 
 class ConversationStatus(Enum):
@@ -24,19 +25,10 @@ class PayloadData(BaseModel):
     clean_message: str
 
 
-class UserCreatedHandler:
-    @inject
-    def __init__(
-        self,
-        intercom_api_service: IntercomAPIService,
-        open_ai_service: OpenAIService,
-        messages_cache_service: MessagesCache,
-        translations_service: OpenAITranslatorService,
-    ):
-        self.intercom_api_service = intercom_api_service
-        self.open_ai_service = open_ai_service
-        self.messages_cache_service = messages_cache_service
-        self.translations_service = translations_service
+class UserCreatedHandler(MessageHandler):
+
+    async def execute(self, payload: Dict):
+        await self.user_created_handler(payload=payload)
 
     async def user_created_handler(self, payload: Dict):
         try:
@@ -49,10 +41,11 @@ class UserCreatedHandler:
                 conversation_context_analys="",
                 messages=[],
             )
-            await self.messages_cache_service.set_conversation_state(
+            await self.update_conversation_status(
                 conversation_id=payload_params.conversation_id,
                 conversation_state=conversation_state,
             )
+
             return
         except (ClientResponseError, RedisError, OpenAIError) as e:
             full_exception_name = f"{type(e).__module__}.{type(e).__name__}"

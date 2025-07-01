@@ -55,6 +55,13 @@ logging.basicConfig(level=logging.DEBUG, )
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+logging.getLogger("uvicorn").setLevel(logging.WARNING)
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
+logging.getLogger("fastapi").setLevel(logging.WARNING)
+logging.getLogger("asyncio").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
 Instrumentator().instrument(app).expose(app)
 
 process = psutil.Process()
@@ -122,27 +129,45 @@ async def process_metrics(request: Request, call_next):
 @app.post("/webhook/process/v2")
 @inject
 async def process_message(request: Request,
+                          redis_service: RedisService = Depends(lambda: container.redis_service()),
                           messages_processor: MessagesProcessor = Depends(lambda: container.messages_processor())):
     try:
 
         payload = await request.json()
-        await messages_processor.process_message(payload=payload)
-        SUCCESS_REQUEST_COUNT.labels(
+        notification_event_id: str | None = payload.get("id", None)
+        if notification_event_id == None:
+            return Response(status_code=status.HTTP_200_OK)
+        is_event_handled = await redis_service.set_key_async(notification_event_id, "1")
+        if is_event_handled == True:
+            await messages_processor.process_message(payload=payload)
+            SUCCESS_REQUEST_COUNT.labels(
+                pod_name=os.environ.get("HOSTNAME", "unknown")
+            ).inc()
+
+            return Response(status_code=status.HTTP_200_OK, content='message was processed')
+        else:
+            SUCCESS_REQUEST_COUNT.labels(
+                pod_name=os.environ.get("HOSTNAME", "unknown")
+            ).inc()
+            return Response(
+                status_code=status.HTTP_200_OK, content="event already processed"
+            )
+    except ValueError as valError:
+        logger.error('invalid json')
+
+        FAILED_REQUEST_COUNT.labels(
             pod_name=os.environ.get("HOSTNAME", "unknown")
         ).inc()
-
-        return Response(status_code=status.HTTP_200_OK, content='message was processed')
-    except ValueError as valueError:
-        logger.error('invalid json')
-        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
-
         return Response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content="invalid json"
         )
 
     except Exception as e:
         logger.error(str(e))
-        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
+        FAILED_REQUEST_COUNT.labels(
+            pod_name=os.environ.get("HOSTNAME", "unknown")
+        ).inc()
+
         return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

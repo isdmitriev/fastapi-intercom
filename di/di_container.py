@@ -14,11 +14,11 @@ from services.handlers.user_replied_handler import UserRepliedHandler
 from services.handlers.admin_noted_handler import AdminNotedHandler
 from services.handlers.messages_processor import MessagesProcessor
 from services.handlers.admin_close_handler import AdminCloseHandler
-from services.handlers.common import CommonOperations
+from services.handlers.common import MessageHandler
 
 
 class Container(containers.DeclarativeContainer):
-    # wiring_config = containers.WiringConfiguration(packages=['app', 'services'])
+    wiring_config = containers.WiringConfiguration(packages=['app', 'services'])
     # wiring_config = containers.WiringConfiguration(
     #     modules=[
     #         "app",
@@ -82,11 +82,7 @@ class Container(containers.DeclarativeContainer):
     admin_closed_service: AdminCloseHandler = providers.Singleton(
         AdminCloseHandler, messages_cache_service=messages_cache_service
     )
-    common_operations_service: CommonOperations = providers.Singleton(
-        CommonOperations, intercom_api_service=intercom_api_service,
-        translations_service=translations_service,
-        open_ai_service=open_ai_service
-    )
+
     messages_processor: MessagesProcessor = providers.Singleton(
         MessagesProcessor,
         user_replied_service=user_replied_service,
