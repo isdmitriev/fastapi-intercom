@@ -61,9 +61,9 @@ class UserMessage(BaseModel):
     status: str
     original_text: str
     translated_text: str
-    note: str | None
-    possible_interpretations: List[str] = []
-    corrected_text: str
+    note: Optional[str | None]=None
+    possible_interpretations: Optional[List[str]] = []
+    corrected_text: Optional[str]=None
     context_analysis: str
     language: Optional[str] = None
 

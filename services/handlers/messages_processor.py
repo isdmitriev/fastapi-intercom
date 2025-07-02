@@ -18,12 +18,12 @@ from prometheus_metricks.metricks import (
 )
 import os
 
-logger = logging.getLogger('message_processor')
+logger = logging.getLogger("message_processor")
 logger.setLevel(logging.INFO)
 logger.propagate = False
 
 handler = logging.StreamHandler()
-formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
@@ -38,12 +38,12 @@ class InterestedEvents(Enum):
 class MessagesProcessor:
     @inject
     def __init__(
-            self,
-            user_created_service: UserCreatedHandler,
-            user_replied_service: UserRepliedHandler,
-            admin_noted_service: AdminNotedHandler,
-            admin_closed_service: AdminCloseHandler,
-            es_service: ESService,
+        self,
+        user_created_service: UserCreatedHandler,
+        user_replied_service: UserRepliedHandler,
+        admin_noted_service: AdminNotedHandler,
+        admin_closed_service: AdminCloseHandler,
+        es_service: ESService,
     ):
         self.user_created_service = user_created_service
         self.user_replied_service = user_replied_service
@@ -103,7 +103,6 @@ class MessagesProcessor:
         metric.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).observe(
             time.perf_counter() - start_time
         )
-
 
     def _log_error(self, topic: str, app_exception: APPException | Exception):
         if isinstance(app_exception, APPException):

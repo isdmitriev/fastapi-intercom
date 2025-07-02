@@ -8,6 +8,8 @@ from models.custom_exceptions import APPException
 from openai._exceptions import OpenAIError
 from services.redis_cache_service import MessagesCache
 from models.models import ConversationMessages, ConversationMessage
+from pydantic import BaseModel, ValidationError
+from services.promt_storage import PromtStorage
 
 load_dotenv()
 
@@ -32,6 +34,43 @@ class OpenAIService:
             raise app_exception
         except Exception as e:
             raise e
+
+    async def _make_open_ai_request(
+            self, message: str, model_name: str, system_promt: str, messages: List[Dict]
+    ) -> UserMessage:
+        try:
+            formatted_messages = [{"role": "system", "content": system_promt}]
+            formatted_messages.extend(messages)
+            formatted_messages.extend({"role": "user", "content": message})
+            request_response = await self.client_async.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=0,
+                response_format={"type": "json_object"},
+            )
+            result_dict: Dict = json.loads(request_response.choices[0].message.content)
+            user_message: UserMessage = UserMessage.model_validate(result_dict)
+            return user_message
+        except ValidationError as validationError:
+            raise validationError
+        except Exception as error:
+            raise error
+
+    async def analyze_message_execute(self, message: str, conversation_id: str) -> UserMessage:
+        chat_history: List[Dict] = self.get_chat_history(
+            conversation_id=conversation_id
+        )
+        system_promt = PromtStorage.get_promt_analyze_message_execute()
+        analyzed_result: UserMessage = await self._make_open_ai_request(
+            message=message,
+            system_promt=system_promt,
+            messages=chat_history,
+            model_name="gpt-4-turbo",
+        )
+        return analyzed_result
+
+    async def analyze_message_execute_v2(self, message: str, current_chat_context: str) -> UserMessage:
+        pass
 
     def detect_language(self, message: str) -> str | None:
         response = self.open_ai_client.chat.completions.create(
@@ -81,7 +120,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_hindi_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response: ChatCompletion = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -116,7 +155,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_bengali_to_english_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -133,7 +172,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_bengali_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -150,7 +189,7 @@ class OpenAIService:
         return result
 
     async def translate_message_from_english_to_hindi_async(
-        self, message: str
+            self, message: str
     ) -> str | None:
         response = await self.client_async.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -452,7 +491,7 @@ For "uncertain", also include:
             return None
 
     async def analyze_message_with_correction_v3(
-        self, message: str, conversation_id: str
+            self, message: str, conversation_id: str
     ):
         system_promt = """# Casino Support AI Assistant
 

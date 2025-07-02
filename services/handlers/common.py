@@ -4,7 +4,7 @@ from services.openai_translator_service import OpenAITranslatorService
 from services.redis_cache_service import MessagesCache
 from dependency_injector.wiring import inject
 from models.models import UserMessage, ConversationState
-
+from services.handlers.models import MessageAnalysResponse, MessageAnalysConfig
 from typing import Tuple, Dict
 from enum import Enum
 from abc import ABC, abstractmethod
@@ -21,6 +21,18 @@ class CommandLanguage(Enum):
     hindi = "Hindi"
     hi = "Hinglish"
     bn = "Bengali"
+
+
+class MessageAnalyze(ABC):
+    @inject
+    def __init__(self, open_ai_service: OpenAIService):
+        self.open_ai_service = open_ai_service
+
+    @abstractmethod
+    async def analyze_message(
+        self, analys_config: MessageAnalysConfig
+    ) -> MessageAnalysResponse:
+        pass
 
 
 class MessageHandler(ABC):

@@ -76,7 +76,7 @@ class AdminNotedHandler(MessageHandler):
                 )
                 await self.update_conversation_status(
                     conversation_state=conversation_state,
-                    conversation_id=payload_params.conversation_id
+                    conversation_id=payload_params.conversation_id,
                 )
                 return
             if payload_params.clean_message == AdminCommand.DETECTSTART.value:
@@ -105,7 +105,7 @@ class AdminNotedHandler(MessageHandler):
                 conversation_state.conversation_language = target_language
                 await self.update_conversation_status(
                     conversation_state=conversation_state,
-                    conversation_id=payload_params.conversation_id
+                    conversation_id=payload_params.conversation_id,
                 )
                 await self._start_force_lang(
                     admin_id=payload_params.admin_id,
@@ -114,9 +114,9 @@ class AdminNotedHandler(MessageHandler):
                 return
 
             if (
-                    payload_params.clean_message.startswith("!")
-                    and conversation_state.conversation_status
-                    == ConversationStatus.STARTED.value
+                payload_params.clean_message.startswith("!")
+                and conversation_state.conversation_status
+                == ConversationStatus.STARTED.value
             ):
 
                 message_for_user: str = payload_params.clean_message.lstrip("!")
@@ -129,10 +129,14 @@ class AdminNotedHandler(MessageHandler):
                         target_lang=target_lang,
                         chat_context_analys=conversation_state.conversation_context_analys,
                     )
-                    if (new_chat_context is not None):
-                        conversation_state.conversation_context_analys = new_chat_context
-                        await self.update_conversation_status(conversation_id=payload_params.conversation_id,
-                                                              conversation_state=conversation_state)
+                    if new_chat_context is not None:
+                        conversation_state.conversation_context_analys = (
+                            new_chat_context
+                        )
+                        await self.update_conversation_status(
+                            conversation_id=payload_params.conversation_id,
+                            conversation_state=conversation_state,
+                        )
                     return
         except (ClientResponseError, RedisError, OpenAIError) as e:
             full_exception_name = f"{type(e).__module__}.{type(e).__name__}"
@@ -151,7 +155,7 @@ class AdminNotedHandler(MessageHandler):
             raise ex
 
     async def _start_force_lang(
-            self, admin_id: str, conversation_state: ConversationState
+        self, admin_id: str, conversation_state: ConversationState
     ):
         last_message: str | None = conversation_state.conversation_last_message
         note_for_admin, context_analys = await self.get_note_for_admin(
@@ -164,7 +168,7 @@ class AdminNotedHandler(MessageHandler):
         )
 
     async def start_translation_service(
-            self, admin_id: str, conversation_state: ConversationState
+        self, admin_id: str, conversation_state: ConversationState
     ):
         last_message: str = conversation_state.conversation_last_message
         last_message_lang: str = (
@@ -186,8 +190,10 @@ class AdminNotedHandler(MessageHandler):
             admin_id=admin_id,
             note=note_for_admin,
         )
-        await self.update_conversation_status(conversation_state=conversation_state,
-                                              conversation_id=conversation_state.conversation_id)
+        await self.update_conversation_status(
+            conversation_state=conversation_state,
+            conversation_id=conversation_state.conversation_id,
+        )
 
     def _get_target_language(self, command_language: str) -> str | None:
         if command_language == CommandLanguage.hi.name:
