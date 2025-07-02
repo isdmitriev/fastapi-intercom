@@ -41,10 +41,10 @@ class OpenAIService:
         try:
             formatted_messages = [{"role": "system", "content": system_promt}]
             formatted_messages.extend(messages)
-            formatted_messages.extend({"role": "user", "content": message})
+            formatted_messages.append({"role": "user", "content": message})
             request_response = await self.client_async.chat.completions.create(
                 model=model_name,
-                messages=messages,
+                messages=formatted_messages,
                 temperature=0,
                 response_format={"type": "json_object"},
             )
@@ -56,7 +56,9 @@ class OpenAIService:
         except Exception as error:
             raise error
 
-    async def analyze_message_execute(self, message: str, conversation_id: str) -> UserMessage:
+    async def analyze_message_execute(
+            self, message: str, conversation_id: str
+    ) -> UserMessage:
         chat_history: List[Dict] = self.get_chat_history(
             conversation_id=conversation_id
         )
@@ -69,8 +71,51 @@ class OpenAIService:
         )
         return analyzed_result
 
-    async def analyze_message_execute_v2(self, message: str, current_chat_context: str) -> UserMessage:
-        pass
+    async def analyze_message_execute_agent(
+            self, message: str, current_chat_context: str
+    ) -> UserMessage:
+        system_promt = PromtStorage.get_promt_analyze_message_execute_agent()
+        if current_chat_context == "":
+            current_chat_context = "No previous context available."
+        agent_input = f"""## MESSAGE TYPE
+        agent_message
+
+        ## CURRENT MESSAGE
+        "{message}"
+
+        ## CONTEXT ANALYSIS
+        {current_chat_context}"""
+        model = 'model="gpt-3.5-turbo-0125'
+
+        analyzed_result: UserMessage = await self._make_open_ai_request(
+            message=agent_input,
+            model_name=model,
+            messages=[],
+            system_promt=system_promt,
+        )
+        return analyzed_result
+
+    async def analyze_message_execute_user(
+            self, message: str, current_chat_context: str
+    ) -> UserMessage:
+        system_promt = PromtStorage.get_promt_analyze_message_execute_user()
+        if current_chat_context == "":
+            current_chat_context = "No previous context available."
+
+        user_input = f"""## MESSAGE TYPE
+        user_message
+
+        ## CURRENT MESSAGE
+        "{message}"
+
+        ## CONTEXT ANALYSIS
+        {current_chat_context}"""
+        model ='gpt-3.5-turbo-0125'
+        analyzed_result: UserMessage = await self._make_open_ai_request(
+            message=user_input, messages=[], model_name=model, system_promt=system_promt
+
+        )
+        return analyzed_result
 
     def detect_language(self, message: str) -> str | None:
         response = self.open_ai_client.chat.completions.create(
