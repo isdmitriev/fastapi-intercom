@@ -14,7 +14,8 @@ from aiohttp.client_exceptions import ClientResponseError
 from openai._exceptions import OpenAIError
 from redis.exceptions import RedisError
 from services.handlers.common import MessageHandler
-
+from services.handlers.models import MessageAnalysConfig, MessageAnalysResponse
+import traceback
 
 class MessageStatus(Enum):
     NO_ERROR = "no_error"
@@ -67,7 +68,8 @@ class AdminNotedHandler(MessageHandler):
                     ConversationStatus.STARTED.value
                 )
                 await self.update_conversation_status(
-                    conversation_state=conversation_state
+                    conversation_state=conversation_state,
+                    conversation_id=payload_params.conversation_id,
                 )
                 return
             if payload_params.clean_message == AdminCommand.STOP.value:
@@ -139,6 +141,7 @@ class AdminNotedHandler(MessageHandler):
                         )
                     return
         except (ClientResponseError, RedisError, OpenAIError) as e:
+            stack = traceback.format_exc()
             full_exception_name = f"{type(e).__module__}.{type(e).__name__}"
             exception_message: str = str(e)
             app_exception: APPException = APPException(
@@ -149,6 +152,7 @@ class AdminNotedHandler(MessageHandler):
                     "conversation_id": payload_params.conversation_id,
                     "admin_message": payload_params.clean_message,
                 },
+                stack_trace=stack
             )
             raise app_exception
         except Exception as ex:
@@ -158,12 +162,30 @@ class AdminNotedHandler(MessageHandler):
         self, admin_id: str, conversation_state: ConversationState
     ):
         last_message: str | None = conversation_state.conversation_last_message
-        note_for_admin, context_analys = await self.get_note_for_admin(
-            last_message, conversation_state.conversation_context_analys
+        analys_config: MessageAnalysConfig = MessageAnalysConfig(
+            message=last_message,
+            type="fast",
+            model="gpt-3.5-turbo-0125",
+            chat_context=conversation_state.conversation_context_analys,
         )
+        analys_response: MessageAnalysResponse = (
+            await self.message_analyze_service.analyze_message(
+                analys_config=analys_config
+            )
+        )
+        # note_for_admin, context_analys = await self.get_note_for_admin(
+        #     last_message, conversation_state.conversation_context_analys
+        # )
         await self.intercom_api_service.add_admin_note_to_conversation_async(
             admin_id=admin_id,
-            note=note_for_admin,
+            note=analys_response.note_for_admin,
+            conversation_id=conversation_state.conversation_id,
+        )
+        conversation_state.conversation_context_analys = (
+            analys_response.chat_context_analys
+        )
+        await self.update_conversation_status(
+            conversation_state=conversation_state,
             conversation_id=conversation_state.conversation_id,
         )
 
@@ -176,19 +198,32 @@ class AdminNotedHandler(MessageHandler):
                 message=last_message
             )
         )
-
-        note_for_admin, context_analys = await self.get_note_for_admin(
-            user_replied_message=last_message,
-            current_context_analys=conversation_state.conversation_context_analys,
+        analys_config: MessageAnalysConfig = MessageAnalysConfig(
+            message=last_message,
+            type="fast",
+            model="gpt-3.5-turbo-0125",
+            chat_context=conversation_state.conversation_context_analys,
         )
-        conversation_state.conversation_context_analys = context_analys
+        analyzed_response: MessageAnalysResponse = (
+            await self.message_analyze_service.analyze_message(
+                analys_config=analys_config
+            )
+        )
+
+        # note_for_admin, context_analys = await self.get_note_for_admin(
+        #     user_replied_message=last_message,
+        #     current_context_analys=conversation_state.conversation_context_analys,
+        # )
+        conversation_state.conversation_context_analys = (
+            analyzed_response.chat_context_analys
+        )
         conversation_state.conversation_language = last_message_lang
         conversation_state.conversation_status = ConversationStatus.STARTED.value
 
         await self.intercom_api_service.add_admin_note_to_conversation_async(
             conversation_id=conversation_state.conversation_id,
             admin_id=admin_id,
-            note=note_for_admin,
+            note=analyzed_response.note_for_admin,
         )
         await self.update_conversation_status(
             conversation_state=conversation_state,

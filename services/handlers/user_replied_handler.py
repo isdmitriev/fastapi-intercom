@@ -14,6 +14,8 @@ from models.custom_exceptions import APPException
 from aiohttp.client_exceptions import ClientResponseError
 from openai._exceptions import OpenAIError
 from redis.exceptions import RedisError
+from services.handlers.models import MessageAnalysConfig, MessageAnalysResponse
+import traceback
 
 
 class ConversationStatus(Enum):
@@ -47,8 +49,8 @@ class UserRepliedHandler(MessageHandler):
                 )
             )
             if (
-                conversation_state.conversation_status
-                == ConversationStatus.STOPPED.value
+                    conversation_state.conversation_status
+                    == ConversationStatus.STOPPED.value
             ):
                 conversation_state.conversation_last_message = (
                     payload_params.clean_message
@@ -60,8 +62,8 @@ class UserRepliedHandler(MessageHandler):
                 return
 
             if (
-                conversation_state.conversation_status
-                == ConversationStatus.STARTED.value
+                    conversation_state.conversation_status
+                    == ConversationStatus.STARTED.value
             ):
 
                 user_replied_message_language: str = (
@@ -85,11 +87,25 @@ class UserRepliedHandler(MessageHandler):
                     Language.HINGLISH.value,
                     Language.BENGALI.value,
                 ]:
-                    note_for_admin, context_analys = await self.get_note_for_admin(
-                        user_replied_message=payload_params.clean_message,
-                        current_context_analys=conversation_state.conversation_context_analys,
+                    analys_config: MessageAnalysConfig = MessageAnalysConfig(
+                        message=payload_params.clean_message,
+                        type="fast",
+                        model="gpt-3.5-turbo-0125",
+                        chat_context=conversation_state.conversation_context_analys,
                     )
-                    conversation_state.conversation_context_analys = context_analys
+                    analyze_result: MessageAnalysResponse = (
+                        await self.message_analyze_service.analyze_message(
+                            analys_config=analys_config
+                        )
+                    )
+
+                    # note_for_admin, context_analys = await self.get_note_for_admin(
+                    #     user_replied_message=payload_params.clean_message,
+                    #     current_context_analys=conversation_state.conversation_context_analys,
+                    # )
+                    conversation_state.conversation_context_analys = (
+                        analyze_result.chat_context_analys
+                    )
                     conversation_state.conversation_last_message = (
                         payload_params.clean_message
                     )
@@ -103,10 +119,11 @@ class UserRepliedHandler(MessageHandler):
                     await self.intercom_api_service.add_admin_note_to_conversation_async(
                         conversation_id=payload_params.conversation_id,
                         admin_id="8459322",
-                        note=note_for_admin,
+                        note=analyze_result.note_for_admin,
                     )
                     return
         except (ClientResponseError, RedisError, OpenAIError) as e:
+            stack = traceback.format_exc()
             full_exception_name = f"{type(e).__module__}.{type(e).__name__}"
             exception_message: str = str(e)
             app_exception: APPException = APPException(
@@ -114,6 +131,7 @@ class UserRepliedHandler(MessageHandler):
                 ex_class=full_exception_name,
                 event_type="conversation.user.replied",
                 params={"conversation_id": payload_params.conversation_id},
+                stack_trace=stack
             )
             raise app_exception
         except Exception as ex:

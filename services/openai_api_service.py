@@ -10,6 +10,7 @@ from services.redis_cache_service import MessagesCache
 from models.models import ConversationMessages, ConversationMessage
 from pydantic import BaseModel, ValidationError
 from services.promt_storage import PromtStorage
+from services.handlers.models import MessageAnalysConfig
 
 load_dotenv()
 
@@ -42,13 +43,14 @@ class OpenAIService:
             formatted_messages = [{"role": "system", "content": system_promt}]
             formatted_messages.extend(messages)
             formatted_messages.append({"role": "user", "content": message})
-            request_response = await self.client_async.chat.completions.create(
-                model=model_name,
-                messages=formatted_messages,
-                temperature=0,
-                response_format={"type": "json_object"},
+            request_response = await self._get_open_ai_response(
+                message=message,
+                model_name=model_name,
+                system_promt=system_promt,
+                messages=messages,
             )
-            result_dict: Dict = json.loads(request_response.choices[0].message.content)
+
+            result_dict: Dict = json.loads(request_response)
             user_message: UserMessage = UserMessage.model_validate(result_dict)
             return user_message
         except ValidationError as validationError:
@@ -56,199 +58,95 @@ class OpenAIService:
         except Exception as error:
             raise error
 
+    async def _get_open_ai_response(
+            self, message: str, model_name: str, system_promt: str, messages: List[Dict]
+    ) -> str:
+        try:
+            formatted_messages = [{"role": "system", "content": system_promt}]
+            formatted_messages.extend(messages)
+            formatted_messages.append({"role": "user", "content": message})
+            request_response = await self.client_async.chat.completions.create(
+                model=model_name,
+                messages=formatted_messages,
+                temperature=0,
+                response_format={"type": "json_object"},
+            )
+            return request_response.choices[0].message.content
+        except Exception as ex:
+            raise ex
+
     async def analyze_message_execute(
-            self, message: str, conversation_id: str
+            self, analys_config: MessageAnalysConfig
     ) -> UserMessage:
         chat_history: List[Dict] = self.get_chat_history(
-            conversation_id=conversation_id
+            conversation_id=analys_config.conversation_id
         )
         system_promt = PromtStorage.get_promt_analyze_message_execute()
         analyzed_result: UserMessage = await self._make_open_ai_request(
-            message=message,
+            message=analys_config.message,
             system_promt=system_promt,
             messages=chat_history,
-            model_name="gpt-4-turbo",
+            model_name=analys_config.model,
         )
         return analyzed_result
 
     async def analyze_message_execute_agent(
-            self, message: str, current_chat_context: str
-    ) -> UserMessage:
+            self, analys_config: MessageAnalysConfig
+    ) -> str:
         system_promt = PromtStorage.get_promt_analyze_message_execute_agent()
-        if current_chat_context == "":
-            current_chat_context = "No previous context available."
+        if analys_config.chat_context == "":
+            analys_config.chat_context = "No previous context available."
         agent_input = f"""## MESSAGE TYPE
         agent_message
 
         ## CURRENT MESSAGE
-        "{message}"
+        "{analys_config.message}"
 
         ## CONTEXT ANALYSIS
-        {current_chat_context}"""
-        model = 'model="gpt-3.5-turbo-0125'
+        {analys_config.chat_context}"""
 
-        analyzed_result: UserMessage = await self._make_open_ai_request(
-            message=agent_input,
-            model_name=model,
-            messages=[],
-            system_promt=system_promt,
+        updated_chat_context: Dict = json.loads(
+            await self._get_open_ai_response(
+                message=agent_input,
+                model_name=analys_config.model,
+                messages=[],
+                system_promt=system_promt,
+            )
         )
-        return analyzed_result
+        context_analys_result: str = updated_chat_context.get("context_analysis", "")
+        return context_analys_result
 
     async def analyze_message_execute_user(
-            self, message: str, current_chat_context: str
+            self, analys_config: MessageAnalysConfig
     ) -> UserMessage:
         system_promt = PromtStorage.get_promt_analyze_message_execute_user()
-        if current_chat_context == "":
-            current_chat_context = "No previous context available."
+        if analys_config.chat_context == "":
+            analys_config.chat_context = "No previous context available."
 
         user_input = f"""## MESSAGE TYPE
         user_message
 
         ## CURRENT MESSAGE
-        "{message}"
+        "{analys_config.message}"
 
         ## CONTEXT ANALYSIS
-        {current_chat_context}"""
-        model ='gpt-3.5-turbo-0125'
-        analyzed_result: UserMessage = await self._make_open_ai_request(
-            message=user_input, messages=[], model_name=model, system_promt=system_promt
+        {analys_config.chat_context}"""
 
+        analyzed_result: UserMessage = await self._make_open_ai_request(
+            message=user_input,
+            messages=[],
+            model_name=analys_config.model,
+            system_promt=system_promt,
         )
         return analyzed_result
 
-    def detect_language(self, message: str) -> str | None:
-        response = self.open_ai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Ты помощник, который определяет язык текста. Отвечай только кодом языка (например, 'en', 'hi', 'bn').",
-                },
-                {"role": "user", "content": f"Какой это язык? {message}"},
-            ],
-            max_tokens=5,
-        )
 
-        result = response.choices[0].message.content.strip()
-        return result
 
-    async def detect_language_async(self, message: str) -> str | None:
-        response: ChatCompletion = await self.client_async.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Ты помощник, который определяет язык текста. Отвечай только кодом языка (например, 'en', 'hi', 'bn').",
-                },
-                {"role": "user", "content": f"Какой это язык? {message}"},
-            ],
-            max_tokens=5,
-        )
-        result = response.choices[0].message.content.strip()
-        return result
 
-    def translate_message_from_hindi_to_english(self, message: str) -> str | None:
-        response = self.open_ai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Ты переводчик, который переводит текст с индийских языков (например, хинди, бенгальский, тамильский) на английский.",
-                },
-                {"role": "user", "content": f"Переведи на английский: {message}"},
-            ],
-            max_tokens=100,
-        )
-        result = response.choices[0].message.content.strip()
 
-        return result
 
-    async def translate_message_from_hindi_to_english_async(
-            self, message: str
-    ) -> str | None:
-        response: ChatCompletion = await self.client_async.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Ты переводчик, который переводит текст с индийских языков (например, хинди, бенгальский, тамильский) на английский.",
-                },
-                {"role": "user", "content": f"Переведи на английский: {message}"},
-            ],
-            max_tokens=100,
-        )
-        result: str = response.choices[0].message.content.strip()
-        return result
 
-    def translate_message_from_english_to_hindi(self, message: str) -> str | None:
-        response = self.open_ai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Ты переводчик, который переводит текст с английских языков на индийский.",
-                },
-                {
-                    "role": "user",
-                    "content": f"Переведи на индийский,отправь мне только сам перевод: {message}",
-                },
-            ],
-        )
-        result = response.choices[0].message.content.strip()
 
-        return result
-
-    async def translate_message_from_bengali_to_english_async(
-            self, message: str
-    ) -> str | None:
-        response = await self.client_async.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Ты переводчик, который переводит текст с индийских языков (например, хинди, бенгальский, тамильский) на английский.",
-                },
-                {"role": "user", "content": f"Переведи на английский: {message}"},
-            ],
-            max_tokens=100,
-        )
-        result: str = response.choices[0].message.content.strip()
-        return result
-
-    async def translate_message_from_english_to_bengali_async(
-            self, message: str
-    ) -> str | None:
-        response = await self.client_async.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Ты переводчик, который переводит текст с английских языков на бенгальский.",
-                },
-                {"role": "user", "content": f"Переведи на бенгальский: {message}"},
-            ],
-            max_tokens=100,
-        )
-        result: str = response.choices[0].message.content.strip()
-        return result
-
-    async def translate_message_from_english_to_hindi_async(
-            self, message: str
-    ) -> str | None:
-        response = await self.client_async.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Ты переводчик, который переводит текст с английских языков на индийский.",
-                },
-                {"role": "user", "content": f"Переведи на индийский: {message}"},
-            ],
-        )
-        result = response.choices[0].message.content.strip()
-
-        return result
 
     async def analyze_message_with_correction(self, message: str):
         system_promt = """```
@@ -2113,47 +2011,4 @@ Your response will be programmatically parsed, so any text outside the JSON stru
         return result_messages
 
 
-async def analyze_message_with_correction_async_v2(self, message: str):
-    promt = """You are an AI assistant for an online casino and sports betting support team. Your task is to analyze player messages in English, Hindi (Devanagari), Hinglish (Romanized Hindi), or Bengali.
 
-Always return JSON with the following structure:
-{
-    \"status\": \"[uncertain/error_fixed/no_error]\",
-    \"original_text\": \"original message\",
-    \"translated_text\": \"English translation\",
-    
-    // Only for status=uncertain:
-    \"possible_interpretations\": [
-        \"corrected version (Most likely meaning explanation)\",
-        \"original version (Alternative meaning explanation)\"
-    ],
-    \"note\": \"Note explaining unusual words with possible meanings AND two alternative translations:\\n1. [First translation - most probable]\\n2. [Second translation - alternative interpretation]\\nClarification needed.\"
-}
-
-Status codes:
-- \"uncertain\": When you're less than 95% confident about message meaning
-- \"error_fixed\": When you found and corrected mistakes
-- \"no_error\": When message is clear and no corrections needed
-
-Example for uncertain message:
-{
-    \"status\": \"uncertain\",
-    \"original_text\": \"Bhai site par login nahi ho pa raha hai, mera engine start hi nahi ho raha, password dalte hi petrol khatam ho jata hai\",
-    \"translated_text\": \"Brother, I cannot log in to the site, my engine is not starting, as soon as I enter the password, petrol runs out\",
-    \"possible_interpretations\": [
-        \"Bhai site par login nahi ho pa raha hai, mera page load hi nahi ho raha, password dalte hi session expire ho jata hai (Most likely: The player is experiencing a technical issue where the site fails to load after password entry)\",
-        \"Bhai site par login nahi ho pa raha hai, mera engine start hi nahi ho raha, password dalte hi petrol khatam ho jata hai (Unclear meaning, might refer to connection issues or error messages during login)\"
-    ],
-    \"note\": \"The player used the words 'engine' and 'petrol', which are unusual in a casino login context. Possible meanings:\\n1. Website/app not loading properly after password entry\\n2. Session expiring or connection dropping during login\\nAlternative translations:\\n1. 'Brother, I cannot log in to the site, the page doesn't load, session expires right after entering password'\\n2. 'Brother, I cannot log in to the site, the application crashes, an error appears right after entering password'\\nClarification needed.\"
-}"""
-
-    response = await self.client_async.chat.completions.create(
-        model="gpt-4",  # Используй нужную модель
-        messages=[
-            {"role": "system", "content": promt},
-            {"role": "user", "content": message},
-        ],
-        temperature=0,
-    )
-    response_dict: Dict = json.loads(response.choices[0].message.content)
-    print(response_dict)

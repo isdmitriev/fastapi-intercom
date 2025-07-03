@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 from typing import Dict
 import logging
-
+import traceback
 from services.redis_cache_service import RedisService
 from services.mongodb_service import MongodbService
 from services.es_service import ESService
@@ -60,6 +60,7 @@ async def startup():
     container.init_resources()
 
 
+@app.exception_handler(APPException)
 async def handle_app_exception(
         request: Request,
         exception: APPException,
@@ -77,13 +78,16 @@ async def handle_app_exception(
     )
 
 
+@app.exception_handler(APPException)
 async def handle_common_exception(request: Request, exception: Exception):
+    stack_trace = "".join(traceback.format_exception(type(exception), exception, exception.__traceback__))
     logger.error(f"❌ {str(exception)} type:{type(exception)}")
     exception: APPException = APPException(
         message=str(exception),
         event_type="undefined",
         ex_class=type(exception).__name__,
         params={},
+        stack_trace=stack_trace
     )
     await container.es_service().save_exception_async(app_exception=exception)
     FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
@@ -160,12 +164,10 @@ async def process_message(
         )
 
     except Exception as e:
-        logger.error(str(e))
-        FAILED_REQUEST_COUNT.labels(
-            pod_name=os.environ.get("HOSTNAME", "unknown")
-        ).inc()
 
-        return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        raise e
+
+        # return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @app.get("/")

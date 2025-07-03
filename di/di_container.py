@@ -15,10 +15,11 @@ from services.handlers.admin_noted_handler import AdminNotedHandler
 from services.handlers.messages_processor import MessagesProcessor
 from services.handlers.admin_close_handler import AdminCloseHandler
 from services.handlers.common import MessageHandler
+from services.handlers.analyze_message_service import MessageAnalyzeService
 
 
 class Container(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(packages=['app', 'services'])
+    wiring_config = containers.WiringConfiguration(packages=["app", "services"])
     # wiring_config = containers.WiringConfiguration(
     #     modules=[
     #         "app",
@@ -30,7 +31,7 @@ class Container(containers.DeclarativeContainer):
 
     mongo_db_service = providers.Singleton(MongodbService)
     redis_service = providers.Singleton(RedisService)
-    es_service= providers.Singleton(ESService)
+    es_service = providers.Singleton(ESService)
     intercom_api_service = providers.Singleton(IntercomAPIService)
     messages_cache_service = providers.Singleton(MessagesCache)
     open_ai_service = providers.Singleton(
@@ -58,12 +59,17 @@ class Container(containers.DeclarativeContainer):
         es_service=es_service,
         claude_ai_service=claude_ai_service,
     )
-    user_created_service= providers.Singleton(
+    message_analyze_service = providers.Singleton(
+        MessageAnalyzeService, open_ai_service=open_ai_service
+    )
+    user_created_service = providers.Singleton(
         UserCreatedHandler,
         intercom_api_service=intercom_api_service,
         open_ai_service=open_ai_service,
         messages_cache_service=messages_cache_service,
         translations_service=translations_service,
+        message_analyze_service=message_analyze_service
+
     )
     user_replied_service = providers.Singleton(
         UserRepliedHandler,
@@ -71,6 +77,7 @@ class Container(containers.DeclarativeContainer):
         open_ai_service=open_ai_service,
         messages_cache_service=messages_cache_service,
         translations_service=translations_service,
+        message_analyze_service=message_analyze_service
     )
     admin_noted_service = providers.Singleton(
         AdminNotedHandler,
@@ -78,11 +85,15 @@ class Container(containers.DeclarativeContainer):
         open_ai_service=open_ai_service,
         messages_cache_service=messages_cache_service,
         translations_service=translations_service,
+        message_analyze_service=message_analyze_service
     )
-    admin_closed_service= providers.Singleton(
-        AdminCloseHandler, messages_cache_service=messages_cache_service,
-        intercom_api_service=intercom_api_service, open_ai_service=open_ai_service,
-        translations_service=translations_service
+    admin_closed_service = providers.Singleton(
+        AdminCloseHandler,
+        messages_cache_service=messages_cache_service,
+        intercom_api_service=intercom_api_service,
+        open_ai_service=open_ai_service,
+        translations_service=translations_service,
+        message_analyze_service=message_analyze_service
     )
 
     messages_processor = providers.Singleton(

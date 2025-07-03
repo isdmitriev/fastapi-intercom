@@ -106,14 +106,17 @@ def test_get_admins():
 #     result = await OpenAIService().detect_language_async(message)
 #     assert result == 'bn'
 
+
 @pytest.mark.asyncio
 async def test_openai_detect_language():
     start_time = time.perf_counter()
-    hindi_message: str = 'मैं हिंदी बोलता हूँ'
-    result: str = await OpenAITranslatorService().detect_language_async_v2(message=hindi_message)
+    hindi_message: str = "मैं हिंदी बोलता हूँ"
+    result: str = await OpenAITranslatorService().detect_language_async_v2(
+        message=hindi_message
+    )
     print(time.perf_counter() - start_time)
 
-    assert result == 'Hindi'
+    assert result == "Hindi"
 
 
 # def test_openai_service_translate_to_hindi():
@@ -206,23 +209,25 @@ async def test_translator_service():
     client: OpenAITranslatorService = OpenAITranslatorService()
     result = await client.translate_message_from_english_to_hindi_async()
 
-
     print(result)
     print(time.perf_counter() - start_time)
 
 
 @pytest.mark.asyncio
 async def test_openai():
-    conv_id = 'conv:215468885032326'
+    conv_id = "conv:215468885032326"
 
     client: OpenAIService = Container.open_ai_service()
     start_time = time.perf_counter()
-    message: str = await client.analyze_message_with_correction_v4(message='namaste!', analys='')
+    message: str = await client.analyze_message_with_correction_v4(
+        message="namaste!", analys=""
+    )
     assert isinstance(message, UserMessage)
 
     # assert isinstance(message, UserMessage)
     print(time.perf_counter() - start_time)
     print(message)
+
 
 # def test_intercom_api():
 #     client: IntercomAPIService = IntercomAPIService()

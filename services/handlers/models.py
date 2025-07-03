@@ -11,4 +11,5 @@ class MessageAnalysConfig(BaseModel):
     message: str
     chat_context: Optional[str] = None
     conversation_id: Optional[str] = None
-    analys_provider: str
+    model: str
+    type: str

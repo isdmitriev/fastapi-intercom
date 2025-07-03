@@ -16,7 +16,7 @@ class RedisService:
                 host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=1
             )
             self.redis_client_async = RedisAsync(
-                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=2
+                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=1
             )
         except RedisError as redis_error:
             full_exception_name = (
