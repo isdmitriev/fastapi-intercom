@@ -19,7 +19,6 @@ from prometheus_metricks.metricks import (
     FAILED_REQUEST_COUNT,
 )
 import os
-import canvas_handlers
 
 from services.handlers.messages_processor import MessagesProcessor
 
@@ -28,7 +27,7 @@ container = Container()
 container.wire(
     modules=[
         "app",
-        "services.web_hook_processor",
+
         "services.redis_cache_service",
         "services.mongodb_service",
         "services.es_service",
@@ -40,7 +39,7 @@ container.wire(
     ]
 )
 app = FastAPI()
-app.include_router(canvas_handlers.router)
+
 logger = logging.getLogger("main_app")
 logger.setLevel(logging.INFO)
 logger.propagate = False
@@ -78,7 +77,7 @@ async def handle_app_exception(
     )
 
 
-@app.exception_handler(APPException)
+@app.exception_handler(Exception)
 async def handle_common_exception(request: Request, exception: Exception):
     stack_trace = "".join(traceback.format_exception(type(exception), exception, exception.__traceback__))
     logger.error(f"❌ {str(exception)} type:{type(exception)}")

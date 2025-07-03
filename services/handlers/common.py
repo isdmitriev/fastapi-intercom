@@ -89,61 +89,9 @@ class MessageHandler(ABC):
         )
         return new_context_analys
 
-    # async def get_note_for_admin(
-    #         self, user_replied_message: str, current_context_analys: str
-    # ) -> Tuple[str, str]:
-    #
-    #     analyzed_user_message: UserMessage = (
-    #         await self.open_ai_service.analyze_message_with_correction_v4(
-    #             message=user_replied_message, analys=current_context_analys
-    #         )
-    #     )
-    #     if analyzed_user_message.status == MessageStatus.NO_ERROR.value:
-    #         note_for_admin: str = (
-    #                 "original:"
-    #                 + user_replied_message
-    #                 + "\n\n"
-    #                 + analyzed_user_message.translated_text
-    #         )
-    #         return (note_for_admin, analyzed_user_message.context_analysis)
-    #     if analyzed_user_message.status == MessageStatus.ERROR_FIXED.value:
-    #         note_for_admin: str = (
-    #                 "original:"
-    #                 + user_replied_message
-    #                 + "\n\n"
-    #                 + analyzed_user_message.corrected_text
-    #         )
-    #         return (note_for_admin, analyzed_user_message.context_analysis)
-    #     if analyzed_user_message.status == MessageStatus.UNCERTAIN.value:
-    #         note: str = self.create_admin_note_for_uncertain_status(
-    #             analyzed_message=analyzed_user_message
-    #         )
-    #         note_for_admin: str = (
-    #                 "original:" + analyzed_user_message.original_text + "\n\n" + note
-    #         )
-    #         return (note_for_admin, analyzed_user_message.context_analysis)
-
     async def update_conversation_status(
             self, conversation_id: str, conversation_state: ConversationState
     ):
         await self.messages_cache_service.set_conversation_state(
             conversation_id=conversation_id, conversation_state=conversation_state
         )
-
-    # def create_admin_note_for_uncertain_status(
-    #         self, analyzed_message: UserMessage
-    # ) -> str:
-    #     possible_interpritations = analyzed_message.possible_interpretations
-    #     one: str = possible_interpritations[0]
-    #     two: str = possible_interpritations[1]
-    #     note: str = (
-    #             "translated: "
-    #             + analyzed_message.translated_text
-    #             + "\n"
-    #             + analyzed_message.context_analysis
-    #             + "\n"
-    #             + one
-    #             + "\n"
-    #             + two
-    #     )
-    #     return note

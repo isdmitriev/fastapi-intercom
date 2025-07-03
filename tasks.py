@@ -18,9 +18,9 @@ logger.addHandler(handler)
 
 @celery_app.task(name="mongodb_task")
 def mongodb_task(data):
-    print(f"TASK STARTED: {data}")  # Явный print для проверки
+    print(f"TASK STARTED: {data}")
     logger.debug("Debug message: %s", data)
-    logger.info("Info message: %s", data)  # Попробуйте info уровень
+    logger.info("Info message: %s", data)
     return f"Processed data: {data}"
 
 

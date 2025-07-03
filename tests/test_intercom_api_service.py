@@ -13,7 +13,7 @@ import traceback
 from services.http_service import IntercomAPIServiceV2
 from models.custom_exceptions import APPException
 import time
-from services.claude_ai import ClaudeService
+
 
 CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService

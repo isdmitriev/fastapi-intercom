@@ -51,9 +51,7 @@ class RedisService:
 class MessagesCache:
     def __init__(self):
         try:
-            self.redis_client = Redis(
-                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=2
-            )
+
             self.redis_client_async = RedisAsync(
                 host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=2
             )
@@ -73,7 +71,7 @@ class MessagesCache:
             raise e
 
     async def set_conversation_state(
-        self, conversation_id: str, conversation_state: ConversationState
+            self, conversation_id: str, conversation_state: ConversationState
     ):
         key: str = f"conversation_state:{conversation_id}"
         value: str = conversation_state.model_dump_json()
@@ -84,7 +82,7 @@ class MessagesCache:
         await self.redis_client_async.delete(key)
 
     async def get_conversation_state(
-        self, conversation_id: str
+            self, conversation_id: str
     ) -> ConversationState | None:
         value: str | None = await self.redis_client_async.get(
             f"conversation_state:{conversation_id}"
@@ -95,80 +93,5 @@ class MessagesCache:
         else:
             return None
 
-    def set_key(self, key_name: str, key_value: str):
-        self.redis_client.set(key_name, key_value, ex=21600)
-
-    def set_conversation_messages(
-        self, conversation_id: str, messages: ConversationMessages
-    ):
-        key_value: str = messages.model_dump_json()
-        self.set_key(conversation_id, key_value)
-
-    def get_conversation_messages(
-        self, conversation_id: str
-    ) -> ConversationMessages | None:
-        value: str | None = self.redis_client.get(conversation_id)
-        if value != None:
-            result: ConversationMessages = ConversationMessages.model_validate_json(
-                value
-            )
-            return result
-        else:
-            return None
-
-    def set_conversation_context(
-        self, conversation_id: str, conversation_context: ConversationContext
-    ):
-        key_value = conversation_context.model_dump_json()
-        self.set_key("conversation_context:" + conversation_id, key_value)
-
-    def get_conversation_context(
-        self, conversation_id: str
-    ) -> ConversationContext | None:
-        value: str | None = self.redis_client.get(
-            "conversation_context:" + conversation_id
-        )
-        if value != None:
-            result: ConversationContext = ConversationContext.model_validate_json(value)
-            return result
-        else:
-            return None
-
-    def delete_conversation(self, conversation_id: str):
-        self.redis_client.delete(conversation_id)
-
-    def set_conversation_language(self, conversation_id: str, language: str):
-        self.set_key(conversation_id, language)
-
-    def get_conversation_language(self, conversation_id: str):
-        language: str = self.redis_client.get(conversation_id)
-        return language
-
-    def set_conversation_analis(self, conversation_id: str, analys: str):
-        self.set_key(conversation_id, analys)
-
-    def get_conversation_analis(self, conversation_id: str):
-        analis: str = self.redis_client.get(conversation_id)
-        return analis
-
-    def set_conversation_status(self, conversation_d: str, status: str):
-        conv_status: str = "conv_status:" + conversation_d
-        self.set_key(conv_status, status)
-
-    def get_conversation_status(self, conversation_id: str) -> str | None:
-        status: str | None = self.redis_client.get("conv_status:" + conversation_id)
-
-        return status
-
-    def set_conversation_last_message(self, conversation_id: str, message: str):
-        conv_last_message: str = "conv_last_message:" + conversation_id
-        self.set_key(conv_last_message, message)
-
-    def get_conversation_last_message(self, conversation_id: str) -> str | None:
-        message: str | None = self.redis_client.get(
-            "conv_last_message:" + conversation_id
-        )
-        return message
-
-    def close(self):
-        self.redis_client.close()
+    async def close_async(self):
+        await self.redis_client_async.close()

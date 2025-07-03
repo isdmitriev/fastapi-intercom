@@ -99,10 +99,6 @@ class UserRepliedHandler(MessageHandler):
                         )
                     )
 
-                    # note_for_admin, context_analys = await self.get_note_for_admin(
-                    #     user_replied_message=payload_params.clean_message,
-                    #     current_context_analys=conversation_state.conversation_context_analys,
-                    # )
                     conversation_state.conversation_context_analys = (
                         analyze_result.chat_context_analys
                     )

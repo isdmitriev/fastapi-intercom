@@ -7,6 +7,9 @@ from enum import Enum
 from abc import ABC, abstractmethod
 from functools import cached_property
 
+class ModelsType(Enum):
+    FAST='gpt-3.5-turbo-0125'
+    POWER='gpt-4o-2024-11-20'
 
 class MessageAnalyze(ABC):
     @inject
