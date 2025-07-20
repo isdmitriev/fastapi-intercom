@@ -1,5 +1,5 @@
 import os
-from openai import OpenAI, AsyncOpenAI, ChatCompletion, APIError
+from openai import OpenAI, AsyncOpenAI, ChatCompletion, RateLimitError, APIError
 from dotenv import load_dotenv
 import json
 from redis import RedisError
@@ -91,7 +91,7 @@ class OpenAIService:
 
     @retry(
         stop=stop_after_attempt(4),
-        retry=retry_if_exception_type(APIError),
+        retry=retry_if_exception_type((APIError, RateLimitError)),
         wait=wait_exponential(multiplier=1, min=1, max=10),
         reraise=True,
     )

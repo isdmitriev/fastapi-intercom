@@ -1,9 +1,9 @@
 from typing import Dict, Tuple
-
+from asyncio import TimeoutError
 import os
 from dotenv import load_dotenv
 
-from aiohttp import ClientSession, ClientTimeout, TCPConnector, ClientError
+from aiohttp import ClientSession, ClientTimeout, TCPConnector, ClientError, ClientConnectionError
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -45,8 +45,7 @@ class IntercomAPIService:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type(ClientError),
-    )
+        retry=retry_if_exception_type((ClientError, ClientConnectionError, TimeoutError)))
     async def attach_admin_to_conversation_async(
             self, admin_id: str, conversation_id: str
     ) -> Tuple[int, Dict | None]:
@@ -70,7 +69,7 @@ class IntercomAPIService:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type(ClientError),
+        retry=retry_if_exception_type((ClientError, ClientConnectionError, TimeoutError)),
     )
     async def add_admin_message_to_conversation_async(
             self, conversation_id: str, admin_id: str, message: str
@@ -96,7 +95,7 @@ class IntercomAPIService:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type(ClientError),
+        retry=retry_if_exception_type((ClientError, ClientConnectionError, TimeoutError)),
     )
     async def add_admin_note_to_conversation_async(
             self, conversation_id: str, admin_id: str, note: str
