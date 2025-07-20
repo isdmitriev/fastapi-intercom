@@ -16,6 +16,8 @@ from openai._exceptions import OpenAIError
 from redis.exceptions import RedisError
 from services.handlers.models import MessageAnalysConfig, MessageAnalysResponse
 import traceback
+import aiohttp
+import openai
 
 
 class ConversationStatus(Enum):
@@ -49,8 +51,8 @@ class UserRepliedHandler(MessageHandler):
                 )
             )
             if (
-                    conversation_state.conversation_status
-                    == ConversationStatus.STOPPED.value
+                conversation_state.conversation_status
+                == ConversationStatus.STOPPED.value
             ):
                 conversation_state.conversation_last_message = (
                     payload_params.clean_message
@@ -62,8 +64,8 @@ class UserRepliedHandler(MessageHandler):
                 return
 
             if (
-                    conversation_state.conversation_status
-                    == ConversationStatus.STARTED.value
+                conversation_state.conversation_status
+                == ConversationStatus.STARTED.value
             ):
 
                 user_replied_message_language: str = (
@@ -118,7 +120,12 @@ class UserRepliedHandler(MessageHandler):
                         note=analyze_result.note_for_admin,
                     )
                     return
-        except (ClientResponseError, RedisError, OpenAIError) as e:
+        except (
+            aiohttp.ClientError,
+            ClientResponseError,
+            RedisError,
+            openai.APIError,
+        ) as e:
             stack = traceback.format_exc()
             full_exception_name = f"{type(e).__module__}.{type(e).__name__}"
             exception_message: str = str(e)
@@ -127,7 +134,7 @@ class UserRepliedHandler(MessageHandler):
                 ex_class=full_exception_name,
                 event_type="conversation.user.replied",
                 params={"conversation_id": payload_params.conversation_id},
-                stack_trace=stack
+                stack_trace=stack,
             )
             raise app_exception
         except Exception as ex:

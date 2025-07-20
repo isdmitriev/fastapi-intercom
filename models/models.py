@@ -29,11 +29,6 @@ class MessageTranslated(BaseModel):
     user: User
 
 
-class ConversationContext(BaseModel):
-    last_user_message: str
-    current_context_analys: str
-
-
 class ConversationMessage(BaseModel):
     conversation_id: str
     time: datetime
@@ -47,7 +42,7 @@ class ConversationMessage(BaseModel):
 class ConversationState(BaseModel):
     conversation_id: str
     conversation_status: str
-    conversation_language: str|None
+    conversation_language: str | None
     conversation_last_message: str
     conversation_context_analys: str
     messages: List[ConversationMessage] = []
@@ -61,17 +56,8 @@ class UserMessage(BaseModel):
     status: str
     original_text: str
     translated_text: str
-    note: Optional[str | None]=None
+    note: Optional[str | None] = None
     possible_interpretations: Optional[List[str]] = []
-    corrected_text: Optional[str]=None
+    corrected_text: Optional[str] = None
     context_analysis: str
     language: Optional[str] = None
-
-
-class RequestInfo(BaseModel):
-    status: str
-    execution_time: float | None
-    event_type: str
-    exception: Optional[Dict[str, Any]] = None
-    timestamp: Optional[datetime] = datetime.utcnow().isoformat()
-

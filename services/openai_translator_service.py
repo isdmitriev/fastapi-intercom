@@ -1,11 +1,17 @@
 import os
-from openai import OpenAI, AsyncOpenAI, ChatCompletion
+from openai import OpenAI, AsyncOpenAI, ChatCompletion, APIError
 from dotenv import load_dotenv
 import json
 from typing import Dict, List
 from models.models import UserMessage
 from models.custom_exceptions import APPException
 from openai._exceptions import OpenAIError
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
 
 load_dotenv()
 
@@ -15,7 +21,7 @@ class OpenAITranslatorService:
         try:
 
             self.client_async = AsyncOpenAI(api_key=os.getenv("OPENAPI_KEY"))
-        except OpenAIError as open_ai_error:
+        except APIError as open_ai_error:
             full_exception_name = (
                 f"{type(open_ai_error).__module__}.{type(open_ai_error).__name__}"
             )
@@ -30,8 +36,14 @@ class OpenAITranslatorService:
         except Exception as e:
             raise e
 
+    @retry(
+        stop=stop_after_attempt(4),
+        retry=retry_if_exception_type(APIError),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
     async def translate_message_from_english_to_hindi_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         promt = """You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following English message into Hindi (हिन्दी) while preserving the exact meaning and making it easy to understand for a native Hindi speaker.
 
@@ -85,8 +97,14 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
 
         return result
 
+    @retry(
+        stop=stop_after_attempt(4),
+        retry=retry_if_exception_type(APIError),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
     async def translate_message_from_english_to_bengali_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         current_promt = """You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following English message into Bengali (বাংলা) while preserving the exact meaning and making it easy to understand for a native Bengali speaker.
 
@@ -142,8 +160,14 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
 
         return result
 
+    @retry(
+        stop=stop_after_attempt(4),
+        retry=retry_if_exception_type(APIError),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
     async def translate_message_from_english_to_hinglish_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India and Bangladesh. Your task is to translate the following English message into Romanized Hindi (Hinglish) while preserving the exact meaning and making it easy to understand for a native Hindi speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that Indian players commonly understand."
         response = await self.client_async.chat.completions.create(
@@ -164,8 +188,14 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
 
         return result
 
+    @retry(
+        stop=stop_after_attempt(4),
+        retry=retry_if_exception_type(APIError),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
     async def translate_message_from_english_to_hinglish_async_v2(
-            self, message: str
+        self, message: str
     ) -> str | None:
         prompt = f"""You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India and Bangladesh. Your task is to translate the following English message into **Hinglish (Romanized Hindi)**, ensuring that the translation is written **entirely in the Latin alphabet** (English letters).
 
@@ -248,8 +278,14 @@ REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mand
         result = translated_text.strip('"')
         return result
 
+    @retry(
+        stop=stop_after_attempt(4),
+        retry=retry_if_exception_type(APIError),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
     async def translate_message_from_bengali_to_english_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from Bangladesh and India. Your task is to translate the following Bengali (বাংলা) message into English while preserving the exact meaning and making it easy to understand for a native English speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that English-speaking players commonly understand."
         response = await self.client_async.chat.completions.create(
@@ -271,8 +307,14 @@ REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mand
 
         return result
 
+    @retry(
+        stop=stop_after_attempt(4),
+        retry=retry_if_exception_type(APIError),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
     async def translate_message_from_hindi_to_english_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following Hindi (हिंदी) message into English while preserving the exact meaning and making it easy to understand for a native English speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that English-speaking players commonly understand."
         response = await self.client_async.chat.completions.create(
@@ -294,8 +336,14 @@ REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mand
 
         return result
 
+    @retry(
+        stop=stop_after_attempt(4),
+        retry=retry_if_exception_type(APIError),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
     async def translate_message_from_hinglish_to_english_async(
-            self, message: str
+        self, message: str
     ) -> str | None:
         promt = "You are an AI assistant for the customer support team of an online casino and sports betting platform, handling conversations with players from India. Your task is to translate the following Hinglish (a mix of Hindi and English) message into proper English while preserving the exact meaning and making it easy to understand for a native English speaker. Maintain a friendly and professional tone, ensuring clarity for the player. If the message contains casino or betting-related terms, translate them in a way that English-speaking players commonly understand. Also, ensure that informal or slang expressions are appropriately adapted for clarity and professionalism."
         response = await self.client_async.chat.completions.create(
@@ -317,6 +365,12 @@ REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mand
 
         return result
 
+    @retry(
+        stop=stop_after_attempt(4),
+        retry=retry_if_exception_type(APIError),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
     async def detect_language_async(self, message: str) -> str | None:
         promt = """You are an AI assistant for an online casino and sports betting customer support team. Your task is to determine the language of a player's message.
 
@@ -343,6 +397,12 @@ Return ONLY the language name without explanation."""
 
         return result
 
+    @retry(
+        stop=stop_after_attempt(4),
+        retry=retry_if_exception_type(APIError),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
     async def detect_language_async_v2(self, message: str):
         prompt = f"""
             Determine the language of the given text. The possible options are:

@@ -1,0 +1,44 @@
+from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
+from abc import ABC, abstractmethod
+from kafka_handler.models import KafkaConsumerConfig
+import json
+
+
+class ClientsServiceBase(ABC):
+
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def get_producer_client(self, bootstrap_servers) -> AIOKafkaProducer:
+        pass
+
+    @abstractmethod
+    def get_consumer_client(
+        self, consumer_config: KafkaConsumerConfig
+    ) -> AIOKafkaConsumer:
+        pass
+
+
+class KafkaClientsService(ClientsServiceBase):
+    def get_producer_client(self, bootstrap_servers) -> AIOKafkaProducer:
+        producer_client: AIOKafkaProducer = AIOKafkaProducer(
+            bootstrap_servers=bootstrap_servers,
+            key_serializer=lambda k: k.encode("utf-8"),
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+        )
+        return producer_client
+
+    def get_consumer_client(
+        self, consumer_config: KafkaConsumerConfig
+    ) -> AIOKafkaConsumer:
+        consumer_client: AIOKafkaConsumer = AIOKafkaConsumer(
+            consumer_config.topic,
+            bootstrap_servers=consumer_config.bootstrap_servers,
+            group_id=consumer_config.consumer_group,
+            key_deserializer=lambda k: k.decode("utf-8") if k else None,
+            value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+            auto_offset_reset="earliest",
+            enable_auto_commit=True,
+        )
+        return consumer_client

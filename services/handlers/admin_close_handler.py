@@ -8,9 +8,7 @@ from services.handlers.common import MessageHandler
 
 
 class AdminCloseHandler(MessageHandler):
-    # @inject
-    # def __init__(self, messages_cache_service: MessagesCache):
-    #     self.messages_cache_service = messages_cache_service
+
     async def execute(self, payload: Dict):
         await self.admin_close_handler(payload=payload)
 

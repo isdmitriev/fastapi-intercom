@@ -28,12 +28,12 @@ class CommandLanguage(Enum):
 class MessageHandler(ABC):
     @inject
     def __init__(
-            self,
-            intercom_api_service: IntercomAPIService,
-            open_ai_service: OpenAIService,
-            messages_cache_service: MessagesCache,
-            translations_service: OpenAITranslatorService,
-            message_analyze_service: MessageAnalyzeService,
+        self,
+        intercom_api_service: IntercomAPIService,
+        open_ai_service: OpenAIService,
+        messages_cache_service: MessagesCache,
+        translations_service: OpenAITranslatorService,
+        message_analyze_service: MessageAnalyzeService,
     ):
         self.intercom_api_service = intercom_api_service
         self.open_ai_service = open_ai_service
@@ -46,18 +46,20 @@ class MessageHandler(ABC):
         pass
 
     async def send_admin_reply_message(
-            self,
-            chat_context_analys: str,
-            message: str,
-            admin_id: str,
-            conversation_id: str,
-            target_lang: str,
+        self,
+        chat_context_analys: str,
+        message: str,
+        admin_id: str,
+        conversation_id: str,
+        target_lang: str,
     ) -> str | None:
         if target_lang == None:
             return None
         analys_config: MessageAnalysConfig = MessageAnalysConfig(
-            message=message, chat_context=chat_context_analys,
-            type='fast', model='gpt-3.5-turbo-0125'
+            message=message,
+            chat_context=chat_context_analys,
+            type="fast",
+            model="gpt-3.5-turbo-0125",
         )
         if target_lang == CommandLanguage.hi.value:
             admin_note: str = (
@@ -90,7 +92,7 @@ class MessageHandler(ABC):
         return new_context_analys
 
     async def update_conversation_status(
-            self, conversation_id: str, conversation_state: ConversationState
+        self, conversation_id: str, conversation_state: ConversationState
     ):
         await self.messages_cache_service.set_conversation_state(
             conversation_id=conversation_id, conversation_state=conversation_state

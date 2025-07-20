@@ -88,12 +88,19 @@ async def handle_common_exception(request: Request, exception: Exception):
         params={},
         stack_trace=stack_trace
     )
-    await container.es_service().save_exception_async(app_exception=exception)
-    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
+    try:
+        await container.es_service().save_exception_async(app_exception=exception)
+        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
 
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=exception.message
-    )
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=exception.message
+        )
+    except Exception as e:
+        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
+
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=exception.message
+        )
 
 
 app.add_exception_handler(APPException, handle_app_exception)
@@ -102,6 +109,8 @@ app.add_exception_handler(Exception, handle_common_exception)
 
 @app.on_event("shutdown")
 async def shutdown():
+    interom_client = container.intercom_api_service()
+    await interom_client.close_client_session()
     await container.shutdown_resources()
 
 
@@ -165,8 +174,6 @@ async def process_message(
     except Exception as e:
 
         raise e
-
-        # return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @app.get("/")

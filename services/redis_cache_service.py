@@ -4,7 +4,13 @@ from dotenv import load_dotenv
 from models.models import ConversationMessages, ConversationState
 from models.custom_exceptions import APPException
 from models.models import ConversationContext
-from redis.asyncio import Redis as RedisAsync
+from redis.asyncio import Redis as RedisAsync, ConnectionPool
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
 
 load_dotenv()
 
@@ -43,6 +49,11 @@ class RedisService:
         is_key_exist: bool = self.redis_client.setnx(key_name, key_value)
         return is_key_exist
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=3),
+        retry=retry_if_exception_type(RedisError),
+    )
     async def set_key_async(self, key_name: str, key_value: str) -> bool:
         is_key_exist: bool = await self.redis_client_async.setnx(key_name, key_value)
         return is_key_exist
@@ -53,7 +64,11 @@ class MessagesCache:
         try:
 
             self.redis_client_async = RedisAsync(
-                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=2
+                host=os.getenv("REDIS_URI"),
+                decode_responses=True,
+                port=6379,
+                db=2,
+                max_connections=20,
             )
         except RedisError as redis_error:
             full_exception_name = (
@@ -70,6 +85,11 @@ class MessagesCache:
         except Exception as e:
             raise e
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(RedisError),
+    )
     async def set_conversation_state(
             self, conversation_id: str, conversation_state: ConversationState
     ):
@@ -81,6 +101,11 @@ class MessagesCache:
         key: str = f"conversation_state:{conversation_id}"
         await self.redis_client_async.delete(key)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(RedisError),
+    )
     async def get_conversation_state(
             self, conversation_id: str
     ) -> ConversationState | None:
