@@ -5,7 +5,7 @@ from typing import Dict
 import logging
 import traceback
 from services.redis_cache_service import RedisService
-from services.mongodb_service import MongodbService
+
 from services.es_service import ESService
 from di.di_container import Container
 from dependency_injector.wiring import inject, Provide
@@ -118,6 +118,8 @@ app.add_exception_handler(Exception, handle_common_exception)
 @app.on_event("shutdown")
 async def shutdown():
     interom_client = container.intercom_api_service()
+    redis_client = container.redis_service()
+    await redis_client.close()
     await interom_client.close_client_session()
     await container.shutdown_resources()
 

@@ -1,6 +1,6 @@
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from abc import ABC, abstractmethod
-from kafka_handler.models import KafkaConsumerConfig
+
 import json
 
 
@@ -15,7 +15,7 @@ class ClientsServiceBase(ABC):
 
     @abstractmethod
     async def get_consumer_client(
-            self, bootstrap_servers: str, topic: str, group: str
+        self, bootstrap_servers: str, topic: str, group: str
     ) -> AIOKafkaConsumer:
         pass
 
@@ -30,7 +30,7 @@ class KafkaClientsService(ClientsServiceBase):
         return producer_client
 
     async def get_consumer_client(
-            self, bootstrap_servers: str, topic: str, group: str
+        self, bootstrap_servers: str, topic: str, group: str
     ) -> AIOKafkaConsumer:
         consumer_client: AIOKafkaConsumer = AIOKafkaConsumer(
             topic,

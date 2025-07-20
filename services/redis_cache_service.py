@@ -18,9 +18,7 @@ load_dotenv()
 class RedisService:
     def __init__(self):
         try:
-            self.redis_client = Redis(
-                host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=1
-            )
+
             self.redis_client_async = RedisAsync(
                 host=os.getenv("REDIS_URI"), decode_responses=True, port=6379, db=1
             )
@@ -39,15 +37,8 @@ class RedisService:
         except Exception as e:
             raise e
 
-    def get_redis_client(self):
-        return self.redis_client
-
-    def close(self):
-        self.redis_client.close()
-
-    def set_key(self, key_name: str, key_value: str) -> bool:
-        is_key_exist: bool = self.redis_client.setnx(key_name, key_value)
-        return is_key_exist
+    async def close(self):
+        await self.redis_client_async.close()
 
     @retry(
         stop=stop_after_attempt(3),

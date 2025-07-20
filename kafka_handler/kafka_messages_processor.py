@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dependency_injector.wiring import inject
 from kafka_clients_service import KafkaClientsService
 from services.handlers.messages_processor import MessagesProcessor
-from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
+from aiokafka import AIOKafkaConsumer
 import os
 from dotenv import load_dotenv
 from aiokafka.errors import KafkaError
@@ -20,7 +20,11 @@ load_dotenv()
 
 class KafkaProcessor(ABC):
     @inject
-    def __init__(self, clients_service: KafkaClientsService, messages_processor: MessagesProcessor):
+    def __init__(
+        self,
+        clients_service: KafkaClientsService,
+        messages_processor: MessagesProcessor,
+    ):
         self.clients_service = clients_service
         self.messages_processor = messages_processor
 
@@ -31,8 +35,14 @@ class KafkaProcessor(ABC):
 
 class KafkaService(KafkaProcessor):
     @inject
-    def __init__(self, clients_service: KafkaClientsService, messages_processor: MessagesProcessor):
-        super().__init__(clients_service=clients_service, messages_processor=messages_processor)
+    def __init__(
+        self,
+        clients_service: KafkaClientsService,
+        messages_processor: MessagesProcessor,
+    ):
+        super().__init__(
+            clients_service=clients_service, messages_processor=messages_processor
+        )
         self.consumer_client: Optional[AIOKafkaConsumer] = None
 
     @retry(
@@ -48,7 +58,7 @@ class KafkaService(KafkaProcessor):
             async for message in self.consumer_client:
                 payload = message.value
                 await self.messages_processor.process_message(payload=payload)
-        except(APPException, KafkaError) as error:
+        except (APPException, KafkaError) as error:
             pass
         except Exception as er:
             pass
@@ -57,8 +67,10 @@ class KafkaService(KafkaProcessor):
 
     async def init_client(self):
         self.consumer_client = await self.clients_service.get_consumer_client(
-            bootstrap_servers=os.getenv('KAFKA_BROKER_URI'), topic=os.getenv('KAFKA_TOPIC'),
-            group=os.getenv('KAFKA_GROUP'))
+            bootstrap_servers=os.getenv("KAFKA_BROKER_URI"),
+            topic=os.getenv("KAFKA_TOPIC"),
+            group=os.getenv("KAFKA_GROUP"),
+        )
         await self.consumer_client.start()
 
     async def stop_client(self):

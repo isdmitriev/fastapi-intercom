@@ -6,7 +6,7 @@ from redis import RedisError
 from typing import Dict, List
 from models.models import UserMessage
 from models.custom_exceptions import APPException
-from openai._exceptions import OpenAIError
+
 from services.redis_cache_service import MessagesCache
 from models.models import ConversationMessages, ConversationMessage, ConversationState
 from pydantic import BaseModel, ValidationError

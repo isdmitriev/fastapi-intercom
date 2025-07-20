@@ -1,11 +1,8 @@
-import requests
 from typing import Dict, Tuple
-import aiohttp
-import asyncio
+
 import os
 from dotenv import load_dotenv
-import httpx
-from httpx import Response
+
 from aiohttp import ClientSession, ClientTimeout, TCPConnector, ClientError
 from tenacity import (
     retry,
@@ -28,7 +25,7 @@ class IntercomAPIService:
         if self.client_session and not self.client_session.closed:
             return
 
-        timeout: ClientTimeout = ClientTimeout(total=13)
+        timeout: ClientTimeout = ClientTimeout(total=15)
         connector: TCPConnector = TCPConnector(
             limit=50, limit_per_host=30, ttl_dns_cache=300, use_dns_cache=True
         )

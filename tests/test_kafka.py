@@ -12,3 +12,10 @@ async def test_clients_service():
     producer: AIOKafkaProducer = await client.get_producer_client(bootstrap_servers='localhost:9092')
 
     assert isinstance(producer, AIOKafkaProducer)
+@pytest.mark.asyncio
+async def test_send_message():
+    sender:KafkaSender=Container.kafka_sender_service()
+    assert isinstance(sender,KafkaSender)
+    await sender.send_message(topic='intercom_test',key='123',payload={'message':'test2'})
+
+

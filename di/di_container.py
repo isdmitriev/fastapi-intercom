@@ -17,21 +17,15 @@ from services.handlers.admin_close_handler import AdminCloseHandler
 from services.handlers.common import MessageHandler
 from services.handlers.analyze_message_service import MessageAnalyzeService
 from kafka_handler.kafka_clients_service import KafkaClientsService
+from kafka_handler.kafka_sender_service import KafkaSender, KafkaSenderService
 
 
 class Container(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(packages=["app", "services"])
-    # wiring_config = containers.WiringConfiguration(
-    #     modules=[
-    #         "app",
-    #         "services.web_hook_processor",
-    #         "services.redis_cache_service",
-    #         "services.mongodb_service",
-    #     ]
-    # )
+    wiring_config = containers.WiringConfiguration(packages=["app", "services", "kafka_handler"])
 
     mongo_db_service = providers.Singleton(MongodbService)
     kafka_clients_service = providers.Singleton(KafkaClientsService)
+    kafka_sender_service = providers.Singleton(KafkaSenderService, clients_service=kafka_clients_service)
     redis_service = providers.Singleton(RedisService)
     es_service = providers.Singleton(ESService)
     intercom_api_service = providers.Singleton(IntercomAPIService)

@@ -11,6 +11,7 @@ from tenacity import (
     wait_exponential,
     retry_if_exception_type,
 )
+from aiokafka import AIOKafkaProducer
 
 load_dotenv()
 
@@ -24,14 +25,6 @@ class KafkaSender(ABC):
     async def send_message(self, topic: str, key: str, payload: Dict[str, Any]):
         pass
 
-    @abstractmethod
-    async def stop_producer(self):
-        pass
-
-    @abstractmethod
-    async def start_producer(self):
-        pass
-
     async def get_producer_client(self, bootstrap_servers):
         return await self.clients_service.get_producer_client(
             bootstrap_servers=bootstrap_servers
@@ -42,10 +35,8 @@ class KafkaSenderService(KafkaSender):
     @inject
     def __init__(self, clients_service: KafkaClientsService):
         super().__init__(clients_service=clients_service)
-        self.kafka_producer_client = self.get_producer_client(
-            bootstrap_servers=os.getenv("KAFKA_BROKER_URI")
-        )
-        self.produces_started = False
+
+        self.kafka_producer_client: AIOKafkaProducer | None = None
 
     @retry(
         stop=stop_after_attempt(3),
@@ -59,9 +50,10 @@ class KafkaSenderService(KafkaSender):
 
     async def stop_producer(self):
         await self.kafka_producer_client.stop()
-        self.produces_started = False
 
     async def start_producer(self):
-        if self.produces_started == False:
+        if self.kafka_producer_client is None:
+            self.kafka_producer_client = await self.clients_service.get_producer_client(
+                bootstrap_servers=os.getenv("KAFKA_BROKER_URI")
+            )
             await self.kafka_producer_client.start()
-            self.produces_started = True
