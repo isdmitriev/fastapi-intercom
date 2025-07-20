@@ -20,7 +20,7 @@ class MessageAnalyze(ABC):
 
     @abstractmethod
     async def analyze_message(
-        self, analys_config: MessageAnalysConfig
+            self, analys_config: MessageAnalysConfig
     ) -> MessageAnalysResponse:
         pass
 
@@ -33,7 +33,7 @@ class MessageStatus(Enum):
 
 class MessageAnalyzeService(MessageAnalyze):
     async def analyze_message(
-        self, analys_config: MessageAnalysConfig
+            self, analys_config: MessageAnalysConfig
     ) -> MessageAnalysResponse:
         message_handlers: Dict = self._methods_dict
         analyzed_user_message: UserMessage = await message_handlers.get(
@@ -56,22 +56,22 @@ class MessageAnalyzeService(MessageAnalyze):
         return new_chat_context
 
     def _get_note_for_admin(
-        self, analyzed_user_message: UserMessage
+            self, analyzed_user_message: UserMessage
     ) -> Tuple[str, str]:
         if analyzed_user_message.status == MessageStatus.NO_ERROR.value:
             note_for_admin: str = (
-                "original:"
-                + analyzed_user_message.original_text
-                + "\n\n"
-                + analyzed_user_message.translated_text
+                    "original:"
+                    + analyzed_user_message.original_text
+                    + "\n\n"
+                    + analyzed_user_message.translated_text
             )
             return (note_for_admin, analyzed_user_message.context_analysis)
         if analyzed_user_message.status == MessageStatus.ERROR_FIXED.value:
             note_for_admin: str = (
-                "original:"
-                + analyzed_user_message.original_text
-                + "\n\n"
-                + analyzed_user_message.corrected_text
+                    "original:"
+                    + analyzed_user_message.original_text
+                    + "\n\n"
+                    + analyzed_user_message.corrected_text
             )
             return (note_for_admin, analyzed_user_message.context_analysis)
         if analyzed_user_message.status == MessageStatus.UNCERTAIN.value:
@@ -79,26 +79,26 @@ class MessageAnalyzeService(MessageAnalyze):
                 analyzed_message=analyzed_user_message
             )
             note_for_admin: str = (
-                "original:" + analyzed_user_message.original_text + "\n\n" + note
+                    "original:" + analyzed_user_message.original_text + "\n\n" + note
             )
             return (note_for_admin, analyzed_user_message.context_analysis)
         pass
 
     def create_admin_note_for_uncertain_status(
-        self, analyzed_message: UserMessage
+            self, analyzed_message: UserMessage
     ) -> str:
         possible_interpritations = analyzed_message.possible_interpretations
         one: str = possible_interpritations[0]
         two: str = possible_interpritations[1]
         note: str = (
-            "translated: "
-            + analyzed_message.translated_text
-            + "\n"
-            + analyzed_message.context_analysis
-            + "\n"
-            + one
-            + "\n"
-            + two
+                "translated: "
+                + analyzed_message.translated_text
+                + "\n"
+                + analyzed_message.context_analysis
+                + "\n"
+                + one
+                + "\n"
+                + two
         )
         return note
 
