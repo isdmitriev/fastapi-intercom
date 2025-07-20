@@ -3,7 +3,7 @@ from asyncio import TimeoutError
 import os
 from dotenv import load_dotenv
 
-from aiohttp import ClientSession, ClientTimeout, TCPConnector, ClientError, ClientConnectionError
+from aiohttp import ClientSession, ClientTimeout, TCPConnector, ClientError, ClientConnectionError, ClientResponseError
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -45,7 +45,7 @@ class IntercomAPIService:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type((ClientError, ClientConnectionError, TimeoutError)))
+        retry=retry_if_exception_type((ClientError, ClientResponseError, ClientConnectionError, TimeoutError)))
     async def attach_admin_to_conversation_async(
             self, admin_id: str, conversation_id: str
     ) -> Tuple[int, Dict | None]:
@@ -60,16 +60,16 @@ class IntercomAPIService:
             "assignee_id": admin_id,
         }
         async with self.client_session.post(url=url, json=payload) as response:
-            if response.status == 200:
-                data = await response.json()
-                return response.status, data
-            else:
+            response.raise_for_status()
+            if response.status == 204:
                 return response.status, None
+            data = await response.json()
+            return response.status, data
 
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type((ClientError, ClientConnectionError, TimeoutError)),
+        retry=retry_if_exception_type((ClientError, ClientResponseError, ClientConnectionError, TimeoutError)),
     )
     async def add_admin_message_to_conversation_async(
             self, conversation_id: str, admin_id: str, message: str
@@ -86,16 +86,16 @@ class IntercomAPIService:
         }
 
         async with self.client_session.post(url, json=payload) as response:
-            if response.status == 200:
-                data = await response.json()
-                return response.status, data
-            else:
+            response.raise_for_status()
+            if response.status == 204:
                 return response.status, None
+            data = await response.json()
+            return response.status, data
 
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type((ClientError, ClientConnectionError, TimeoutError)),
+        retry=retry_if_exception_type((ClientError, ClientResponseError, ClientConnectionError, TimeoutError)),
     )
     async def add_admin_note_to_conversation_async(
             self, conversation_id: str, admin_id: str, note: str
@@ -112,8 +112,8 @@ class IntercomAPIService:
         }
 
         async with self.client_session.post(url, json=payload) as response:
-            if response.status == 200:
-                data = await response.json()
-                return response.status, data
-            else:
+            response.raise_for_status()
+            if response.status == 204:
                 return response.status, None
+            data = await response.json()
+            return response.status, data
