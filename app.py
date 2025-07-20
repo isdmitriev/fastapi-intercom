@@ -119,6 +119,8 @@ app.add_exception_handler(Exception, handle_common_exception)
 async def shutdown():
     interom_client = container.intercom_api_service()
     redis_client = container.redis_service()
+    es_client = container.es_service()
+    await es_client.close_client()
     await redis_client.close()
     await interom_client.close_client_session()
     await container.shutdown_resources()
