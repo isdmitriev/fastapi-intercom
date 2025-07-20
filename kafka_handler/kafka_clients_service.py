@@ -10,18 +10,18 @@ class ClientsServiceBase(ABC):
         pass
 
     @abstractmethod
-    def get_producer_client(self, bootstrap_servers) -> AIOKafkaProducer:
+    async def get_producer_client(self, bootstrap_servers) -> AIOKafkaProducer:
         pass
 
     @abstractmethod
-    def get_consumer_client(
+    async def get_consumer_client(
             self, bootstrap_servers: str, topic: str, group: str
     ) -> AIOKafkaConsumer:
         pass
 
 
 class KafkaClientsService(ClientsServiceBase):
-    def get_producer_client(self, bootstrap_servers) -> AIOKafkaProducer:
+    async def get_producer_client(self, bootstrap_servers) -> AIOKafkaProducer:
         producer_client: AIOKafkaProducer = AIOKafkaProducer(
             bootstrap_servers=bootstrap_servers,
             key_serializer=lambda k: k.encode("utf-8"),
@@ -29,7 +29,7 @@ class KafkaClientsService(ClientsServiceBase):
         )
         return producer_client
 
-    def get_consumer_client(
+    async def get_consumer_client(
             self, bootstrap_servers: str, topic: str, group: str
     ) -> AIOKafkaConsumer:
         consumer_client: AIOKafkaConsumer = AIOKafkaConsumer(

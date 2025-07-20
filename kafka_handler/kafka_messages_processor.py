@@ -56,7 +56,7 @@ class KafkaService(KafkaProcessor):
             pass
 
     async def init_client(self):
-        self.consumer_client = self.clients_service.get_consumer_client(
+        self.consumer_client = await self.clients_service.get_consumer_client(
             bootstrap_servers=os.getenv('KAFKA_BROKER_URI'), topic=os.getenv('KAFKA_TOPIC'),
             group=os.getenv('KAFKA_GROUP'))
         await self.consumer_client.start()

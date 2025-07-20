@@ -32,8 +32,8 @@ class KafkaSender(ABC):
     async def start_producer(self):
         pass
 
-    def get_producer_client(self, bootstrap_servers):
-        return self.clients_service.get_producer_client(
+    async def get_producer_client(self, bootstrap_servers):
+        return await self.clients_service.get_producer_client(
             bootstrap_servers=bootstrap_servers
         )
 

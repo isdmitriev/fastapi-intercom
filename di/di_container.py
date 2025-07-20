@@ -16,6 +16,7 @@ from services.handlers.messages_processor import MessagesProcessor
 from services.handlers.admin_close_handler import AdminCloseHandler
 from services.handlers.common import MessageHandler
 from services.handlers.analyze_message_service import MessageAnalyzeService
+from kafka_handler.kafka_clients_service import KafkaClientsService
 
 
 class Container(containers.DeclarativeContainer):
@@ -30,6 +31,7 @@ class Container(containers.DeclarativeContainer):
     # )
 
     mongo_db_service = providers.Singleton(MongodbService)
+    kafka_clients_service = providers.Singleton(KafkaClientsService)
     redis_service = providers.Singleton(RedisService)
     es_service = providers.Singleton(ESService)
     intercom_api_service = providers.Singleton(IntercomAPIService)

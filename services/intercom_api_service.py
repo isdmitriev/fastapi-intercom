@@ -24,6 +24,7 @@ class IntercomAPIService:
         self.client_session: ClientSession | None = None
 
     async def _init_client_session(self):
+
         if self.client_session and not self.client_session.closed:
             return
 
@@ -41,6 +42,7 @@ class IntercomAPIService:
         )
 
     async def close_client_session(self):
+
         await self.client_session.close()
 
     @retry(
@@ -49,7 +51,7 @@ class IntercomAPIService:
         retry=retry_if_exception_type(ClientError),
     )
     async def attach_admin_to_conversation_async(
-        self, admin_id: str, conversation_id: str
+            self, admin_id: str, conversation_id: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/parts"
         if self.client_session is None:
@@ -74,7 +76,7 @@ class IntercomAPIService:
         retry=retry_if_exception_type(ClientError),
     )
     async def add_admin_message_to_conversation_async(
-        self, conversation_id: str, admin_id: str, message: str
+            self, conversation_id: str, admin_id: str, message: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         if self.client_session is None:
@@ -100,7 +102,7 @@ class IntercomAPIService:
         retry=retry_if_exception_type(ClientError),
     )
     async def add_admin_note_to_conversation_async(
-        self, conversation_id: str, admin_id: str, note: str
+            self, conversation_id: str, admin_id: str, note: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         if self.client_session is None:
