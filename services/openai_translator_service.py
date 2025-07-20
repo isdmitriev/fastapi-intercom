@@ -91,6 +91,7 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
                 },
             ],
             temperature=0.2,
+            timeout=5
         )
         translated_text = response.choices[0].message.content
         result = translated_text.strip('"')
@@ -154,6 +155,7 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
                 },
             ],
             temperature=0,
+            timeout=5
         )
         translated_text = response.choices[0].message.content
         result = translated_text.strip('"')
@@ -183,6 +185,7 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
                 },
             ],
             temperature=0.2,
+            timeout=5
         )
         result = response.choices[0].message.content.strip()
 
@@ -273,6 +276,7 @@ REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mand
             model="gpt-3.5-turbo-0125",
             messages=[{"role": "system", "content": promt2}],
             temperature=0.2,
+            timeout=5
         )
         translated_text = response.choices[0].message.content
         result = translated_text.strip('"')
@@ -300,6 +304,7 @@ REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mand
                     "content": message,
                 },
             ],
+            timeout=5,
             temperature=0.2,
         )
         translated_text = response.choices[0].message.content
@@ -329,6 +334,7 @@ REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mand
                     "content": message,
                 },
             ],
+            timeout=5,
             temperature=0.2,
         )
         translated_text = response.choices[0].message.content
@@ -358,6 +364,7 @@ REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mand
                     "content": message,
                 },
             ],
+            timeout=5,
             temperature=0.2,
         )
         translated_text = response.choices[0].message.content
@@ -392,6 +399,7 @@ Return ONLY the language name without explanation."""
                 {"role": "user", "content": message},
             ],
             temperature=0,
+            timeout=5
         )
         result = response.choices[0].message.content.strip()
 
@@ -423,6 +431,7 @@ Return ONLY the language name without explanation."""
             messages=[{"role": "system", "content": prompt}],
             max_tokens=10,
             temperature=0,
+            timeout=5
         )
         result = response.choices[0].message.content.strip()
         return result

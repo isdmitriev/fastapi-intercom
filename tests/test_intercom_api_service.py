@@ -14,10 +14,8 @@ from services.http_service import IntercomAPIServiceV2
 from models.custom_exceptions import APPException
 import time
 
-
-CLIENT: IntercomAPIService = IntercomAPIService()
 from services.mongodb_service import MongodbService
-from models.models import MessageTranslated, User, RequestInfo
+
 from models.models import ConversationMessages, ConversationMessage, UserMessage
 
 
@@ -28,69 +26,6 @@ from models.models import ConversationMessages, ConversationMessage, UserMessage
 #         "intercom_app", "event_logs", {"name": "ilya"}
 #     )
 
-
-def test_get_admins():
-    result = CLIENT.get_all_admins()
-    status_code, data = result
-    print(data)
-
-    assert status_code == 200
-
-
-# def test_add_admin_message_to_conversation():
-#     admin_id: str = "8028082"
-#     conversation_id: str = "6"
-#     message: str = "i am Isdmitriev2@gmail.com"
-#
-#     result = CLIENT.add_admin_message_to_conversation(
-#         admin_id=admin_id, conversation_id=conversation_id, message=message
-#     )
-#     assert result[0] == 200
-
-
-# def test_add_admin_note_to_conversation():
-#     admin_id: str = "8028082"
-#     conversation_id: str = "0"
-#     note: str = "note from Isdmitriev2@gmail.com"
-#     print(note)
-#
-#     result = CLIENT.add_admin_note_to_conversation(
-#             conversation_id=conversation_id, note=note, admin_id=admin_id
-#     )
-
-
-# @pytest.mark.asyncio
-# async def test_process():
-#     user_id: str = "6798a0c79645a8b3711b89d3"
-#     admin_id: str = "8028082"
-#     create_conversation_response: str = CLIENT.create_conversation(
-#         user_id=user_id, message="good day!"
-#     )
-#     status = create_conversation_response[0]
-#     json_data = create_conversation_response[1]
-#     assert status == 200
-#     new_conversatin_id: str = json_data.get("conversation_id", "")
-#     attach_admin_to_conversation_response = CLIENT.attach_admin_to_conversation(
-#         conversation_id=new_conversatin_id, admin_id=admin_id
-#     )
-#     assert attach_admin_to_conversation_response[0] == 200
-#
-#     test_user_replied_response = await CLIENT.add_user_replied_to_conversation(
-#         conversation_id=new_conversatin_id, user_id=user_id, message='अच्छा दिन'
-#     )
-#     assert test_user_replied_response[0] == 200
-#     test_add_admin_message_to_conversation_response = (
-#         CLIENT.add_admin_message_to_conversation(
-#             conversation_id=new_conversatin_id,
-#             admin_id=admin_id,
-#             message="admin message",
-#         )
-#     )
-#     assert test_add_admin_message_to_conversation_response[0] == 200
-#     add_admin_note_to_conversation_response = CLIENT.add_admin_note_to_conversation(
-#         conversation_id=new_conversatin_id, note="note", admin_id=admin_id
-#     )
-#     assert add_admin_note_to_conversation_response[0] == 200
 
 # @pytest.mark.asyncio
 # async def test_get_conversation():
@@ -190,17 +125,6 @@ async def test_openai_detect_language():
 #
 #     list_messages: ConversationMessages = messages_cache.get_conversation_messages(conversation_id='12345')
 #     assert isinstance(list_messages, ConversationMessages)
-def test_conversation_language():
-    try:
-        redis_cache: MessagesCache = MessagesCache()
-        redis_cache.set_conversation_language(
-            conversation_id="155", language="Hinglish"
-        )
-        language: str = redis_cache.get_conversation_language(conversation_id="155")
-        assert language == "Hinglish"
-    except Exception as e:
-        print(type(e).__module__ + type(e).__name__)
-        print(str(e))
 
 
 @pytest.mark.asyncio
@@ -211,49 +135,6 @@ async def test_translator_service():
 
     print(result)
     print(time.perf_counter() - start_time)
-
-
-@pytest.mark.asyncio
-async def test_openai():
-    conv_id = "conv:215468885032326"
-
-    client: OpenAIService = Container.open_ai_service()
-    start_time = time.perf_counter()
-    message: str = await client.analyze_message_with_correction_v4(
-        message="namaste!", analys=""
-    )
-    assert isinstance(message, UserMessage)
-
-    # assert isinstance(message, UserMessage)
-    print(time.perf_counter() - start_time)
-    print(message)
-
-
-# def test_intercom_api():
-#     client: IntercomAPIService = IntercomAPIService()
-#     response = client.get_all_admins()
-#     print(response[1])
-
-# @pytest.mark.asyncio
-# async def test_analyze_message():
-#     open_ai_client = OpenAIService()
-#     await open_ai_client.analyze_message_with_correction_async_v2(
-#         message="Bhai site par login nahi ho pa raha hai, mera engine start hi nahi ho raha, password dalte hi petrol khatam ho jata hai"
-#     )
-
-
-# @pytest.mark.asyncio
-# async def test_intercom_client_v2():
-#     admin_id: str = "8028082"
-#     client: IntercomAPIServiceV2 = IntercomAPIServiceV2()
-#     with pytest.raises(APPException) as app_exception:
-#         start = time.perf_counter()
-#         result = await client.add_admin_note_to_conversation_async(
-#             conversation_id="170", admin_id=admin_id, note="good day!"
-#         )
-#         end = time.perf_counter()
-#         print(f"Время выполнения: {end - start:.6f} seconds")
-
 
 # def test_es_service():
 #     client: ESService = ESService()
@@ -274,22 +155,4 @@ async def test_openai():
 #     print(res)
 
 
-# @pytest.mark.asyncio
-# async def test_analyze_message_v3():
-#     conversation_id: str = "conv:199"
-#     client = OpenAIService()
-#     result: UserMessage = await client.analyze_message_with_correction_v3(
-#         message="namaste",
-#         conversation_id=conversation_id
-#     )
-#     print(result)
-#     print(result.context_analysis)
-#     assert isinstance(result, UserMessage)
 #
-# @pytest.mark.asyncio
-# async def test_analyze_message_claude():
-#     conversation_id: str = "conv:199"
-#     client =ClaudeService()
-#     user_message:UserMessage=await client.analyze_message_with_correction(message='Meri button abhi bhi active nahi hai.',conversation_id=conversation_id)
-#     print(user_message)
-#     assert isinstance(user_message,UserMessage)

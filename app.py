@@ -126,8 +126,6 @@ async def shutdown():
 
 @app.middleware("http")
 async def process_metrics(request: Request, call_next):
-    # process = psutil.Process()
-
     memory_before = process.memory_info().rss / (1024 * 1024)
 
     response = await call_next(request)
@@ -180,10 +178,6 @@ async def process_message(
         return Response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content="invalid json"
         )
-
-    except Exception as e:
-
-        raise e
 
 
 @app.get("/")
