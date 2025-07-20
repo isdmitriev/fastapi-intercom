@@ -45,6 +45,7 @@ class IntercomAPIService:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
         retry=retry_if_exception_type((ClientError, ClientResponseError, ClientConnectionError, TimeoutError)))
     async def attach_admin_to_conversation_async(
             self, admin_id: str, conversation_id: str
@@ -68,6 +69,7 @@ class IntercomAPIService:
 
     @retry(
         stop=stop_after_attempt(3),
+        reraise=True,
         wait=wait_exponential(multiplier=1, min=1, max=10),
         retry=retry_if_exception_type((ClientError, ClientResponseError, ClientConnectionError, TimeoutError)),
     )
@@ -94,6 +96,7 @@ class IntercomAPIService:
 
     @retry(
         stop=stop_after_attempt(3),
+        reraise=True,
         wait=wait_exponential(multiplier=1, min=1, max=10),
         retry=retry_if_exception_type((ClientError, ClientResponseError, ClientConnectionError, TimeoutError)),
     )
