@@ -65,16 +65,24 @@ async def handle_app_exception(
         exception: APPException,
 ):
     es_service: ESService = container.es_service()
+    try:
+        await es_service.save_exception_async(app_exception=exception)
 
-    await es_service.save_exception_async(app_exception=exception)
+        logger.error(f"❌ error:{exception.message} event_type:{exception.event_type} ")
+        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
 
-    logger.error(f"❌ error:{exception.message} event_type:{exception.event_type} ")
-    FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": exception.message},
+        )
+    except Exception as e:
+        logger.error(f"❌ error:{exception.message} event_type:{exception.event_type} ")
+        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
 
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"error": exception.message},
-    )
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": exception.message},
+        )
 
 
 @app.exception_handler(Exception)

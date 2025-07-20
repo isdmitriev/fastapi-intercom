@@ -27,7 +27,7 @@ class IntercomAPIService:
         if self.client_session and not self.client_session.closed:
             return
 
-        timeout: ClientTimeout = ClientTimeout(total=10)
+        timeout: ClientTimeout = ClientTimeout(total=13)
         connector: TCPConnector = TCPConnector(
             limit=50, limit_per_host=30, ttl_dns_cache=300, use_dns_cache=True
         )

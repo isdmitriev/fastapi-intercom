@@ -15,7 +15,7 @@ class ClientsServiceBase(ABC):
 
     @abstractmethod
     def get_consumer_client(
-        self, consumer_config: KafkaConsumerConfig
+            self, bootstrap_servers: str, topic: str, group: str
     ) -> AIOKafkaConsumer:
         pass
 
@@ -30,12 +30,12 @@ class KafkaClientsService(ClientsServiceBase):
         return producer_client
 
     def get_consumer_client(
-        self, consumer_config: KafkaConsumerConfig
+            self, bootstrap_servers: str, topic: str, group: str
     ) -> AIOKafkaConsumer:
         consumer_client: AIOKafkaConsumer = AIOKafkaConsumer(
-            consumer_config.topic,
-            bootstrap_servers=consumer_config.bootstrap_servers,
-            group_id=consumer_config.consumer_group,
+            topic,
+            bootstrap_servers=bootstrap_servers,
+            group_id=group,
             key_deserializer=lambda k: k.decode("utf-8") if k else None,
             value_deserializer=lambda v: json.loads(v.decode("utf-8")),
             auto_offset_reset="earliest",
