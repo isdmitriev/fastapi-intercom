@@ -19,6 +19,7 @@ from tenacity import (
     retry_if_exception_type,
 )
 import tiktoken
+from services.handlers.decorators import decorator_service
 
 load_dotenv()
 
@@ -37,15 +38,17 @@ class OpenAIService:
             app_exception: APPException = APPException(
                 message=exception_message,
                 ex_class=full_exception_name,
-                event_type="OpenAIService_Init",
+                event_type="unknown",
+                service_name='open_ai_init',
                 params={},
             )
+            self.client_async = None
             raise app_exception
         except Exception as e:
             raise e
 
     async def _make_open_ai_request(
-        self, message: str, model_name: str, system_promt: str, messages: List[Dict]
+            self, message: str, model_name: str, system_promt: str, messages: List[Dict]
     ) -> UserMessage:
         try:
 
@@ -65,7 +68,7 @@ class OpenAIService:
             raise error
 
     def get_count_request_tokens(
-        self, messages: List[Dict[str, str]], model: str = "gpt-3.5-turbo-0125"
+            self, messages: List[Dict[str, str]], model: str = "gpt-3.5-turbo-0125"
     ) -> float:
         try:
             encoding = tiktoken.encoding_for_model(model)
@@ -89,14 +92,15 @@ class OpenAIService:
         num_tokens += 2
         return num_tokens
 
-    @retry(
-        stop=stop_after_attempt(4),
-        retry=retry_if_exception_type((APIError, RateLimitError)),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        reraise=True,
-    )
+    # @retry(
+    #     stop=stop_after_attempt(4),
+    #     retry=retry_if_exception_type((APIError, RateLimitError)),
+    #     wait=wait_exponential(multiplier=1, min=1, max=4),
+    #     reraise=True,
+    # )
+    @decorator_service.service_exception_handler('open_ai_api', 3, APIError, RateLimitError, Exception)
     async def _get_open_ai_response(
-        self, message: str, model_name: str, system_promt: str, messages: List[Dict]
+            self, message: str, model_name: str, system_promt: str, messages: List[Dict]
     ) -> str:
         try:
             formatted_messages = [{"role": "system", "content": system_promt}]
@@ -114,7 +118,7 @@ class OpenAIService:
             raise ex
 
     async def analyze_message_execute(
-        self, analys_config: MessageAnalysConfig
+            self, analys_config: MessageAnalysConfig
     ) -> UserMessage:
         chat_history: List[Dict] = await self.get_chat_history(
             conversation_id=analys_config.conversation_id
@@ -129,7 +133,7 @@ class OpenAIService:
         return analyzed_result
 
     async def analyze_message_execute_agent(
-        self, analys_config: MessageAnalysConfig
+            self, analys_config: MessageAnalysConfig
     ) -> str:
         system_promt = PromtStorage.get_promt_analyze_message_execute_agent()
         if analys_config.chat_context == "":
@@ -155,7 +159,7 @@ class OpenAIService:
         return context_analys_result
 
     async def analyze_message_execute_user(
-        self, analys_config: MessageAnalysConfig
+            self, analys_config: MessageAnalysConfig
     ) -> UserMessage:
         system_promt = PromtStorage.get_promt_analyze_message_execute_user()
         if analys_config.chat_context == "":
@@ -178,12 +182,6 @@ class OpenAIService:
         )
         return analyzed_result
 
-    @retry(
-        stop=stop_after_attempt(3),
-        retry=retry_if_exception_type(RedisError),
-        wait=wait_exponential(multiplier=1, min=1, max=6),
-        reraise=True,
-    )
     async def get_chat_history(self, conversation_id: str) -> List[Dict]:
         conversation_state: ConversationState = (
             await self.messages_cache_service.get_conversation_state(
@@ -206,3 +204,7 @@ class OpenAIService:
                         {"role": "user", "content": chat_message.message}
                     )
             return result_messages
+
+    async def close(self):
+        if (self.client_async is not None):
+            await self.client_async.close()

@@ -18,6 +18,7 @@ from services.handlers.common import MessageHandler
 from services.handlers.analyze_message_service import MessageAnalyzeService
 from kafka_handler.kafka_clients_service import KafkaClientsService
 from kafka_handler.kafka_sender_service import KafkaSender, KafkaSenderService
+from services.handlers.decorators import DecoratorService
 
 
 class Container(containers.DeclarativeContainer):
@@ -30,6 +31,7 @@ class Container(containers.DeclarativeContainer):
     es_service = providers.Singleton(ESService)
     intercom_api_service = providers.Singleton(IntercomAPIService)
     messages_cache_service = providers.Singleton(MessagesCache)
+    decorators_service = providers.Singleton(DecoratorService)
     open_ai_service = providers.Singleton(
         OpenAIService, messages_cache_service=messages_cache_service
     )

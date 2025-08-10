@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from models.models import ConversationMessages, ConversationState
 from models.custom_exceptions import APPException
-
+from services.handlers.decorators import decorator_service
 from redis.asyncio import Redis as RedisAsync, ConnectionPool
 from tenacity import (
     retry,
@@ -69,20 +69,24 @@ class MessagesCache:
             app_exception: APPException = APPException(
                 message=exception_message,
                 ex_class=full_exception_name,
-                event_type="MessagesCache_Init",
+                event_type="unknown",
+                service_name='redis_init',
                 params={},
             )
+            self.redis_client_async = None
             raise app_exception
         except Exception as e:
+            self.redis_client_async = None
             raise e
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type(RedisError),
-    )
+    # @retry(
+    #     stop=stop_after_attempt(3),
+    #     wait=wait_exponential(multiplier=1, min=1, max=10),
+    #     retry=retry_if_exception_type(RedisError),
+    # )
+    @decorator_service.service_exception_handler('redis_set_state', 3, RedisError, Exception)
     async def set_conversation_state(
-        self, conversation_id: str, conversation_state: ConversationState
+            self, conversation_id: str, conversation_state: ConversationState
     ):
         key: str = f"conversation_state:{conversation_id}"
         value: str = conversation_state.model_dump_json()
@@ -92,13 +96,14 @@ class MessagesCache:
         key: str = f"conversation_state:{conversation_id}"
         await self.redis_client_async.delete(key)
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type(RedisError),
-    )
+    # @retry(
+    #     stop=stop_after_attempt(3),
+    #     wait=wait_exponential(multiplier=1, min=1, max=10),
+    #     retry=retry_if_exception_type(RedisError),
+    # )
+    @decorator_service.service_exception_handler('redis_get_state', 3, RedisError, Exception)
     async def get_conversation_state(
-        self, conversation_id: str
+            self, conversation_id: str
     ) -> ConversationState | None:
         value: str | None = await self.redis_client_async.get(
             f"conversation_state:{conversation_id}"
@@ -110,4 +115,5 @@ class MessagesCache:
             return None
 
     async def close_async(self):
-        await self.redis_client_async.close()
+        if (self.redis_client_async is not None):
+            await self.redis_client_async.close()

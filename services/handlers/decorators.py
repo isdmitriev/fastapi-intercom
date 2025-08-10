@@ -24,6 +24,7 @@ class DecoratorService:
             except Exception as ex:
                 params: Dict[str, Any] = {}
                 params.update(kargs)
+
                 raise APPException(
                     message=str(ex),
                     event_type="unknown",
@@ -38,7 +39,7 @@ class DecoratorService:
             self,
             service_name: str,
             attempt: int = 3,
-            *interested_exceptions: Type[Exception],
+            *interested_exceptions,
     ):
         if interested_exceptions:
             retry_condition = retry_if_exception_type(interested_exceptions)
@@ -49,6 +50,8 @@ class DecoratorService:
             def handle_retry_error(retry_state):
                 last_exception = retry_state.outcome.exception()
                 params: Dict[str, Any] = {**retry_state.kwargs}
+                params.pop('system_promt', default=None)
+                params.pop('messages', default=None)
 
                 raise APPException(
                     message=str(last_exception),
@@ -93,3 +96,4 @@ class DecoratorService:
             return wrapper
 
         return handler_decorator
+decorator_service:DecoratorService=DecoratorService()

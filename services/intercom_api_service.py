@@ -1,8 +1,8 @@
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 from asyncio import TimeoutError
 import os
 from dotenv import load_dotenv
-
+from services.handlers.decorators import decorator_service
 from aiohttp import (
     ClientSession,
     ClientTimeout,
@@ -19,6 +19,7 @@ from tenacity import (
 )
 
 load_dotenv()
+
 
 
 class IntercomAPIService:
@@ -46,19 +47,28 @@ class IntercomAPIService:
         )
 
     async def close_client_session(self):
+        if (self.client_session is not None):
+            await self.client_session.close()
 
-        await self.client_session.close()
+    @decorator_service.service_exception_handler('intercom_api', 3, ClientResponseError, ClientError, Exception)
+    async def send_post_request(self, url: str, payload: Dict[str, Any]):
+        async with self.client_session.post(url=url, json=payload) as response:
+            response.raise_for_status()
+            if response.status == 204:
+                return response.status, None
+            data = await response.json()
+            return response.status, data
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        reraise=True,
-        retry=retry_if_exception_type(
-            (ClientError, ClientResponseError, ClientConnectionError, TimeoutError)
-        ),
-    )
+    # @retry(
+    #     stop=stop_after_attempt(3),
+    #     wait=wait_exponential(multiplier=1, min=1, max=10),
+    #     reraise=True,
+    #     retry=retry_if_exception_type(
+    #         (ClientError, ClientResponseError, ClientConnectionError, TimeoutError)
+    #     ),
+    # )
     async def attach_admin_to_conversation_async(
-        self, admin_id: str, conversation_id: str
+            self, admin_id: str, conversation_id: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/parts"
         if self.client_session is None:
@@ -70,23 +80,24 @@ class IntercomAPIService:
             "admin_id": admin_id,
             "assignee_id": admin_id,
         }
-        async with self.client_session.post(url=url, json=payload) as response:
-            response.raise_for_status()
-            if response.status == 204:
-                return response.status, None
-            data = await response.json()
-            return response.status, data
+        return await self.send_post_request(url=url, payload=payload)
+        # async with self.client_session.post(url=url, json=payload) as response:
+        #     response.raise_for_status()
+        #     if response.status == 204:
+        #         return response.status, None
+        #     data = await response.json()
+        #     return response.status, data
 
-    @retry(
-        stop=stop_after_attempt(3),
-        reraise=True,
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type(
-            (ClientError, ClientResponseError, ClientConnectionError, TimeoutError)
-        ),
-    )
+    # @retry(
+    #     stop=stop_after_attempt(3),
+    #     reraise=True,
+    #     wait=wait_exponential(multiplier=1, min=1, max=10),
+    #     retry=retry_if_exception_type(
+    #         (ClientError, ClientResponseError, ClientConnectionError, TimeoutError)
+    #     ),
+    # )
     async def add_admin_message_to_conversation_async(
-        self, conversation_id: str, admin_id: str, message: str
+            self, conversation_id: str, admin_id: str, message: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         if self.client_session is None:
@@ -98,24 +109,25 @@ class IntercomAPIService:
             "message_type": "comment",
             "body": message,
         }
+        return await self.send_post_request(url=url, payload=payload)
 
-        async with self.client_session.post(url, json=payload) as response:
-            response.raise_for_status()
-            if response.status == 204:
-                return response.status, None
-            data = await response.json()
-            return response.status, data
+        # async with self.client_session.post(url, json=payload) as response:
+        #     response.raise_for_status()
+        #     if response.status == 204:
+        #         return response.status, None
+        #     data = await response.json()
+        #     return response.status, data
 
-    @retry(
-        stop=stop_after_attempt(3),
-        reraise=True,
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type(
-            (ClientError, ClientResponseError, ClientConnectionError, TimeoutError)
-        ),
-    )
+    # @retry(
+    #     stop=stop_after_attempt(3),
+    #     reraise=True,
+    #     wait=wait_exponential(multiplier=1, min=1, max=10),
+    #     retry=retry_if_exception_type(
+    #         (ClientError, ClientResponseError, ClientConnectionError, TimeoutError)
+    #     ),
+    # )
     async def add_admin_note_to_conversation_async(
-        self, conversation_id: str, admin_id: str, note: str
+            self, conversation_id: str, admin_id: str, note: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         if self.client_session is None:
@@ -127,10 +139,11 @@ class IntercomAPIService:
             "message_type": "note",
             "body": note,
         }
+        return await self.send_post_request(url=url, payload=payload)
 
-        async with self.client_session.post(url, json=payload) as response:
-            response.raise_for_status()
-            if response.status == 204:
-                return response.status, None
-            data = await response.json()
-            return response.status, data
+        # async with self.client_session.post(url, json=payload) as response:
+        #     response.raise_for_status()
+        #     if response.status == 204:
+        #         return response.status, None
+        #     data = await response.json()
+        #     return response.status, data
