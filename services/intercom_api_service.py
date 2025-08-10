@@ -3,7 +3,14 @@ from asyncio import TimeoutError
 import os
 from dotenv import load_dotenv
 
-from aiohttp import ClientSession, ClientTimeout, TCPConnector, ClientError, ClientConnectionError, ClientResponseError
+from aiohttp import (
+    ClientSession,
+    ClientTimeout,
+    TCPConnector,
+    ClientError,
+    ClientConnectionError,
+    ClientResponseError,
+)
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -46,9 +53,12 @@ class IntercomAPIService:
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
         reraise=True,
-        retry=retry_if_exception_type((ClientError, ClientResponseError, ClientConnectionError, TimeoutError)))
+        retry=retry_if_exception_type(
+            (ClientError, ClientResponseError, ClientConnectionError, TimeoutError)
+        ),
+    )
     async def attach_admin_to_conversation_async(
-            self, admin_id: str, conversation_id: str
+        self, admin_id: str, conversation_id: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/parts"
         if self.client_session is None:
@@ -71,10 +81,12 @@ class IntercomAPIService:
         stop=stop_after_attempt(3),
         reraise=True,
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type((ClientError, ClientResponseError, ClientConnectionError, TimeoutError)),
+        retry=retry_if_exception_type(
+            (ClientError, ClientResponseError, ClientConnectionError, TimeoutError)
+        ),
     )
     async def add_admin_message_to_conversation_async(
-            self, conversation_id: str, admin_id: str, message: str
+        self, conversation_id: str, admin_id: str, message: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         if self.client_session is None:
@@ -98,10 +110,12 @@ class IntercomAPIService:
         stop=stop_after_attempt(3),
         reraise=True,
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type((ClientError, ClientResponseError, ClientConnectionError, TimeoutError)),
+        retry=retry_if_exception_type(
+            (ClientError, ClientResponseError, ClientConnectionError, TimeoutError)
+        ),
     )
     async def add_admin_note_to_conversation_async(
-            self, conversation_id: str, admin_id: str, note: str
+        self, conversation_id: str, admin_id: str, note: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         if self.client_session is None:

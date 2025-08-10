@@ -45,7 +45,7 @@ class OpenAIService:
             raise e
 
     async def _make_open_ai_request(
-            self, message: str, model_name: str, system_promt: str, messages: List[Dict]
+        self, message: str, model_name: str, system_promt: str, messages: List[Dict]
     ) -> UserMessage:
         try:
 
@@ -65,7 +65,7 @@ class OpenAIService:
             raise error
 
     def get_count_request_tokens(
-            self, messages: List[Dict[str, str]], model: str = "gpt-3.5-turbo-0125"
+        self, messages: List[Dict[str, str]], model: str = "gpt-3.5-turbo-0125"
     ) -> float:
         try:
             encoding = tiktoken.encoding_for_model(model)
@@ -96,7 +96,7 @@ class OpenAIService:
         reraise=True,
     )
     async def _get_open_ai_response(
-            self, message: str, model_name: str, system_promt: str, messages: List[Dict]
+        self, message: str, model_name: str, system_promt: str, messages: List[Dict]
     ) -> str:
         try:
             formatted_messages = [{"role": "system", "content": system_promt}]
@@ -114,7 +114,7 @@ class OpenAIService:
             raise ex
 
     async def analyze_message_execute(
-            self, analys_config: MessageAnalysConfig
+        self, analys_config: MessageAnalysConfig
     ) -> UserMessage:
         chat_history: List[Dict] = await self.get_chat_history(
             conversation_id=analys_config.conversation_id
@@ -129,7 +129,7 @@ class OpenAIService:
         return analyzed_result
 
     async def analyze_message_execute_agent(
-            self, analys_config: MessageAnalysConfig
+        self, analys_config: MessageAnalysConfig
     ) -> str:
         system_promt = PromtStorage.get_promt_analyze_message_execute_agent()
         if analys_config.chat_context == "":
@@ -155,7 +155,7 @@ class OpenAIService:
         return context_analys_result
 
     async def analyze_message_execute_user(
-            self, analys_config: MessageAnalysConfig
+        self, analys_config: MessageAnalysConfig
     ) -> UserMessage:
         system_promt = PromtStorage.get_promt_analyze_message_execute_user()
         if analys_config.chat_context == "":
