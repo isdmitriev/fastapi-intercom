@@ -79,7 +79,7 @@ class DecoratorService:
 
         return service_decorator
 
-    def message_handler_exception(self, event_type: str):
+    def message_handler_exception_decorator(self, event_type: str):
         def handler_decorator(func):
             @wraps(func)
             async def wrapper(*args, **kargs):
