@@ -36,10 +36,10 @@ class DecoratorService:
         return wrapper
 
     def service_exception_handler(
-            self,
-            service_name: str,
-            attempt: int = 3,
-            *interested_exceptions,
+        self,
+        service_name: str,
+        attempt: int = 3,
+        *interested_exceptions,
     ):
         if interested_exceptions:
             retry_condition = retry_if_exception_type(interested_exceptions)
@@ -49,9 +49,10 @@ class DecoratorService:
         def service_decorator(func):
             def handle_retry_error(retry_state):
                 last_exception = retry_state.outcome.exception()
-                params: Dict[str, Any] = {**retry_state.kwargs}
-                params.pop('system_promt', default=None)
-                params.pop('messages', default=None)
+                params: Dict[str, Any] = {}
+                params.update(**retry_state.kwargs)
+                params.pop("system_promt",None)
+                params.pop("messages",None)
 
                 raise APPException(
                     message=str(last_exception),
@@ -62,7 +63,7 @@ class DecoratorService:
                         traceback.format_exception(
                             type(last_exception),
                             last_exception,
-                            last_exception.__traceback__
+                            last_exception.__traceback__,
                         )
                     ),
                     service_name=service_name,
@@ -96,4 +97,6 @@ class DecoratorService:
             return wrapper
 
         return handler_decorator
-decorator_service:DecoratorService=DecoratorService()
+
+
+decorator_service: DecoratorService = DecoratorService()

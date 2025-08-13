@@ -51,10 +51,10 @@ class UserCreatedHandler(MessageHandler):
 
             return
         except (
-            aiohttp.ClientError,
-            ClientResponseError,
-            RedisError,
-            openai.APIError,
+                aiohttp.ClientError,
+                ClientResponseError,
+                RedisError,
+                openai.APIError,
         ) as e:
             stack = traceback.format_exc()
             full_exception_name = f"{type(e).__module__}.{type(e).__name__}"
@@ -71,7 +71,7 @@ class UserCreatedHandler(MessageHandler):
             )
             raise app_exception
         except Exception as ex:
-            raise ex
+            self.common_exception_handler(exception=ex)
 
     def _get_payload_params(self, payload: Dict) -> PayloadData:
         conversation_id: str = payload.get("data", {}).get("item", {}).get("id", "")

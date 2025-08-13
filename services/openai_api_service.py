@@ -26,26 +26,8 @@ load_dotenv()
 
 class OpenAIService:
     def __init__(self, messages_cache_service: MessagesCache):
-        try:
-
-            self.client_async = AsyncOpenAI(api_key=os.getenv("OPENAPI_KEY"))
-            self.messages_cache_service = messages_cache_service
-        except APIError as open_ai_error:
-            full_exception_name = (
-                f"{type(open_ai_error).__module__}.{type(open_ai_error).__name__}"
-            )
-            exception_message: str = str(open_ai_error)
-            app_exception: APPException = APPException(
-                message=exception_message,
-                ex_class=full_exception_name,
-                event_type="unknown",
-                service_name='open_ai_init',
-                params={},
-            )
-            self.client_async = None
-            raise app_exception
-        except Exception as e:
-            raise e
+        self.client_async = AsyncOpenAI(api_key=os.getenv("OPENAPI_KEY"))
+        self.messages_cache_service = messages_cache_service
 
     async def _make_open_ai_request(
             self, message: str, model_name: str, system_promt: str, messages: List[Dict]
@@ -98,24 +80,23 @@ class OpenAIService:
     #     wait=wait_exponential(multiplier=1, min=1, max=4),
     #     reraise=True,
     # )
-    @decorator_service.service_exception_handler('open_ai_api', 3, APIError, RateLimitError, Exception)
+    @decorator_service.service_exception_handler(
+        "open_ai_api_call", 3, RateLimitError, APIError, Exception
+    )
     async def _get_open_ai_response(
             self, message: str, model_name: str, system_promt: str, messages: List[Dict]
     ) -> str:
-        try:
-            formatted_messages = [{"role": "system", "content": system_promt}]
-            formatted_messages.extend(messages)
-            formatted_messages.append({"role": "user", "content": message})
-            request_response = await self.client_async.chat.completions.create(
-                model=model_name,
-                messages=formatted_messages,
-                temperature=0,
-                response_format={"type": "json_object"},
-                timeout=20,
-            )
-            return request_response.choices[0].message.content
-        except Exception as ex:
-            raise ex
+        formatted_messages = [{"role": "system", "content": system_promt}]
+        formatted_messages.extend(messages)
+        formatted_messages.append({"role": "user", "content": message})
+        request_response = await self.client_async.chat.completions.create(
+            model=model_name,
+            messages=formatted_messages,
+            temperature=0,
+            response_format={"type": "json_object"},
+            timeout=20,
+        )
+        return request_response.choices[0].message.content
 
     async def analyze_message_execute(
             self, analys_config: MessageAnalysConfig
@@ -206,5 +187,5 @@ class OpenAIService:
             return result_messages
 
     async def close(self):
-        if (self.client_async is not None):
+        if self.client_async is not None:
             await self.client_async.close()

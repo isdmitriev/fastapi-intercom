@@ -19,7 +19,7 @@ from tenacity import (
 class ESService:
     def __init__(self):
         self.client_async = AsyncElasticsearch(
-            os.getenv("ESEARCH_URI"), request_timeout=10
+            os.getenv("ESEARCH_URI"), request_timeout=5
         )
 
     # @retry(
@@ -28,7 +28,9 @@ class ESService:
     #     wait=wait_exponential(multiplier=1, min=1, max=10),
     #     reraise=True,
     # )
-    @decorator_service.service_exception_handler('es_save_result', 3, TransportError, Exception)
+    @decorator_service.service_exception_handler(
+        "es_save_result", 3, TransportError, Exception
+    )
     async def save_processing_result(self, processing_result: ProcessingResult):
         proces_result_dict: Dict = processing_result.model_dump()
         await self.client_async.index(
@@ -41,10 +43,12 @@ class ESService:
     #     wait=wait_exponential(multiplier=1, min=1, max=10),
     #     reraise=True,
     # )
-    @decorator_service.service_exception_handler('es_exception_save', 3, TransportError, Exception)
+    @decorator_service.service_exception_handler(
+        "es_exception_save", 3, TransportError, Exception
+    )
     async def save_exception_async(self, app_exception: APPException):
         await self.client_async.index(index="errors", document=app_exception.__dict__)
 
     async def close_client(self):
-        if (self.client_async is not None):
+        if self.client_async is not None:
             await self.client_async.close()

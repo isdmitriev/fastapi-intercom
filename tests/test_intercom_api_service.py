@@ -1,8 +1,9 @@
 import datetime
 from tasks import mongodb_task, mongodb_task_async
 from services.intercom_api_service import IntercomAPIService
-from typing import Dict
+from typing import Dict, List
 import pytest
+from unittest.mock import AsyncMock
 import asyncio
 from services.openai_api_service import OpenAIService
 from services.es_service import ESService
@@ -13,9 +14,9 @@ import traceback
 from services.http_service import IntercomAPIServiceV2
 from models.custom_exceptions import APPException
 import time
-
+from models.custom_exceptions import APPException
 from services.mongodb_service import MongodbService
-
+from services.handlers.common import MessageAnalysConfig
 from models.models import ConversationMessages, ConversationMessage, UserMessage
 
 
@@ -136,23 +137,62 @@ async def test_translator_service():
     print(result)
     print(time.perf_counter() - start_time)
 
-# def test_es_service():
-#     client: ESService = ESService()
-#     # client.create_index('requests')
-#     exception: APPException = APPException(
-#         message="error",
-#         event_type="conversation.admin.noted",
-#         ex_class="class",
-#         params={},
-#     )
-#     request_info: RequestInfo = RequestInfo(
-#         exception=exception.__dict__,
-#         status="error",
-#         execution_time=None,
-#         event_type="conversation.admin.noted",
-#     )
-#     res = client.add_document(index_name="requests", document=request_info.dict())
-#     print(res)
+
+@pytest.fixture
+def intercom_client():
+    return IntercomAPIService()
 
 
-#
+@pytest.fixture
+def mocked_open_ai_service():
+    messages_cache: MessagesCache = MessagesCache()
+    open_ai_service: OpenAIService = OpenAIService(
+        messages_cache_service=messages_cache
+    )
+    open_ai_service.get_chat_history = AsyncMock(
+        return_value=[{"role": "user", "content": "good day!"}]
+    )
+    return open_ai_service
+
+
+@pytest.mark.asyncio
+async def test_open_ai_service(mocked_open_ai_service):
+    assert isinstance(mocked_open_ai_service, OpenAIService)
+    history = await mocked_open_ai_service.get_chat_history(conversation_id="1")
+    assert isinstance(history, List)
+    analys_config: MessageAnalysConfig = MessageAnalysConfig()
+
+
+@pytest.mark.asyncio
+async def test_intercom_api_service(intercom_client):
+    admin_id: str = "8736174"
+    conversation_id: str = "215470301462007"
+    note: str = "good day!"
+
+    status, data = await intercom_client.add_admin_note_to_conversation_async(
+        conversation_id=conversation_id, admin_id=admin_id, note=note
+    )
+    assert status == 200
+    assert isinstance(data, Dict)
+
+
+@pytest.mark.asyncio
+async def test_custom_decorator_intercom_api(intercom_client):
+    admin_id: str = "8736174"
+    conversation_id: str = "215470301462007"
+    note: str = "good day!"
+
+    with pytest.raises(APPException) as ex1:
+        await intercom_client.add_admin_note_to_conversation_async(
+            conversation_id=conversation_id, admin_id=admin_id, note=note
+        )
+    with pytest.raises(APPException) as ex2:
+        await intercom_client.add_admin_message_to_conversation_async(
+            conversation_id=conversation_id, admin_id=admin_id, message=note
+        )
+    exception1 = ex1.value
+    assert isinstance(exception1, APPException)
+    assert exception1.params.get("conversation_id", "") == conversation_id
+    exception2 = ex2.value
+    assert isinstance(exception2, APPException)
+    assert exception2.params.get("conversation_id", "") == conversation_id

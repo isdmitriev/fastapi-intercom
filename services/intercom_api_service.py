@@ -21,7 +21,6 @@ from tenacity import (
 load_dotenv()
 
 
-
 class IntercomAPIService:
     def __init__(self):
         self.access_token = os.getenv("INTERCOM_KEY_TEST")
@@ -47,10 +46,9 @@ class IntercomAPIService:
         )
 
     async def close_client_session(self):
-        if (self.client_session is not None):
+        if self.client_session is not None:
             await self.client_session.close()
 
-    @decorator_service.service_exception_handler('intercom_api', 3, ClientResponseError, ClientError, Exception)
     async def send_post_request(self, url: str, payload: Dict[str, Any]):
         async with self.client_session.post(url=url, json=payload) as response:
             response.raise_for_status()
@@ -96,6 +94,9 @@ class IntercomAPIService:
     #         (ClientError, ClientResponseError, ClientConnectionError, TimeoutError)
     #     ),
     # )
+    @decorator_service.service_exception_handler(
+        "intercom_api_admin_message", 3, ClientResponseError, ClientError, Exception
+    )
     async def add_admin_message_to_conversation_async(
             self, conversation_id: str, admin_id: str, message: str
     ) -> Tuple[int, Dict | None]:
@@ -126,6 +127,9 @@ class IntercomAPIService:
     #         (ClientError, ClientResponseError, ClientConnectionError, TimeoutError)
     #     ),
     # )
+    @decorator_service.service_exception_handler(
+        "intercom_api_admin_note", 3, ClientResponseError, ClientError, Exception
+    )
     async def add_admin_note_to_conversation_async(
             self, conversation_id: str, admin_id: str, note: str
     ) -> Tuple[int, Dict | None]:
