@@ -68,7 +68,6 @@ async def handle_app_exception(
     try:
         await es_service.save_exception_async(app_exception=exception)
 
-        logger.error(f"❌ error:{exception.message} event_type:{exception.event_type} ")
         FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
 
         return JSONResponse(
@@ -76,12 +75,12 @@ async def handle_app_exception(
             content={"error": exception.message},
         )
     except Exception as e:
-        logger.error(f"❌ error:{exception.message} event_type:{exception.event_type} ")
+        logger.error(f"❌ error:{exception.message}")
         FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": exception.message},
+            content={"error": str(e)},
         )
 
 
@@ -91,9 +90,10 @@ async def handle_common_exception(request: Request, exception: Exception):
     logger.error(f"❌ {str(exception)} type:{type(exception)}")
     exception: APPException = APPException(
         message=str(exception),
-        event_type="undefined",
+        event_type="unknown",
         ex_class=type(exception).__name__,
         params={},
+        service_name='unknown',
         stack_trace=stack_trace
     )
     try:
@@ -101,7 +101,7 @@ async def handle_common_exception(request: Request, exception: Exception):
         FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
 
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=exception.message
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(exception)
         )
     except Exception as e:
         FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
@@ -121,6 +121,8 @@ async def shutdown():
     redis_client = container.redis_service()
     es_client = container.es_service()
     open_ai_client = container.open_ai_service()
+    translator_service = container.translations_service()
+    translator_service.close()
     await open_ai_client.close()
     await es_client.close_client()
     await redis_client.close()

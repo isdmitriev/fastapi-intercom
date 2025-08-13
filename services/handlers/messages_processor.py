@@ -107,8 +107,12 @@ class MessagesProcessor:
     def _log_error(self, topic: str, app_exception: APPException | Exception):
         if isinstance(app_exception, APPException):
             logger.error(
-                f"❌ Error while processing {topic}: {app_exception.message} type:{app_exception.ex_class}"
+                f"❌ Error while processing {topic}: {app_exception.message} type:{app_exception.ex_class} params:{app_exception.params},service:{app_exception.service_name}"
             )
-        elif isinstance(app_exception, Exception):
+        else:
+
             message: str = str(app_exception)
-            logger.error(f"❌ Error while processing {topic}: {message}")
+            type: str = (
+                f"{type(app_exception).__module__}.{type(app_exception).__name__}"
+            )
+            logger.error(f"❌ Error while processing {topic}: {message} type:{type}")

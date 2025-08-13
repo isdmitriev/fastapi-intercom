@@ -50,26 +50,13 @@ class UserCreatedHandler(MessageHandler):
             )
 
             return
-        except (
-                aiohttp.ClientError,
-                ClientResponseError,
-                RedisError,
-                openai.APIError,
-        ) as e:
-            stack = traceback.format_exc()
-            full_exception_name = f"{type(e).__module__}.{type(e).__name__}"
-            exception_message: str = str(e)
-            app_exception: APPException = APPException(
-                message=exception_message,
-                ex_class=full_exception_name,
-                event_type="conversation.user.created",
-                params={
-                    "conversation_id": payload_params.conversation_id,
-                    "user_created_message": payload_params.clean_message,
-                },
-                stack_trace=stack,
+        except APPException as app_ex:
+            self.app_exception_handler(
+                exception=app_ex,
+                event_type="user_created",
+                params={"user_created_message": payload_params.clean_message},
             )
-            raise app_exception
+
         except Exception as ex:
             self.common_exception_handler(exception=ex)
 

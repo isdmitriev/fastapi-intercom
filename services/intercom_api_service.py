@@ -66,7 +66,7 @@ class IntercomAPIService:
     #     ),
     # )
     async def attach_admin_to_conversation_async(
-            self, admin_id: str, conversation_id: str
+        self, admin_id: str, conversation_id: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/parts"
         if self.client_session is None:
@@ -98,7 +98,7 @@ class IntercomAPIService:
         "intercom_api_admin_message", 3, ClientResponseError, ClientError, Exception
     )
     async def add_admin_message_to_conversation_async(
-            self, conversation_id: str, admin_id: str, message: str
+        self, conversation_id: str, admin_id: str, message: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         if self.client_session is None:
@@ -131,7 +131,7 @@ class IntercomAPIService:
         "intercom_api_admin_note", 3, ClientResponseError, ClientError, Exception
     )
     async def add_admin_note_to_conversation_async(
-            self, conversation_id: str, admin_id: str, note: str
+        self, conversation_id: str, admin_id: str, note: str
     ) -> Tuple[int, Dict | None]:
         url = f"https://api.intercom.io/conversations/{conversation_id}/reply"
         if self.client_session is None:

@@ -51,8 +51,8 @@ class DecoratorService:
                 last_exception = retry_state.outcome.exception()
                 params: Dict[str, Any] = {}
                 params.update(**retry_state.kwargs)
-                params.pop("system_promt",None)
-                params.pop("messages",None)
+                params.pop("system_promt", None)
+                params.pop("messages", None)
 
                 raise APPException(
                     message=str(last_exception),
