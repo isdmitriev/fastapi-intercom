@@ -58,7 +58,7 @@ class UserCreatedHandler(MessageHandler):
             )
 
         except Exception as ex:
-            self.common_exception_handler(exception=ex)
+            self.common_exception_handler(exception=ex, event_type="user_created")
 
     def _get_payload_params(self, payload: Dict) -> PayloadData:
         conversation_id: str = payload.get("data", {}).get("item", {}).get("id", "")

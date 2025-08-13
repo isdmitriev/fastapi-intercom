@@ -128,7 +128,7 @@ class UserRepliedHandler(MessageHandler):
             )
 
         except Exception as ex:
-            self.common_exception_handler(exception=ex)
+            self.common_exception_handler(exception=ex, event_type="user_replied")
 
     def _get_payload_params(self, payload: Dict) -> PayloadData:
         user_reply: Dict = payload["data"]["item"]["conversation_parts"][

@@ -91,7 +91,7 @@ async def handle_common_exception(request: Request, exception: Exception):
     exception: APPException = APPException(
         message=str(exception),
         event_type="unknown",
-        ex_class=type(exception).__name__,
+        ex_class=f"{type(exception).__module__}.{type(exception).__name__}",
         params={},
         service_name='unknown',
         stack_trace=stack_trace
@@ -104,6 +104,7 @@ async def handle_common_exception(request: Request, exception: Exception):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(exception)
         )
     except Exception as e:
+        logger.error(f'❌ es error  message:{str(e)}')
         FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
 
         return JSONResponse(

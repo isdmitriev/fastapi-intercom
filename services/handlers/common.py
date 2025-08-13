@@ -100,7 +100,7 @@ class MessageHandler(ABC):
             conversation_id=conversation_id, conversation_state=conversation_state
         )
 
-    def common_exception_handler(self, exception: Exception):
+    def common_exception_handler(self, event_type: str, exception: Exception):
         stack_trace: str = "".join(
             traceback.format_exception(
                 type(exception), exception, exception.__traceback__
@@ -114,7 +114,7 @@ class MessageHandler(ABC):
             params={},
             service_name="unknown",
             ex_class=full_name,
-            event_type="unknown",
+            event_type=event_type,
             stack_trace=stack_trace,
         )
 

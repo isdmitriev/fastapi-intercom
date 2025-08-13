@@ -151,7 +151,7 @@ class AdminNotedHandler(MessageHandler):
             )
 
         except Exception as ex:
-            self.common_exception_handler(exception=ex)
+            self.common_exception_handler(exception=ex, event_type="admin_noted")
 
     async def _start_force_lang(
         self, admin_id: str, conversation_state: ConversationState

@@ -78,10 +78,6 @@ class MessagesProcessor:
             self._log_error(topic=topic, app_exception=error)
             raise error
 
-        except Exception as e:
-            self._log_error(app_exception=e, topic=topic)
-            raise e
-
     async def _logs_handler(self, topic: str, execution_time: float):
 
         if topic in [
@@ -104,15 +100,7 @@ class MessagesProcessor:
             time.perf_counter() - start_time
         )
 
-    def _log_error(self, topic: str, app_exception: APPException | Exception):
-        if isinstance(app_exception, APPException):
-            logger.error(
-                f"❌ Error while processing {topic}: {app_exception.message} type:{app_exception.ex_class} params:{app_exception.params},service:{app_exception.service_name}"
-            )
-        else:
-
-            message: str = str(app_exception)
-            type: str = (
-                f"{type(app_exception).__module__}.{type(app_exception).__name__}"
-            )
-            logger.error(f"❌ Error while processing {topic}: {message} type:{type}")
+    def _log_error(self, topic: str, app_exception: APPException):
+        logger.error(
+            f"❌ Error while processing {topic}: {app_exception.message} type:{app_exception.ex_class} params:{app_exception.params},service:{app_exception.service_name}"
+        )
