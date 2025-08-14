@@ -26,5 +26,6 @@ class AdminCloseHandler(MessageHandler):
                 ex_class=full_exception_name,
                 event_type="conversation.admin.closed",
                 params={"conversation_id": conversation_id},
+                service_name='admin_closed'
             )
             raise app_exception
