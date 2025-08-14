@@ -81,7 +81,7 @@ class OpenAIService:
     #     reraise=True,
     # )
     @decorator_service.service_exception_handler(
-        "open_ai_api_call", 3, RateLimitError, APIError, Exception
+        ['system_promt','messages'],"open_ai_api_call", 3, RateLimitError, APIError, Exception
     )
     async def _get_open_ai_response(
         self, message: str, model_name: str, system_promt: str, messages: List[Dict]

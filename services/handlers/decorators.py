@@ -7,7 +7,7 @@ from tenacity import (
 )
 from models.custom_exceptions import APPException
 from functools import wraps
-from typing import Dict, Any, Type
+from typing import Dict, Any, Type, List
 import traceback
 
 
@@ -37,6 +37,7 @@ class DecoratorService:
 
     def service_exception_handler(
         self,
+        excluded_method_params: List[str],
         service_name: str,
         attempt: int = 3,
         *interested_exceptions,
@@ -48,11 +49,15 @@ class DecoratorService:
 
         def service_decorator(func):
             def handle_retry_error(retry_state):
+                method_params: Dict = retry_state.kwargs
                 last_exception = retry_state.outcome.exception()
+                for key, value in list(method_params.items()):
+
+                    if key in excluded_method_params:
+                        method_params.pop(key, None)
+
                 params: Dict[str, Any] = {}
-                params.update(**retry_state.kwargs)
-                params.pop("system_promt", None)
-                params.pop("messages", None)
+                params.update(**method_params)
 
                 raise APPException(
                     message=str(last_exception),

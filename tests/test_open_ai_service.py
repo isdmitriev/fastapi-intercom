@@ -28,22 +28,27 @@ async def test_open_ai_service(mocked_open_ai_service):
     history = await mocked_open_ai_service.get_chat_history(conversation_id="1")
     assert isinstance(history, List)
     analys_config: MessageAnalysConfig = MessageAnalysConfig(
-        message="good day!", model="gpt-3.5-turbo-0125", type='fast', chat_context=''
+        message="good day!", model="gpt-3.5-turbo-0125", type="fast", chat_context=""
     )
-    result: UserMessage = await mocked_open_ai_service.analyze_message_execute_user(analys_config=analys_config)
+    result: UserMessage = await mocked_open_ai_service.analyze_message_execute_user(
+        analys_config=analys_config
+    )
     assert isinstance(result, UserMessage)
 
 
 @pytest.mark.asyncio
 async def test_openai_decorator(mocked_open_ai_service):
     analys_config: MessageAnalysConfig = MessageAnalysConfig(
-        message="good day!", model="1gpt-3.5-turbo-0125", type='fast', chat_context=''
+        message="good day!", model="1gpt-3.5-turbo-0125", type="fast", chat_context=""
     )
     with pytest.raises(APPException) as ex:
-        await mocked_open_ai_service.analyze_message_execute_user(analys_config=analys_config)
+        await mocked_open_ai_service.analyze_message_execute_user(
+            analys_config=analys_config
+        )
     error = ex.value
 
     assert isinstance(error, APPException)
+
 
 # @pytest.mark.asyncio
 # async def test_analyze_message_execute_user():
