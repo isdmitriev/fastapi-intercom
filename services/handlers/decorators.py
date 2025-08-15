@@ -30,17 +30,18 @@ class DecoratorService:
                     event_type="unknown",
                     ex_class=f"{type(ex).__module__}.{type(ex).__name__}",
                     params=params,
+                    service_name='unknown',
                     stack_trace=traceback.format_exc(),
                 )
 
         return wrapper
 
     def service_exception_handler(
-        self,
-        excluded_method_params: List[str],
-        service_name: str,
-        attempt: int = 3,
-        *interested_exceptions,
+            self,
+            excluded_method_params: List[str],
+            service_name: str,
+            attempt: int = 3,
+            *interested_exceptions,
     ):
         if interested_exceptions:
             retry_condition = retry_if_exception_type(interested_exceptions)

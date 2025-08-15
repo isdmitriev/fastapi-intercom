@@ -30,6 +30,6 @@ async def test_redis_error_decorator(mocked_conversation_state):
     error = ex.value
 
     assert isinstance(error, APPException)
-    assert error.params.get('conversation_id', '') == conversation_id
-    assert error.params.get('conversation_state', '') == ''
-    assert error.service_name == 'redis_set_state'
+    assert error.params.get("conversation_id", "") == conversation_id
+    assert error.params.get("conversation_state", "") == ""
+    assert error.service_name == "redis_set_state"

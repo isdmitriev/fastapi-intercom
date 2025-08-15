@@ -28,8 +28,9 @@ class ESService:
     #     wait=wait_exponential(multiplier=1, min=1, max=10),
     #     reraise=True,
     # )
-    @decorator_service.service_exception_handler(['processing_result'], 'es_save_process', 3, ConnectionError,
-                                                 Exception)
+    @decorator_service.service_exception_handler(
+        ["processing_result"], "es_save_process", 3, ConnectionError, Exception
+    )
     async def save_processing_result(self, processing_result: ProcessingResult):
         proces_result_dict: Dict = processing_result.model_dump()
         await self.client_async.index(
@@ -42,8 +43,9 @@ class ESService:
     #     wait=wait_exponential(multiplier=1, min=1, max=10),
     #     reraise=True,
     # )
-    @decorator_service.service_exception_handler(['app_exception'], 'es_save_error', 3, ConnectionError,
-                                                 Exception)
+    @decorator_service.service_exception_handler(
+        ["app_exception"], "es_save_error", 3, ConnectionError, Exception
+    )
     async def save_exception_async(self, app_exception: APPException):
         await self.client_async.index(index="errors", document=app_exception.__dict__)
 

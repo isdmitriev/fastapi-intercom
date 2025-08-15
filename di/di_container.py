@@ -19,12 +19,14 @@ from services.handlers.analyze_message_service import MessageAnalyzeService
 from kafka_handler.kafka_clients_service import KafkaClientsService
 from kafka_handler.kafka_sender_service import KafkaSender, KafkaSenderService
 from services.handlers.decorators import DecoratorService
+from services.logger_service import LoggerService
 
 
 class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(packages=["app", "services", "kafka_handler"])
 
     mongo_db_service = providers.Singleton(MongodbService)
+    logger_service = providers.Singleton(LoggerService)
     kafka_clients_service = providers.Singleton(KafkaClientsService)
     kafka_sender_service = providers.Singleton(KafkaSenderService, clients_service=kafka_clients_service)
     redis_service = providers.Singleton(RedisService)
@@ -88,4 +90,5 @@ class Container(containers.DeclarativeContainer):
         admin_noted_service=admin_noted_service,
         admin_closed_service=admin_closed_service,
         es_service=es_service,
+        logger_service=logger_service
     )

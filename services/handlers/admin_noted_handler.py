@@ -144,11 +144,8 @@ class AdminNotedHandler(MessageHandler):
                         )
                     return
         except APPException as app_ex:
-            self.app_exception_handler(
-                exception=app_ex,
-                event_type="admin_noted",
-                params={"clean_message": payload_params.clean_message},
-            )
+            app_ex.params.update({"event_type": "admin_noted"})
+            raise
 
         except Exception as ex:
             self.common_exception_handler(exception=ex, event_type="admin_noted")

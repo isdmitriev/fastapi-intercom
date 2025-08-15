@@ -39,15 +39,15 @@ container.wire(
     ]
 )
 app = FastAPI()
-
-logger = logging.getLogger("main_app")
-logger.setLevel(logging.INFO)
-logger.propagate = False
-
-handler = logging.StreamHandler()
-formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+logger = container.logger_service()
+# logger = logging.getLogger("main_app")
+# logger.setLevel(logging.INFO)
+# logger.propagate = False
+#
+# handler = logging.StreamHandler()
+# formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
+# handler.setFormatter(formatter)
+# logger.addHandler(handler)
 
 Instrumentator().instrument(app).expose(app)
 
@@ -59,7 +59,6 @@ async def startup():
     container.init_resources()
 
 
-@app.exception_handler(APPException)
 async def handle_app_exception(
         request: Request,
         exception: APPException,
@@ -72,10 +71,10 @@ async def handle_app_exception(
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": exception.message},
+            content={"error": str(exception)},
         )
     except Exception as e:
-        logger.error(f"❌ error:{exception.message}")
+
         FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
 
         return JSONResponse(
@@ -84,11 +83,10 @@ async def handle_app_exception(
         )
 
 
-@app.exception_handler(Exception)
 async def handle_common_exception(request: Request, exception: Exception):
     stack_trace = "".join(traceback.format_exception(type(exception), exception, exception.__traceback__))
-    logger.error(f"❌ {str(exception)} type:{type(exception)}")
-    exception: APPException = APPException(
+
+    app_exception: APPException = APPException(
         message=str(exception),
         event_type="unknown",
         ex_class=f"{type(exception).__module__}.{type(exception).__name__}",
@@ -96,6 +94,7 @@ async def handle_common_exception(request: Request, exception: Exception):
         service_name='unknown',
         stack_trace=stack_trace
     )
+    logger.log_error(exception=app_exception)
     try:
         await container.es_service().save_exception_async(app_exception=exception)
         FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
@@ -104,11 +103,11 @@ async def handle_common_exception(request: Request, exception: Exception):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(exception)
         )
     except Exception as e:
-        logger.error(f'❌ es error  message:{str(e)}')
+
         FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
 
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=exception.message
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e)
         )
 
 
@@ -177,7 +176,6 @@ async def process_message(
                 status_code=status.HTTP_200_OK, content="event already processed"
             )
     except ValueError as valError:
-        logger.error("invalid json")
 
         FAILED_REQUEST_COUNT.labels(
             pod_name=os.environ.get("HOSTNAME", "unknown")

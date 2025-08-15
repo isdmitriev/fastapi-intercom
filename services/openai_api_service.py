@@ -30,7 +30,7 @@ class OpenAIService:
         self.messages_cache_service = messages_cache_service
 
     async def _make_open_ai_request(
-        self, message: str, model_name: str, system_promt: str, messages: List[Dict]
+            self, message: str, model_name: str, system_promt: str, messages: List[Dict]
     ) -> UserMessage:
         try:
 
@@ -45,12 +45,12 @@ class OpenAIService:
             user_message: UserMessage = UserMessage.model_validate(result_dict)
             return user_message
         except ValidationError as validationError:
-            raise validationError
+            raise
         except Exception as error:
-            raise error
+            raise
 
     def get_count_request_tokens(
-        self, messages: List[Dict[str, str]], model: str = "gpt-3.5-turbo-0125"
+            self, messages: List[Dict[str, str]], model: str = "gpt-3.5-turbo-0125"
     ) -> float:
         try:
             encoding = tiktoken.encoding_for_model(model)
@@ -81,10 +81,15 @@ class OpenAIService:
     #     reraise=True,
     # )
     @decorator_service.service_exception_handler(
-        ['system_promt','messages'],"open_ai_api_call", 3, RateLimitError, APIError, Exception
+        ["system_promt", "messages"],
+        "open_ai_api_call",
+        3,
+        RateLimitError,
+        APIError,
+        Exception,
     )
     async def _get_open_ai_response(
-        self, message: str, model_name: str, system_promt: str, messages: List[Dict]
+            self, message: str, model_name: str, system_promt: str, messages: List[Dict]
     ) -> str:
         formatted_messages = [{"role": "system", "content": system_promt}]
         formatted_messages.extend(messages)
@@ -99,7 +104,7 @@ class OpenAIService:
         return request_response.choices[0].message.content
 
     async def analyze_message_execute(
-        self, analys_config: MessageAnalysConfig
+            self, analys_config: MessageAnalysConfig
     ) -> UserMessage:
         chat_history: List[Dict] = await self.get_chat_history(
             conversation_id=analys_config.conversation_id
@@ -114,7 +119,7 @@ class OpenAIService:
         return analyzed_result
 
     async def analyze_message_execute_agent(
-        self, analys_config: MessageAnalysConfig
+            self, analys_config: MessageAnalysConfig
     ) -> str:
         system_promt = PromtStorage.get_promt_analyze_message_execute_agent()
         if analys_config.chat_context == "":
@@ -140,7 +145,7 @@ class OpenAIService:
         return context_analys_result
 
     async def analyze_message_execute_user(
-        self, analys_config: MessageAnalysConfig
+            self, analys_config: MessageAnalysConfig
     ) -> UserMessage:
         system_promt = PromtStorage.get_promt_analyze_message_execute_user()
         if analys_config.chat_context == "":

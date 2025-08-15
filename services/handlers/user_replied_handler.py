@@ -121,11 +121,8 @@ class UserRepliedHandler(MessageHandler):
                     )
                     return
         except APPException as app_ex:
-            self.app_exception_handler(
-                exception=app_ex,
-                event_type="user_replied",
-                params={"clean_message": payload_params.clean_message},
-            )
+            app_ex.params.update({"event_type": "user_replied"})
+            raise
 
         except Exception as ex:
             self.common_exception_handler(exception=ex, event_type="user_replied")

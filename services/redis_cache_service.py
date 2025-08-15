@@ -51,10 +51,10 @@ class MessagesCache:
     #     retry=retry_if_exception_type(RedisError),
     # )
     @decorator_service.service_exception_handler(
-        ['conversation_state'], "redis_set_state", 3, RedisError, Exception
+        ["conversation_state"], "redis_set_state", 3, RedisError, Exception
     )
     async def set_conversation_state(
-            self, conversation_id: str, conversation_state: ConversationState
+        self, conversation_id: str, conversation_state: ConversationState
     ):
         key: str = f"conversation_state:{conversation_id}"
         value: str = conversation_state.model_dump_json()
@@ -76,7 +76,7 @@ class MessagesCache:
         [], "redis_get_state", 3, RedisError, Exception
     )
     async def get_conversation_state(
-            self, conversation_id: str
+        self, conversation_id: str
     ) -> ConversationState | None:
         value: str | None = await self.redis_client_async.get(
             f"conversation_state:{conversation_id}"
