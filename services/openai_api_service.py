@@ -2,7 +2,7 @@ import os
 from openai import OpenAI, AsyncOpenAI, ChatCompletion, RateLimitError, APIError
 from dotenv import load_dotenv
 import json
-from redis import RedisError
+
 from typing import Dict, List
 from models.models import UserMessage
 from models.custom_exceptions import APPException

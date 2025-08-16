@@ -31,7 +31,7 @@ class OpenAITranslatorService:
     #     reraise=True,
     # )
     @decorator_service.service_exception_handler(
-        "open_ai_api_translate", 3, RateLimitError, APIError, Exception
+        [],"open_ai_api_translate", 3, RateLimitError, APIError, Exception
     )
     async def translate_message_from_english_to_hindi_async(
         self, message: str
@@ -96,7 +96,7 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
     #     reraise=True,
     # )
     @decorator_service.service_exception_handler(
-        "open_ai_api_translate", 3, RateLimitError, APIError, Exception
+        [],"open_ai_api_translate", 3, RateLimitError, APIError, Exception
     )
     async def translate_message_from_english_to_bengali_async(
         self, message: str
@@ -163,7 +163,7 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
     #     reraise=True,
     # )
     @decorator_service.service_exception_handler(
-        "open_ai_api_translate", 3, RateLimitError, APIError, Exception
+        [],"open_ai_api_translate", 3, RateLimitError, APIError, Exception
     )
     async def translate_message_from_english_to_hinglish_async(
         self, message: str
@@ -195,7 +195,7 @@ Maintain a friendly and professional tone, ensuring clarity for the player. If t
     #     reraise=True,
     # )
     @decorator_service.service_exception_handler(
-        "open_ai_api_translate", 3, RateLimitError, APIError, Exception
+        [],"open_ai_api_translate", 3, RateLimitError, APIError, Exception
     )
     async def translate_message_from_english_to_hinglish_async_v2(
         self, message: str
@@ -289,7 +289,7 @@ REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mand
     #     reraise=True,
     # )
     @decorator_service.service_exception_handler(
-        "open_ai_api_translate", 3, RateLimitError, APIError, Exception
+        [],"open_ai_api_translate", 3, RateLimitError, APIError, Exception
     )
     async def translate_message_from_bengali_to_english_async(
         self, message: str
@@ -322,7 +322,7 @@ REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mand
     #     reraise=True,
     # )
     @decorator_service.service_exception_handler(
-        "open_ai_api_translate", 3, RateLimitError, APIError, Exception
+        [],"open_ai_api_translate", 3, RateLimitError, APIError, Exception
     )
     async def translate_message_from_hindi_to_english_async(
         self, message: str
@@ -355,7 +355,7 @@ REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mand
     #     reraise=True,
     # )
     @decorator_service.service_exception_handler(
-        "open_ai_api_translate", 3, RateLimitError, APIError, Exception
+        [],"open_ai_api_translate", 3, RateLimitError, APIError, Exception
     )
     async def translate_message_from_hinglish_to_english_async(
         self, message: str
@@ -388,7 +388,7 @@ REMEMBER: Complete Hinglish conversion with natural Hindi-English mixing is mand
     #     reraise=True,
     # )
     @decorator_service.service_exception_handler(
-        "open_ai_api_detect_lang", 3, RateLimitError, APIError, Exception
+        [],"open_ai_api_detect_lang", 3, RateLimitError, APIError, Exception
     )
     async def detect_language_async(self, message: str) -> str | None:
         promt = """You are an AI assistant for an online casino and sports betting customer support team. Your task is to determine the language of a player's message.
@@ -424,7 +424,7 @@ Return ONLY the language name without explanation."""
     #     reraise=True,
     # )
     @decorator_service.service_exception_handler(
-        "open_ai_api_detect_lang", 3, RateLimitError, APIError, Exception
+        [],"open_ai_api_detect_lang", 3, RateLimitError, APIError, Exception
     )
     async def detect_language_async_v2(self, message: str):
         prompt = f"""
