@@ -28,4 +28,4 @@ def processing_result():
 def test_logger_service(mocked_logger, mocked_app_exception, processing_result):
     mocked_logger.log_error(exception=mocked_app_exception)
     mocked_logger.log_info(processing_result=processing_result)
-    mocked_logger.log_model('data',extra_name='process_result',model=processing_result)
+    mocked_logger.log_model('data', extra_name='process_result', model=processing_result)

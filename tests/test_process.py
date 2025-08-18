@@ -2,6 +2,7 @@ import random
 
 from services.intercom_api_service import IntercomAPIService
 import asyncio
+from services.openai_api_service import OpenAIService
 
 intercom_client: IntercomAPIService = IntercomAPIService()
 

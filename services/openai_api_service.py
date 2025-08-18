@@ -25,6 +25,7 @@ load_dotenv()
 
 
 class OpenAIService:
+
     def __init__(self, messages_cache_service: MessagesCache):
         self.client_async = AsyncOpenAI(api_key=os.getenv("OPENAPI_KEY"))
         self.messages_cache_service = messages_cache_service

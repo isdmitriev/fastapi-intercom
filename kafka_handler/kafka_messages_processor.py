@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dependency_injector.wiring import inject
-from kafka_clients_service import KafkaClientsService
+from kafka_handler.kafka_clients_service import KafkaClientsService
 from services.handlers.messages_processor import MessagesProcessor
 from aiokafka import AIOKafkaConsumer
 import os

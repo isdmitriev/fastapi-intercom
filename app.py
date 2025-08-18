@@ -1,8 +1,7 @@
-from fastapi import FastAPI, Response, status, Request, Depends, HTTPException
+from fastapi import FastAPI, Response, status, Request, Depends
 from fastapi.responses import JSONResponse
 import uvicorn
-from typing import Dict
-import logging
+
 import traceback
 from services.redis_cache_service import RedisService
 
@@ -24,10 +23,11 @@ from services.handlers.messages_processor import MessagesProcessor
 
 container = Container()
 
+app = FastAPI()
+app.container = container
 container.wire(
     modules=[
-        "app",
-
+        __name__,
         "services.redis_cache_service",
         "services.mongodb_service",
         "services.es_service",
@@ -38,7 +38,7 @@ container.wire(
         "services.handlers.common",
     ]
 )
-app = FastAPI()
+
 logger = container.logger_service()
 # logger = logging.getLogger("main_app")
 # logger.setLevel(logging.INFO)
@@ -61,13 +61,15 @@ async def startup():
 
 async def handle_app_exception(
         request: Request,
-        exception: APPException,
-):
-    es_service: ESService = container.es_service()
-    try:
-        await es_service.save_exception_async(app_exception=exception)
+        exception: APPException
 
-        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
+):
+    try:
+        await container.es_service().save_exception_async(app_exception=exception)
+
+        FAILED_REQUEST_COUNT.labels(
+            pod_name=os.environ.get("HOSTNAME", "unknown")
+        ).inc()
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -75,7 +77,9 @@ async def handle_app_exception(
         )
     except Exception as e:
 
-        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
+        FAILED_REQUEST_COUNT.labels(
+            pod_name=os.environ.get("HOSTNAME", "unknown")
+        ).inc()
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -83,28 +87,38 @@ async def handle_app_exception(
         )
 
 
-async def handle_common_exception(request: Request, exception: Exception):
-    stack_trace = "".join(traceback.format_exception(type(exception), exception, exception.__traceback__))
+async def handle_common_exception(
+        request: Request,
+        exception: Exception,
+
+):
+    stack_trace = "".join(
+        traceback.format_exception(type(exception), exception, exception.__traceback__)
+    )
 
     app_exception: APPException = APPException(
         message=str(exception),
         event_type="unknown",
         ex_class=f"{type(exception).__module__}.{type(exception).__name__}",
         params={},
-        service_name='unknown',
-        stack_trace=stack_trace
+        service_name="unknown",
+        stack_trace=stack_trace,
     )
     logger.log_error(exception=app_exception)
     try:
         await container.es_service().save_exception_async(app_exception=exception)
-        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
+        FAILED_REQUEST_COUNT.labels(
+            pod_name=os.environ.get("HOSTNAME", "unknown")
+        ).inc()
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(exception)
         )
     except Exception as e:
 
-        FAILED_REQUEST_COUNT.labels(pod_name=os.environ.get("HOSTNAME", "unknown")).inc()
+        FAILED_REQUEST_COUNT.labels(
+            pod_name=os.environ.get("HOSTNAME", "unknown")
+        ).inc()
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e)
@@ -148,9 +162,10 @@ async def process_metrics(request: Request, call_next):
 @inject
 async def process_message(
         request: Request,
-        redis_service: RedisService = Depends(lambda: container.redis_service()),
-        messages_processor: MessagesProcessor = Depends(lambda: container.messages_processor())
-
+        redis_service: RedisService = Depends(Provide[Container.redis_service]),
+        messages_processor: MessagesProcessor = Depends(
+            Provide[Container.messages_processor]
+        ),
 ):
     try:
 
